@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" delegate="true" date="2023.03.07">
+    <url><![CDATA[https?://(?:www\.)?ik123\.com/[^/]+/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.ik123.com/mp3-dj/ik123_12715.html
+            var url = window.external.url;
+            var cookie = window.external.getCookieEx(url, 'open_player', 2500) || window.external.getCookieEx(url, 't', 2500);
+            var headers = 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36\r\nCookie: ' + cookie;
+            var html = window.external.getHtmlCodeEx(url, headers, 0, false);
+            var title = html.match(/musicName=\"([^\"]+)/)[1];
+            var thumbnail = (html.indexOf('userface') != -1) ? html.match(/userface\"><img\s+src=\"([^\"]+)/)[1] : '';
+            var furl = html.match(/furl=\"([^\"]+)/)[1];
+            var video_url = 'https://mp4.ik123.com:37373/Dj_www.ik123.com/2010/' + furl.replace('.flv', '.mp4') + '?vsid=tt1c4ae18a70c9b3a159d652571fb6887d131mp4';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

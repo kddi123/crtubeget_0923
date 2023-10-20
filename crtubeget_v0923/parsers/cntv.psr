@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" referer="true" delegate="true" date="2023.06.30">
+    <url><![CDATA[cntv\.cn/.*/(?<id>[^.]+)\.shtml?]]></url>
+    <title><![CDATA[title+="([^"]+)]]></title>
+    <thumbnail><![CDATA[thumbnail="([^"]+)"]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //防止早期flash视频卡页面，用blank
+            //http://jishi.cntv.cn/special/djsb/smdxx/index.shtml
+            //http://ncpa-classic.cntv.cn/2019/04/02/VIDE8H1abicY5cJTzBAshRZC190402.shtml
+            //http://news.cntv.cn/program/dajiakanfa/20101110/105609.shtml
+            //http://news.cntv.cn/2013/11/03/VIDE1383481805019747.shtml -> https://news.cctv.com/2013/11/03/VIDE1383481805019747.shtml
+            var url = window.external.url, video_url = '';
+            var html = window.external.getHtmlCode(url);
+            if (html.indexOf('cctv.com') != -1 && html.match(/href='([^']+)/)) {
+                var video_url = html.match(/href='([^']+)/)[1];
+                document.body.innerHTML = 'cr_video_url=' + video_url + '#ra$';
+                return;
+            }
+
+            var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+            var html = window.external.getHtmlCode(url);
+            var m = html.match(/(?:guid|videoCenterId|changePlayerload[Vv]ideo|initMyAray)['\"]?\s*(?:,|=)\s*[\"']([^\"']+)/);
+            var vid = m ? m[1] : '';
+            //http://jishi.cntv.cn/special/djsb/smdxx/index.shtml
+            if (!vid && html.indexOf('dianbotv') != -1)
+                vid = html.match(/dianbotv\(\d+,\"([^\"]+)/)[1];
+            var api_url = 'https://vdn.apps.cntv.cn/api/getHttpVideoInfo.do?pid=' + vid;
+            var data = window.external.getHtmlCode(api_url);
+            var title = (data.indexOf('\"title\"') != -1) ? data.match(/title\":\"([^\"]+)/)[1] : '';
+            var thumbnail = (data.indexOf('\"image\"') != -1) ? data.match(/image\":\"([^\"]+)/)[1] : '';
+            if (data.indexOf('hls_url') != -1) {
+                //以正则取hls_url，避免JSON.parse(data)出错
+                var hls_url = data.match(/hls_url\":\"([^\"]+)/)[1];
+                data = window.external.getHtmlCode(hls_url);
+                video_url = data.substr(data.lastIndexOf('/asp'));
+                if (vq > 8) {
+                    var re = new RegExp('x' + vq + '([^.]+\.m3u8)');
+                    var m = data.match(re);
+                    video_url = m ? m[1].trim() : video_url;
+                }
+                video_url = hls_url.substr(0, hls_url.indexOf('/asp')) + video_url;
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

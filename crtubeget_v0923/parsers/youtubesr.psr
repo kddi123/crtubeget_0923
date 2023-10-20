@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delegate="true" date="2023.06.05">
+    <title><![CDATA["title":\s*"([^"]+)"]]></title>
+    <thumbnail><![CDATA["thumbnail":\s*"([^"]+)"]]></thumbnail>
+    <duration><![CDATA["duration":\s*([^,]+)]]></duration>
+    <subtitle><![CDATA[subtitle=([^\$]+)]]></subtitle>
+    <medias><![CDATA[\{"format":\s+"(?<format>[^"]+)",\s+"quality":\s+"(?<quality>[^"]*)",\s+"size":\s+(?<file_size>[^,]+),\s+(?:"has_audio":\s+(?<has_audio>[^,]*),\s+)?"url":\s+"(?<url>[^"]+)",\s+"acodec":\s+"(?<acodec>[^"]*)",\s+"vcodec":\s+"(?<vcodec>[^"]*)"\}]]></medias>
+    <jsCode><![CDATA[
+        try {
+            //https://www.youtube.com/watch?v=gw7XAxDcd8k
+            var html = '', url = window.external.url;
+            var api_url = 'https://www.download4.cc/media/parse?address=' + encodeURIComponent(url);
+            var data = window.external.getHtmlCode(api_url, 'https://www.download4.cc/zh/');
+            if (data.indexOf('formats\":[{') != -1) {
+                var jo = JSON.parse(data);
+                html = '\"title\": \"' + jo.data.title + '\", \"thumbnail\": \"' + jo.data.thumbnail + '\", \"duration\": ' + jo.data.duration + ',$';
+                for (let i = 0; i <= jo.data.formats.length - 1; i++) {
+                    var media = jo.data.formats[i];
+                    if (media.ext == 'mhtml')
+                        continue;
+                    var has_audio = (media.acodec && !media.height) ? '' : media.acodec != 'none';
+                    html += '{\"format\": \"' + media.ext + '\", \"quality\": \"' + media.height + '\", \"size\": ' + media.filesize + ', \"has_audio\": ' + has_audio + ', \"url\": \"' + media.url + '\", \"acodec\": \"' + media.acodec + '\", \"vcodec\": \"' + media.vcodec + '\"},\r\n';
+                }
+            }
+            //https://backendace.1010diy.com/web/free-mp3-finder/detail?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Dgw7XAxDcd8k&phonydata=false
+            if (!html) {
+                api_url = 'https://line.1010diy.com/web/free-mp3-finder/detail?url=' + encodeURIComponent(url);
+                data = window.external.getHtmlCode(api_url, 'https://ytbdownload.com/home/');
+                if (data.indexOf('audios\":[{') != -1 && data.indexOf('videos\":[{') != -1) {
+                    var jo = JSON.parse(data);
+                    for (let i = 0; i <= jo.data.audios.length - 1; i++) {
+                        var media = jo.data.audios[i];
+                        var media_url = media.url;
+                        if (media_url.indexOf('url=') != -1)
+                             media_url = decodeURIComponent(media_url.substring(media_url.indexOf('url=') + 4));
+                        html += '{\"format\": \"' + media.ext + '\", \"quality\": \"' + media.formatNote + '\", \"size\": ' + media.fileSize + ', \"has_audio\": , \"url\": \"' + media_url + '\", \"acodec\": \"\", \"vcodec\": \"\"},\r\n';
+                    }
+                    for (let i = 0; i <= jo.data.videos.length - 1; i++) {
+                        var media = jo.data.videos[i];
+                        var media_url = media.url;
+                        html += '{\"format\": \"' + media.ext + '\", \"quality\": \"' + media.formatNote + '\", \"size\": ' + media.fileSize + ', \"has_audio\": ' + media.audio_exist + ', \"url\": \"' + media_url + '\", \"acodec\": \"\", \"vcodec\": \"' + media.vcodec + '\"},\r\n';
+                    }
+                    api_url = 'https://line.1010diy.com/web/free-mp3-finder/query?q=' + encodeURIComponent(url) + '&type=youtube&pageToken=';
+                    data = window.external.getHtmlCode(api_url, 'https://ytbdownload.com/home/');
+                    if (data.indexOf('items\":[{') != -1) {
+                        jo = JSON.parse(data);
+                        var media = jo.data.items[0];
+                        html = '\"title\": \"' + media.title + '\", \"thumbnail\": \"' + media.thumbnail + '\", \"duration\": ' + media.duration + ',$' + html;
+                    }
+                }
+            }
+            if (!html) {
+                data = window.external.getHtmlCode('https://videodownloader.ai/');
+                var token = (data.indexOf('name=\"token\"') != -1) ? data.match(/name=\"token\"\s*value=\"([^\"]+)/)[1] : '';
+                var args = 'url=' + encodeURIComponent(url) + '&token=' + token;
+                var headers = 'Content-Type: application/x-www-form-urlencoded\r\n\Referer: https://videodownloader.ai';
+                data = window.external.getPostResultEx('https://videodownloader.ai/wp-json/aio-dl/video-data/', args, headers);
+                if (data.indexOf('medias\":[{') != -1) {
+                    var jo = JSON.parse(data);
+                    html = '\"title\": \"' + jo.title + '\", \"thumbnail\": \"' + jo.thumbnail + '\", \"duration\": ' + jo.duration + ',$';
+                    for (let i = 0; i <= jo.medias.length - 1; i++) {
+                        var media = jo.medias[i];
+                        var has_audio = media.audioAvailable && !media.videoAvailable ? '' : media.audioAvailable;
+                        html += '{\"format\": \"' + media.extension + '\", \"quality\": \"' + media.quality + '\", \"size\": ' + media.formattedSize + ', \"has_audio\": ' + has_audio + ', \"url\": \"' + media.url + '\", \"acodec\": \"\", \"vcodec\": \"\"},\r\n';
+                    }
+                }
+            }
+            //无文件大小
+            if (!html) {
+                var args = 'url=' + encodeURIComponent(url);
+                var headers = 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8\r\n\Referer: https://freeyoutubedownloader.online/en32';
+                data = window.external.getPostResultEx('https://freeyoutubedownloader.online/', args, headers);
+                if (data.indexOf('formats\":[{') != -1) {
+                    var jo = JSON.parse(data);
+                    var vd = jo.videoDetails;
+                    var thumbnail = vd.thumbnails[vd.thumbnails.length - 1].url;
+                    html = '\"title\": \"' + vd.title + '\", \"thumbnail\": \"' + thumbnail + '\", \"duration\": ' + vd.lengthSeconds + ',$';
+                    for (let i = 0; i <= jo.formats.length - 1; i++) {
+                        var media = jo.formats[i];
+                        var has_audio = (media.hasAudio && !media.hasVideo) ? '' : media.hasAudio;
+                        html += '{\"format\": \"' + media.container + '\", \"quality\": \"' + media.qualityLabel + '\", \"size\": 0, \"has_audio\": ' + has_audio + ', \"url\": \"' + media.url + '\", \"acodec\": \"' + media.audioCodec + '\", \"vcodec\": \"' + media.videoCodec + '\"},\r\n';
+                    }
+                }
+            }
+            //此支无音频流，可与https://www.download4.cc/zh/一起用，取其音频
+            /*if (!html) {
+                api_url = 'https://10downloader.com/download?v=' + encodeURIComponent(url);
+                data = window.external.getHtmlCode(api_url);
+                if (data.indexOf('<title>Download video:') != -1) {
+                    var title = data.match(/class=\"title\">([^<]+)/)[1];
+                    var thumbnail = data.match(/https:\/\/i\.ytimg\.com[^\"]+/)[0];
+                    var duration = data.match(/Duration:\s*<[^>]+>([^<]+)/)[1].trim();
+                    html = '\"title\": \"' + title + '\", \"thumbnail\": \"' + thumbnail + '\", \"duration\": ' + duration + ',$';
+                    //...
+                }
+            }*/
+
+            //https://www.youtube.com/watch?v=0KiDvYJ4moA
+            var subtitle = '';
+            if (window.external.sub_lang || true) {
+                var api_url = 'https://downsub.com/?url=' + encodeURIComponent(url);
+                data = window.external.getHtmlCode(api_url);
+                if (data.indexOf('context=') != -1) {
+                    var lang = window.external.sub_lang;
+                    if (lang == 'Default' || lang == 'All') {
+                        lang = navigator.language;
+                        lang = lang.replace('zh-CN', 'zh-Hans').replace('zh-TW', 'zh-Hant').replace('zh-HK', 'zh-Hant');
+                    }
+                    var ct = atob(data.match(/context='([^\']+)/)[1]);
+                    var jo = JSON.parse(ct);
+                    if (jo.id) {
+                        data = window.external.getHtmlCode('https://get-info.downsub.com/' + jo.id, api_url);
+                        if (data) {
+                            jo = JSON.parse(data);
+                            for (let i in jo.subtitles) {
+                                //default->en
+                                var sub_code = jo.subtitles[i].code;
+                                sub_code = sub_code.replace('zh-CN', 'zh-Hans').replace('zh-TW', 'zh-Hant').replace('zh-HK', 'zh-Hant');
+                                if (!subtitle && sub_code == 'en')
+                                    subtitle = jo.subtitles[i].url;
+                                if (lang.indexOf(sub_code) != -1) {
+                                    subtitle = jo.subtitles[i].url;
+                                    break;
+                                }
+                            }
+                            if (!subtitle && jo.subtitlesAutoTrans.length != 0) {
+                                for (let i in jo.subtitlesAutoTrans) {
+                                    var sub_name = jo.subtitlesAutoTrans[i].name;
+                                    var sub_code = sub_name.replace('English', 'en').replace('Chinese Simplified', 'zh-Hans').replace('Chinese Traditional', 'zh-Hant');
+                                    if (lang.indexOf(sub_code) != -1) {
+                                        subtitle = jo.subtitlesAutoTrans[i].url;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (subtitle)
+                                subtitle = 'https://subtitle.downsub.com/?title=' + lang + '&url=' + subtitle;
+                        }
+                    }
+                }
+            }
+
+            document.body.innerHTML = 'subtitle=' + subtitle + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2022.11.01">
+    <url><![CDATA[https?://item\.btime\.com/(?<id>\w{27})]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://item.btime.com/21mh8fqlst8hogtkgqroafpfvij
+            var url = window.external.url;
+            var html = window.external.getHtmlCode(url);
+            var title = html.match(/<title>([^<]+)/)[1].trim();
+            var vid = url.match(/com\/(\w{27})/)[1];
+            var api_url = 'https://app.api.btime.com/video/play?id=' + vid + '&_=' + Date.now();
+            var data = window.external.getHtmlCode(api_url);
+            var jo = JSON.parse(data);
+            var thumbnail = jo.data.video_covers;
+            var duration = jo.data.duration;
+            var video_url = jo.data.video_stream[0].stream_url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

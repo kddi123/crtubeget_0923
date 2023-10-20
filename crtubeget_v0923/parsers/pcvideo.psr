@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2022.10.28">
+    <url><![CDATA[https?://(?:\w+\.)?pcvideo\.com\.cn/(?:video-)?(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //IE之flash，导致页面未有完成状态
+            //https://pconline.pcvideo.com.cn/video-31371.html
+            //https://mpconline.pcvideo.com.cn/31371.html
+            //https://pcauto.pcvideo.com.cn/hj/video/1695535.html
+            //为避免乱码计
+            var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveObject('Microsoft.XMLHTTP');
+            xhr.open('GET', window.external.url, false);
+            xhr.send(null);
+            html = xhr.responseText;
+            var title = (html.indexOf('<h3') != -1) ? html.match(/<h3[^>]+>([^<]+)/)[1] : (html.indexOf('<h1') != -1) ? html.match(/<h1[^>]+>([^<]+)/)[1] : html.match(/<title>([^<]+)/)[1];
+            var thumbnail = html.match(/poster=\"([^\"]+)/)[1];
+            var video_url = html.match(/<source[^>]+src=\"([^\"]+)/)[1];
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

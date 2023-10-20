@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" delegate="true" date="2021.11.25">
+    <url><![CDATA[https?://(?:\w+.)?mixkit\.co/[^/]+/(?<id>[^/]+?\d+)]]></url>
+    <title><![CDATA[<h1[^>]+>([^<]+)]]></title>
+    <thumbnail><![CDATA[<video.*?poster="([^"]+)"]]></thumbnail>
+    <duration><![CDATA["duration":"([^"]*)"]]></duration>
+    <mediaUrl><![CDATA[<video.*?src="([^"]+)"]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://mixkit.co/free-stock-video/green-fields-and-trees-on-a-plateau-9842/
+            //IE不返回消息
+            document.body.innerHTML = window.external.getHtmlCode(window.external.url);
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

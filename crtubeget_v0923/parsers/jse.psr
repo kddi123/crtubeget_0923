@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" referer="true" date="2022.11.23">
+    <url><![CDATA[https?://(?:\w+\.)?jse\.edu\.cn/.*?resource_id=(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://mskzkt.jse.edu.cn/cloudCourse/seyk/detail.php?resource_id=14889
+            //https://mskzkt.jse.edu.cn/cloudCourse/sedy/sedydetail.html?resource_id=137
+            //https://mskzkt.jse.edu.cn/cloudCourse/msjt/msjtdetail.html?resource_id=576
+            var title = document.title, thumbnail = '', duration = 0, video_url = '';
+            var url = window.external.url;
+            var rid = url.match(/id=([^&]+)/)[1];
+            var api_url = 'https://mskzkt.jse.edu.cn/baseApi/' + url.match(/Course\/([^\/]+)/)[1] + '/resource/detail/';
+            var data = window.external.getPostResult(api_url, 'resource_id=' + rid, 'application/x-www-form-urlencoded; charset=UTF-8', url);
+            var jo = JSON.parse(data);
+            var ri = jo.data.resource_info;
+            title = ri.title;
+            thumbnail = ri.seal_img;
+            var fid = ri.file_id;
+            api_url = 'https://mskzkt.jse.edu.cn/baseApi/base/vod/';
+            data = window.external.getPostResult(api_url, 'file_id=' + fid, 'application/x-www-form-urlencoded; charset=UTF-8', url);
+            jo = JSON.parse(data);
+            api_url = 'https://playvideo.qcloud.com/getplayinfo/v4/' + jo.data.app_id + '/' + jo.data.file_id + '?psign=' + jo.data.psign;
+            data = window.external.getHtmlCode(api_url, url);
+            jo = JSON.parse(data);
+            duration = jo.media.basicInfo.duration;
+            video_url = jo.media.streamingInfo.plainOutput.url;
+            data = window.external.getHtmlCode(video_url, url).trim();
+            video_url = video_url.substr(0, video_url.lastIndexOf('/') + 1) + data.substr(data.lastIndexOf('\n')).trim();
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

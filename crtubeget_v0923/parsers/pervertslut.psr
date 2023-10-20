@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" delegate="true" date="2020.04.14">
+    <url><![CDATA[https?://(?:www\.)?pervertslut\.com/videos/[^/]+/(?<id>[^/]+)]]></url>
+    <title><![CDATA[<h1[^>]+>([^<]+)</h1>]]></title>
+    <thumbnail><![CDATA[preview_url:\s+'([^']+)']]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[video_url:\s+'([^']+)']]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://pervertslut.com/videos/214253/kenzie-reeves-bonks-in-hot-outfit-with-big-dicked-guy/?pqr=1:ca02e299655209f5097abfd1528e3e5b:11:214253:1:
+            //IE不返回消息
+            document.body.innerHTML = window.external.getHtmlCode(window.external.url);
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

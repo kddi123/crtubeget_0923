@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" aria2c="true" delegate="true" date="2023.08.21">
+    <url><![CDATA[douyin\.com/(?:vs|lv)detail/(?<id>[^?]+)]]></url>
+    <title><![CDATA[title="([^"]*)"]]></title>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <dateTime><![CDATA[date_time=([^,]+)]]></dateTime>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.douyin.com/vsdetail/7094903842747257897
+            //https://www.douyin.com/lvdetail/6655414772701331979
+            //https://v.douyin.com/iJgsEttS/->https://www.douyin.com/vsdetail/7265964281518724108
+            var url = window.external.url;
+            var title = '', thumbnail = '', video_url = '', duration = 0, date_time = 0;
+            if (url.indexOf('/vsdetail') != -1) {
+                var eid = url.match(/vsdetail\/([^?&]+)/)[1];
+                var api_url = 'https://webcast.amemv.com/webcast/show/episode/pc_enter/?episode_id=' + eid + '&app_id=6383&aid=6383';
+                var data = window.external.getHtmlCode(api_url, url);
+                if (data.indexOf('episode\":{') != -1) {
+                    var jo = JSON.parse(data);
+                    var ep = jo.data.episode;
+                    title = ep.title;
+                    thumbnail = ep.cover.url_list[0];
+                    date_time = ep.release_time;
+                    var vi = ep.video_info;
+                    duration = vi.duration;
+                    video_url = vi.unfold_play_info.play_urls[0].main;
+                    var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                    if (vq <= 8)
+                        vq = 1080;
+                    for (var i = 0; i <= vi.unfold_play_info.play_urls.length - 1; i++) {
+                        if (vi.unfold_play_info.play_urls[i].definition == vq + 'p') {
+                            video_url = vi.unfold_play_info.play_urls[i].main;
+                            break;
+                        }
+                    }
+                }
+            }
+            else
+                video_url = 'https://www.ixigua.com/' + window.external.url.match(/detail\/([^?]+)/)[1] + '#ra';
+
+            var html = 'title=\"' + video_url + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',date_time=' + date_time + ',cr_video_url=' + video_url + '$';
+            if (typeof(window.external.receive) != 'undefined')
+                window.external.receive(html);
+            else
+                document.body.innerHTML = html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

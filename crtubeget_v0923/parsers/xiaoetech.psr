@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2021.07.27">
+    <url><![CDATA[xiaoe-tech\.com/detail/(?<id>v_[^/\?]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[XIAOEID]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://appbldadcdz3234.pc.xiaoe-tech.com/detail/v_5fc0a555e4b0231ba8892d90/3?from=p_5fabc29ce4b04db7c08df3ce&type=6
+            //https://appbldadcdz3234.pc.xiaoe-tech.com/detail/v_5fc0a7f8e4b04db7c09156a3/3?fromH5=true
+            var url = window.external.url;
+            var video_url = url;
+            var cookie = window.external.getCookieEx(url, 'XIAOEID', 2500);
+            if (!cookie)
+                cookie = window.external.getCookie(url);
+            if (cookie) {
+                var app_id = url.match(/\/\/([^.]+)/)[1];
+                var vid = url.match(/detail\/([^\/]+)/)[1];
+                var args = '{\"goods_id\":\"' + vid + '\",\"goods_type\":3}';
+                var headers = 'App-Id: ' + app_id + '\r\nContent-Type: application/json;charset=UTF-8\r\nReferer: ' + url + '\r\nCookie: ' + cookie;
+                var api_url = 'https://' + app_id + '.pc.xiaoe-tech.com/api/xe.goods.detail.get/2.0.0?app_id=' + app_id;
+                var data = window.external.getPostResultEx(api_url, args, headers);
+                if (data.indexOf('video_m3u8') != -1) {
+                    var jo = JSON.parse(data);
+                    video_url = jo.data.video_m3u8;
+                    video_url = video_url.substr(0, video_url.indexOf('.m3u8')) + '.m3u8';
+                    video_url = video_url.replace('encrypt-k-vod.xet.tech', '1252524126.vod2.myqcloud.com');
+                    document.body.innerHTML = 'title=\"' + jo.data.title + '\",thumbnail=' + jo.data.img_url + ',cr_video_url=' + video_url + '$';
+                }
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

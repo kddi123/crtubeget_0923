@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" referer="true" date="2021.10.17">
+    <url><![CDATA[https?://(?:www\.)?youown\.net/.*?workId=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://youown.net/works?workId=d4bce6bcfdf94fde90cd191541c1e48d
+            var wid = window.location.href.match(/workId=([^&]+)/)[1];
+            var api_url = 'https://api.youown.net/youown/works/works-detail?id=' + wid;
+            var data = window.external.getHtmlCode(api_url, window.location.href);
+            var jo = JSON.parse(data);
+            var title = jo.data.title;
+            var thumbnail = jo.data.coverUrl;
+            var video_url = '', image_url = '';
+            jo = JSON.parse(jo.data.content);
+            for (var i = 0; i <= jo.length - 1; i++) {
+                var item = jo[i];
+                if (item.type == 'video') {
+                    video_url = item.url;
+                    break;
+                }
+                else if (item.type == 'image')
+                    image_url = item.src;
+            }
+            video_url = video_url || image_url || window.location.href;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

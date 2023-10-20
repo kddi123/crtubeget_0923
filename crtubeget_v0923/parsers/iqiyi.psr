@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" speed="12M" delegate="true" date="2023.08.21">
+    <url><![CDATA[(?:(?:iqiyi\.com|pps\.tv)/(?:(?<id>.+)\.html?|.*?/play/(?<id>[^/&]+))|iqiyi\.cn/(?<id>[^/&]+)|suike\.cn/.*?tvStr=(?<id>[^&]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA["duration":(\d+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[ignore_cks]]></ckSign>
+    <exjs><![CDATA[http://www.cr-soft.net/js/jx.js|http://www.cr-soft.net/js/cmd5x.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //https://www.iqiyi.com/v_23kj7qxfgww.html
+            //http://m.iqiyi.com/v_23kj7qxfgww.html?key=b398b8ccbaeacca840073a7ee9b7e7e6
+            //https://m.iqiyi.com/mp/sharePlay.html?tvid=4289682142333100&shareUser=
+            //https://www.iqiyi.com/v_19rr4xo5gs.html 4k
+            //https://sports.iqiyi.com/resource/pcw/play/aup2pt4wqg
+            //http://iqiyi.cn/30B9usa-9b
+            //http://m.suike.cn/svpc.html?platform=12&tvStr=18k9mzxt944&source=share_card_b
+            //http://m.suike.cn/n/pc/e2sp6brfw4.html?tvStr=e2sp6brfw4
+            //不让它用cookie，cookie+annie会致下载失败...只匹配大陆网站，不匹配其它地区比如台湾的
+            var url = window.external.url;
+            if (url.indexOf('iqiyi.cn') != -1) {
+                var video_url = window.external.getRedirectedUrl(url);
+                //http://iqiyi.cn/30B9usa-9b->http://m.iqiyi.com/v_1lic6afslwo.html?&p1=2_22_222&_psc=f9a9396f60814c5ebcfbdd641d49d06f&social_platform=link->https://www.iqiyi.com/v_1lic6afslwo.html
+                while (video_url.indexOf('www.iqiyi') == -1)
+                    video_url = window.external.getRedirectedUrl(video_url);
+                document.body.innerHTML = 'cr_video_url=' + video_url + '#ra$';
+                return;
+            }
+            if (url.indexOf('suike.cn') != -1) {
+                var vid = url.match(/tvStr=([^&]+)/)[1];
+                var video_url = 'https://www.iqiyi.com/v_' + vid + '.html';
+                document.body.innerHTML = 'cr_video_url=' + video_url + '#ra$';
+                return;
+            }
+
+            var ppi = undefined;
+            //sports...
+            if (url.indexOf('/play/') != -1) {
+                var pid = url.match(/play\/([^/&]+)/)[1];
+                var tvid = make_tvid(pid);
+                var data = window.external.getHtmlCode('https://pcw-api.iqiyi.com/video/video/playervideoinfo?tvid=' + tvid);
+                var jo = JSON.parse(data);
+                var video_url = extractVideo(tvid, '38daefc63d14df78535bf6e24890b8bf');
+                document.body.innerHTML = 'title=\"' + jo.data.vn + '\",thumbnail=' + jo.data.vpic + ',cr_video_url=' + video_url + '$';
+                return;
+
+                //...
+                function make_tvid(e) {
+                    return mt(r(e, 36), 129125665826668)
+                }
+                function n(e) {
+                    for (var t = '', n = e.length - 1; n >= 0; n--) {
+                        t += e.charCodeAt(n).toString(16)
+                    }
+                    return t.toString()
+                }
+                function r(e, t) {
+                    var o = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                    for (var n = 0, r = 0; r < e.length; r++) {
+                        n += o.indexOf(e.charAt(r)) * Math.pow(t, e.length - (r + 1))
+                    }
+                    return n
+                }
+                function mt(e, t) {
+                    var n = e.toString(2) + ''
+                      , r = t.toString(2) + ''
+                      , a = '';
+                    a = n.substr(0, n.length - r.length),
+                    n = n.substr(n.length - r.length),
+                    r = r.substr(r.length - n.length);
+                    for (var i = 0; i < n.length; i++)
+                        n[i] === r[i] ? a += 0 : a += 1;
+                    return parseInt(a, 2)
+                }
+            }
+            //tvid...
+            if (url.indexOf('tvid=') != -1) {
+                var tvid = url.match(/tvid=([^&]+)/)[1];
+                var data = window.external.getHtmlCode('https://pcw-api.iqiyi.com/video/video/playervideoinfo?tvid=' + tvid);
+                var jo = JSON.parse(data);
+                document.body.innerHTML = 'title=\"' + jo.data.vn + '\",thumbnail=' + jo.data.vpic + ',cr_video_url=' + jo.data.vu + '#ra$';
+                return;
+            }
+
+            var ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.5481.180 Safari/537.36';
+            var html = window.external.getHtmlCodeEx(url, 'User-Agent: ' + ua);
+            //?
+            if (html.indexOf('<title') == -1) {
+                //https://www.iqiyi.com/v_1vqcung9k5c.html?iqiyi=o...有iqiyi=o即不可
+                if (url.indexOf('?') != -1)
+                    url = url.substring(0, url.indexOf('?'));
+                var cookie = window.external.getCookieEx(url, 'P00003', 2500);
+                for (var i = 0; i <= 2; i++) {
+                    var v = Math.round(Math.random() * 100);
+                    ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.5304.' + v + ' Safari/537.36';
+                    var headers = 'User-Agent: ' + ua + '\r\nCookie: ' + cookie;
+                    html = window.external.getHtmlCodeEx(url, headers);
+                    if (html.indexOf('<title') != -1)
+                        break;
+                }
+            }
+            //https://v.qq.com/x/cover/1pn8h870s9ujr9y/r0022t99fda.html title与content间无空格
+            var title = html.match(/<meta[^>]+property=\"og:title\"\s*content=\"([^\"]+)/) ? html.match(/<meta[^>]+property=\"og:title\"\s*content=\"([^\"]+)/)[1] : '';
+            //用户不要剧集介绍
+            //if (html.match(/subtitle\":\"([^\"]+)/))
+            //    title += ' ' + html.match(/subtitle\":\"([^\"]+)/)[1];
+            title = title.replace(/&#34;/g, '\'');
+            var thumbnail = html.match(/<meta[^>]+property=\"og:image\"\s+content=\"([^\"]+)/) ? html.match(/<meta[^>]+property=\"og:image\"\s+content=\"([^\"]+)/)[1] : '';
+            if (thumbnail) {
+                if (thumbnail.indexOf('//') == 0)
+                    thumbnail = 'https:' + thumbnail;
+                thumbnail = thumbnail.replace('.jpg', '_1920_1080.jpg');
+                //urlExists有时不准了，比如：http://www.iqiyi.com/v_217s19hq4w0.html 直接用getHtmlCode
+                var data = window.external.getHtmlCode(thumbnail);
+                if (!data) {
+                    thumbnail = thumbnail.replace('_1920_1080.jpg', '_1280_720.jpg');
+                    data = window.external.getHtmlCode(thumbnail);
+                    if (!data) {
+                        thumbnail = thumbnail.replace('_1280_720.jpg', '_480_270.jpg');
+                        data = window.external.getHtmlCode(thumbnail);
+                        if (!data)
+                            thumbnail = document.head.innerHTML.match(/<meta\s+content=\"([^\"]+)\"\s+property=\"og:image\">/)[1];
+                    }
+                }
+                if (thumbnail.indexOf('//') == 0)
+                    thumbnail = 'https:' + thumbnail;
+            }
+            //vip...tvId，能下载的12位，16位的，亦走此解析，比如：http://www.iqiyi.com/v_2ffkws1q3x0.html...2020.09.04发现其又影响正常的1080下载，屏其。比如：https://www.iqiyi.com/v_1xx9yr6ug7w.html
+            //比如：https://www.iqiyi.com/v_19rroewhlg.html，payMark为1，但没显示vip，所以再加payMarkUrl判断
+            //https://www.iqiyi.com/v_ftpyznhe6g.html?vfrm=pcw_home&vfrmblk=712211_zongyi&vfrmrst=712211_zongyi_float_video_area1 无.v
+            var video_url = '';
+            if (html.indexOf('\"tvid\"') != -1 || html.indexOf('\"tvId\"') != -1) {
+                var tvid = html.match(/tv[iI]d\":([^,]+)/)[1];
+                var vid = (html.indexOf('\"vid\"') != -1) ? html.match(/\"vid\":\"([^\"]+)/)[1] : '';
+                video_url = extractVideo(tvid, vid);
+            }
+            //https://tw.iqiyi.com/v_19rydujn30.html?pltfm=11&pos=title&flashvars=videoIsFromQidan%3Ditemviewclk_a#vfrm=5-6-0-1
+            //vip类...parMark:1或21。0为free
+            if (!video_url && html.match(/payMark\":[1-9]/))
+                video_url = getol(window.external.url);
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$' + document.body.innerHTML;
+
+            //...
+            function extractVideo(tvid, vid) {
+                if (typeof(fv) == 'undefined')
+                    fv = window.external.fv;
+                if (!fv || fv[0] == '0')
+                    return '';
+                //...ok，如你所愿！
+                if (!tvid || typeof(window.external.getCookieEx) == 'undefined')
+                    return '';
+
+                var cookie = window.external.getCookieEx(window.external.url, 'P00003', 2500);
+                //避免中文出错
+                cookie = cookie.replace(/QC021=[^;]+;/, '');
+                if (typeof(cmd5x) != 'function')
+                    delay(2500);
+                if (typeof(cmd5x) == 'function') {
+                    var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                    var src = window.external.url.indexOf('tw.iqiyi.com') != -1 ? '03020031010010000000' : '03020031010000000000';
+                    var uid = cookie.match(/P00003=[^;]+/) ? cookie.match(/P00003=([^;]+)/)[1] : '';
+                    var kuid = cookie.match(/QC005=[^;]+/) ? cookie.match(/QC005=([^;]+)/)[1] : getKuid();
+                    var dfp = cookie.match(/__dfp=[^;]+/) ? cookie.match(/__dfp=([^;]+)/)[1] : '';
+                    var pck = cookie.match(/P00007=[^;]+/) ? cookie.match(/P00007=([^;]+)/)[1] : '';
+                    //2k->1080
+                    var bid = (vq == 4 || vq == 8) ? 800 : 620;
+                    //为版权风险及下载稳定性考虑，去除其4k支持
+                    //bid = 620;
+                    if (vq == 720)
+                        bid = 500;
+                    else if (vq == 480)
+                        bid = 300;
+                    else if (vq == 360)
+                        bid = 200;
+                    //h264...无4k。1080者，求h264源
+                    var kft = bid > 620 ? '&k_ft2=8191' : '&k_ft1=706436220846084&k_ft4=5';
+                    var headers = 'Referer: ' + window.external.url + '\r\nCookie: ' + cookie;
+                    var args = '/dash?tvid=' + tvid + '&bid=' + bid + '&vid=' + vid + '&src=' + src + '&uid=' + uid + '&k_uid=' + kuid + '&pt=0&lid=&cf=&ct=&dfp=' + dfp + '&pck=' + pck + '&qd_v=5&tm=' + Date.now() + kft;
+                    var api_url = 'https://cache.video.iqiyi.com' + args + '&vf=' + cmd5x(args);
+                    var data = window.external.getHtmlCodeEx(api_url, headers);
+                    //1080...bid可为610。codecInit，为加密源
+                    if (data.indexOf('#EXTM3U') == -1 || data.indexOf('codecInit') != -1) {
+                        kft = '&k_ft1=706504940322820';
+                        args = '/dash?tvid=' + tvid + '&bid=' + bid + '&vid=' + vid + '&src=' + src + '&uid=' + uid + '&k_uid=' + kuid + '&pt=0&lid=&cf=&ct=&dfp=' + dfp + '&pck=' + pck + '&qd_v=5&tm=' + Date.now() + kft;
+                        api_url = 'https://cache.video.iqiyi.com' + args + '&vf=' + cmd5x(args);
+                        data = window.external.getHtmlCodeEx(api_url, headers);
+                    }
+                    if (data.indexOf('#EXTM3U') != -1) {
+                        data = data.replace('var tvInfoJs=', '');
+                        var jo = JSON.parse(data);
+                        var video_url = '';
+                        for (var i = 0; i <= jo.data.program.video.length - 1; i++) {
+                            var video = jo.data.program.video[i];
+                            if (video.m3u8)
+                                video_url = window.external.saveData(video.m3u8);
+                            if (video._selected && video_url)
+                                return video_url;
+                        }
+                    }
+                }
+
+                //vps
+                var t = Date.now();
+                var kuid = cookie.match(/QC005=[^;]+/) ? cookie.match(/QC005=([^;]+)/)[1] : getKuid();
+                var args = '/vps?tvid=' + tvid + '&vid=' + vid + '&v=0&qypid=' + tvid + '_12&src=01012001010000000000&t=' + t + '&k_tag=1&k_uid=' + kuid + '&rs=1';
+                var headers = 'Referer: ' + window.external.url + '\r\nCookie: ' + cookie;
+                var vf = window.external.md5(args + '1j2k2k3l3l4m4m5n5n6o6o7p7p8q8q9r');
+                var api_url = 'http://cache.video.qiyi.com' + args + '&vf=' + vf;
+                var data = window.external.getHtmlCodeEx(api_url, headers);
+                if (data.indexOf('A00000') == -1)
+                    return '';
+
+                //某些用户电脑上，JSON.parse()报Object error错误
+                var jo = eval('(' + data + ')');
+                var vs = jo.data.vp.tkl ? jo.data.vp.tkl[0].vs[0] : undefined;
+                if (vs) {
+                    var host = jo.data.vp.du;
+                    api_url = host + vs.fs[0].l;
+                    data = window.external.getHtmlCodeEx(api_url, headers);
+                    if (data) {
+                        jo = eval('(' + data + ')');
+                        return jo.l || '';
+                    }
+                }
+                return '';
+            }
+
+            function getKuid() {
+                a = 32;
+                for (var b = '', c = 1; c <= a; c++) {
+                    var d = Math.floor(16 * Math.random()).toString(16);
+                    b += d
+                }
+                return b
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

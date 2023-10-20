@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2021.08.23">
+    <url><![CDATA[qq\.com/(?:kan/video/(?<id>[^.]+)\.html?|.*?rowkey=(?<id>[^&]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://post.mp.qq.com/kan/video/200553568-5625e393002692ah-l30601qmmrq.html?_wv=2281701505&sig=9eb90ccf3d10d16e940ab8d59fe1cd4c&time=1580844415&iid=MzEzMzkzNTU0Nw==&sourcefrom=6
+            //https://post.mp.qq.com/kan/video/101-7765ff82557225ah-b32198mhn84.html?_wv=2281701505&sig=f9fb45231c388596afdb4837058187db&time=1610098068&iid=MzA2MDg0NDQ2OQ==&rowkey=7765ff82557225ah&sourcefrom=6
+            //https://web.kandian.qq.com/tpl/sharePage?kandianshare.html5.qq.com=1&_bid=4563&pgyid=2008&rowkey=72660e42980041bk&enc_u=KekqlF0weoq+noR7LiYkOA==
+            var title = document.title;
+            var thumbnail = '';
+            var video_url = window.location.href;
+            var e = document.getElementById('mod-common');
+            if (e) {
+                var vid = e.dataset.videoVid;
+                title = e.dataset.articleTitle;
+                video_url = 'https://v.qq.com/x/page/' + vid + '.html#ra';
+            }
+            else if (window.location.href.indexOf('rowkey') != -1) {
+                var key = window.location.href.match(/rowkey=([^&]+)/)[1];
+                var args = '{\"share_rowkey\":\"' + key + '\"}';
+                var data = window.external.getPostResult('https://cgi.kandian.qq.com/trpc.tkdqq.kd_share_video_recommend.ShareVideoRecommend/GetFeed?g_tk=0&bkn=0', args);
+                var jo = JSON.parse(data);
+                if (jo.result && jo.result.feedData && jo.result.feedData.feeds) {
+                    var video = jo.result.feedData.feeds[0].card.feed.tweet.post.video;
+                    title = video.title;
+                    thumbnail = video.cover.url;
+                    video_url = video.url;
+                }
+            }
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

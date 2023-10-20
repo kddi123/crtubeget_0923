@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2022.03.17">
+    <url><![CDATA[https?://(?:\w+\.)?autohome\.com\.cn/(?:v-(?<id>\d+)\.html?|info/(?<id>[^#]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://v.autohome.com.cn/v-2207251.html#pvareaid=3454186
+            //https://chejiahao.autohome.com.cn/info/10336976#pvareaid=2808364
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var html = window.external.getHtmlCode(window.external.url);
+            title = html.match(/<title>([^<]+)/)[1].replace(/_(?:视频|车家号).*/, '');
+            if (html.indexOf('currplayvid') != -1 || html.indexOf('vid:') != -1) {
+                var vid = (html.indexOf('currplayvid') != -1) ? html.match(/currplayvid\s*=\s*\"([^\"]+)/)[1] : html.match(/vid:\s*\"([^\"]+)/)[1];
+                var api_url = 'https://p-vp.autohome.com.cn/api/gpi?mid=' + vid + '&ft=mp4&strategy=1&r=' + Math.random();
+                var data = window.external.getHtmlCode(api_url);
+                var jo = JSON.parse(data);
+                if (jo.result && jo.result.media) {
+                    var media = jo.result.media;
+                    thumbnail = media.images.cover;
+                    duration = media.info.duration;
+                    var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                    for (var i = 0; i <= media.qualities.length - 1; i++) {
+                        var item = media.qualities[i];
+                        if (item.copy) {
+                            video_url = item.copy;
+                            //100->270, 200->360，不做480以下匹配
+                            if (vq == 720 && item.value == 300)
+                                break;
+                        }
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

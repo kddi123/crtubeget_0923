@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" referer="true" date="2022.03.06">
+    <url><![CDATA[https?://(?:www\.)?yy\.com/.*/(?<id>[^.]+)(?:\.html)?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.yy.com/shenqu/play/id_1131892086770682881.html
+            //https://www.yy.com/sv/9185242704160066907?edition=1
+            //https://www.yy.com/sv/9165691799393748466
+            //https://www.yy.com/1447981080/1447981080 这种直播不行
+            //https://www.yy.com/x/15012_2211925412_1350441809_1622502100967
+            //https://www.yy.com/sv/9165351090747839479
+            var vi = window.pageInfo;
+            if (!vi && window.pageProps) {
+                vi = window.pageProps.detail;
+                if (vi &&  window.pageProps.playerdata)
+                    vi = window.pageProps.playerdata.info;
+            }
+            var title = vi ? (vi.worksName || vi.title || vi.resdesc) : (document.getElementsByTagName('h1').length >= 2) ? document.getElementsByTagName('h1')[1].innerText : document.title;
+            var thumbnail = vi ? (vi.snapshot || vi.pic || vi.snapshoturl) : (document.getElementsByClassName('video-mask').length != 0) ? document.getElementsByClassName('video-mask')[0].src : '';
+            var duration = (document.getElementsByClassName('yc__play-time__total-time').length != 0) ? document.getElementsByClassName('yc__play-time__total-time')[0].innerText : 0;
+            if (!duration && document.getElementsByClassName('vjs-duration vjs-time-control vjs-control').length != 0)
+                duration = document.getElementsByClassName('vjs-duration vjs-time-control vjs-control')[0].innerHTML.match(/时长<\/span>([^<]+)/)[1];
+            if (!duration && vi)
+                duration = vi.duration;
+            var video_url = vi ? (vi.worksUrl || vi.video || vi.resurl) : (document.getElementsByTagName('video').length != 0) ? document.getElementsByTagName('video')[0].src : window.location.href;
+            var html = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url;
+            document.body.innerHTML = html + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

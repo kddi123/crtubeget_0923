@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" date="2023.03.06">
+    <url><![CDATA[https?://(?:www\.)?djyule\.com/player/\?id=(?<id>\d+)]]></url>
+    <title><![CDATA[title:\s+'([^']+)']]></title>
+    <thumbnail><![CDATA[pic:\s+'([^']+)']]></thumbnail>
+    <duration><![CDATA[时长:([^\s]+)\s+]]></duration>
+    <mediaUrl><![CDATA[mp3Url:\s+'([^']+)']]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://djyule.com/player/?id=422917
+            var m = document.body.innerHTML.match(/musicUrl\s+\+\s+\'([^\']+)/);
+            var mp3Url = musicUrl + m[1];
+            document.body.innerHTML = 'mp3Url: \'' + mp3Url + '\'$;' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

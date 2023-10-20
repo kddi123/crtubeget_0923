@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2020.12.03">
+    <url><![CDATA[https?://taobaolive\.taobao\.com/room/index\.htm.*?feedId=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[sgcookie]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://taobaolive.taobao.com/room/index.htm?spm=a21tn.8216370.2278280.4.45445722m5CIYe&feedId=cfdc3402-b28c-440b-a8dc-aebab4345a81
+            var liveId = window.location.href.match(/feedId=([^&]+)/)[1]
+            var api_url = 'https://taobaolive.taobao.com/api/live_detail/1.0?creatorId=&liveId=' + liveId;
+            var data = window.external.getHtmlCode(api_url, window.location.href);
+            if (data) {
+                var jo = JSON.parse(data);
+                if (jo.result) {
+                    var video_url = jo.result.replayUrl || jo.result.liveUrlHls;
+                    var thumbnail = jo.result.broadCaster.headImg;
+                    document.body.innerHTML = 'title=\"' + jo.result.title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+                }
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

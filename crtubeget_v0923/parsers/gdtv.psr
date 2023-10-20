@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" referer="true" date="2022.08.29">
+    <url><![CDATA[https?://(?:\w+\.)?gdtv\.cn/tv/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //2022.08.29，其在IE中已不能解析
+            //https://www.gdtv.cn/tv/2aebfdddbf42afbcb803ec0e0548745b
+            //https://www.gdtv.cn/tv/14cf6265bbdb062ee36d23d1ffabc496
+            var title = '', thumbnail = '', video_url = '';
+            var id = window.external.url.match(/tv\/([^/]+)/)[1];
+            var api_url = 'https://gdtv-api.gdtv.cn/api/news/v1/news/' + id;
+            var t = Date.now();
+            var c = ''.concat('GET', '\n').concat(api_url, '\n').concat(t, '\n').concat('');
+            var sn = window.external.hmacSha256(c, 'dfkcY1c3sfuw0Cii9DWjOUO3iQy2hqlDxyvDXd1oVMxwYAJSgeB6phO8eW1dfuwX');
+            var headers = 'X-ITOUCHTV-Ca-Key: 89541443007807288657755311869534\r\n\X-ITOUCHTV-Ca-Timestamp: ' + t + '\r\n\X-ITOUCHTV-Ca-Signature: ' + sn;
+            var data = window.external.getHtmlCodeEx(api_url, headers);
+            if (data) {
+                var jo = JSON.parse(data);
+                title = jo.title;
+                thumbnail = jo.coverUrl;
+                var vps = JSON.parse(jo.video.playUrl);
+                video_url = vps.fhd || vps.hd || vps.sd;
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

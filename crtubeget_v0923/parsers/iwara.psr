@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" referer="true" date="2023.05.01">
+    <url><![CDATA[https?://(?:www\.|ecchi\.)?iwara\.tv/videos?/(?<id>[a-zA-Z0-9]+)]]></url>
+    <title><![CDATA[title="([^"]+)]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[show_adult]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://www.iwara.tv/video/yrlloc996gfo04ell
+            //https://www.iwara.tv/video/709jho2skx4PYp/64
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var vid = window.location.href.match(/videos?\/([^/]+)/)[1];
+            var api_url = 'https://api.iwara.tv/video/' + vid;
+            var cookie = window.external.getCookieEx(window.external.url, 'show_adult', 2500);
+            var headers = 'Referer: ' + window.external.url + '\r\Cookie: ' + cookie;
+            var data = window.external.getHtmlCodeEx(api_url, headers);
+            if (data.match(/fileUrl\":\"[^\"]+/)) {
+                var jo = JSON.parse(data);
+                title = jo.title;
+                thumbnail = 'https://i.iwara.tv/image/original/' + jo.file.id + '/thumbnail-01.jpg';
+                duration = jo.file.duration;
+                api_url = jo.fileUrl;
+                var t = api_url.match(/expires=([^&]+)/)[1];
+                var args = jo.file.id + '_' + t + '_5nFp9kmbNnHdAFhaqMvt';
+                var xv = window.external.sha1(args);
+                headers += '\r\nX-Version: ' + xv;
+                data = window.external.getHtmlCodeEx(api_url, headers);
+                if (data.match(/download\":\"([^\"]+)/)) {
+                    jo = JSON.parse(data);
+                    for (var i = jo.length - 1; i >= 0; i--) {
+                        if (jo[i].name != 'preview') {
+                            video_url = jo[i].src.download;
+                            if (video_url.indexOf('//') == 0)
+                                video_url = 'https:' + video_url;
+                            break;
+                        }
+                    }
+                }
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

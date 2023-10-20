@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" nm="false" date="2023.09.23">
+    <url><![CDATA[\w+\.sohu\.com/\w+/(?<id>[^.]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[user_isOpenedVip]]></ckSign>
+    <delegate><![CDATA[http://cr-soft.net/jx.php]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://tv.sohu.com/v/MjAxNzExMDkvbjYwMDI0NzEwMi5zaHRtbA.html?qq-pf-to=pcqq.c2c
+            //https://tv.sohu.com/v/dXMvMzI0MjUzNjQwLzIwODMxNzk1Ny5zaHRtbA==.html
+            //https://film.sohu.com/album/1011756.html
+            //http://m.tv.sohu.com/u/vw/216398579.shtml
+            //https://www.sohu.com/a/463951580_640227?sec=wd&qq-pf-to=pcqq.c2c->https://tv.sohu.com/s/sohuplayer/iplay.html?bid=254462317->https://my.tv.sohu.com/play/videonew.do?vid=254462317
+            //https://tv.sohu.com/v/cGwvMC8yMDM0MTc2NTIuc2h0bWw=.html you-get下不了，硬解
+            //https://tv.sohu.com/v/MjAxNzA5MTgvbjYwMDE2NTk5OC5zaHRtbA==.html 不支持，其视频片为加密片
+            //https://tv.sohu.com/v/MjAxOTA2MDYvbjYwMDcyMjc3OC5zaHRtbA==.html
+            //https://film.sohu.com/album/9352633.html
+            //http://tv.sohu.com/v/dXMvMTYwMTU1OTEvMzY5MzAxMzk5LnNodG1s.html 密码保护
+            //delegate for window.localStorage
+            var html = window.external.getHtmlCode(window.external.url, '', 0, false);
+            html = html.replace(/\.MP4/g, '.mp4').replace(/\.M3U8/g, '.m3u8');
+            var title = (html.indexOf('og:title') != -1) ? html.match(/<meta\s+property=\"og:title\"\s+content=\"([^\"]+)\"/)[1] : '';
+            var thumbnail = (html.indexOf('og:image') != -1) ? html.match(/<meta\s+property=\"og:image\"\s+content=\"([^\"]+)\"/)[1] : '';
+            var duration = 0, video_url = '';
+            if (html.indexOf('<iframe') != -1) {
+                video_url = html.match(/<iframe[^>]+src=\"([^\"]+)/)[1];
+                video_url = htmlDecode(video_url) + '#ra';
+            }
+
+            if (!video_url) {
+                var aid = '', vid = '', tvid = '';
+                if (html.indexOf('playlistId') != -1)
+                    aid = html.match(/playlistId\s*=\s*['\"]([^'\"]+)/)[1];
+                if (!aid && html.indexOf('\"aid\"') != -1)
+                    aid = html.match(/\"aid\"\s.*?value=['\"]([^'\"]+)/)[1];
+                if (html.match(/\s+vid\s*=/) != -1)
+                    vid = html.match(/\s+vid\s*=\s*['\"]([^'\"]+)/)[1];
+                if (!vid && html.indexOf('\"vid\"') != -1)
+                    vid = html.match(/\"vid\"\s.*?value=['\"]([^'\"]+)/)[1];
+                //其值可能为空
+                if (html.indexOf(' tvid') != -1)
+                    tvid = html.match(/tvid\s*=\s*['\"]([^'\"]*)/)[1];
+                if (!tvid && html.indexOf('\"tvid\"') != -1)
+                    tvid = html.match(/\"tvid\"\s.*?value=['\"]([^'\"]*)/)[1];
+                if (aid && vid) {
+                    var url = window.external.url;
+                    var cookie = window.external.getCookieEx(url, 'user_isOpenedVip', 2500) || window.external.getCookie(url);
+                    var headers = 'User-Agent: ' + navigator.userAgent + '\r\nReferer: ' + url + '\r\nCookie: ' + cookie;
+                    var api_url = 'https://api.store.sohu.com/film/pc/checkpermission?aid=' + aid + '&vid=' + vid + '&tvid=' + tvid + '&_=' + Date.now();
+                    var data = window.external.getHtmlCodeEx(api_url, headers);
+                    var mkey = (data.indexOf('mkey') != -1) ? data.match(/mkey\":\"([^\"]+)/)[1] : '';
+                    var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                    var ver = (vq <= 8 || vq >= 1080) ? 31 : 21;
+                    if (vq == 480)
+                        ver = 1;
+                    else if (vq == 360)
+                        ver = 2;
+                    api_url = 'https://hot.vrs.sohu.com/vrs_pc_play.action?vid=' + vid + '&ver=' + ver + '&ssl=1&pflag=pch5&mkey=' + mkey;
+                    data = window.external.getHtmlCode(api_url, url);
+                    var jo = JSON.parse(data);
+                    if (!jo.data) {
+                        //https://tv.sohu.com/v/dXMvMzM4OTE0MTAwLzMyOTA3MDQ0MS5zaHRtbA==.html 短视频
+                        api_url = 'https://my.tv.sohu.com/play/videonew.do?vid=' + vid + '&ver=' + ver + '&ssl=1&t=' + Date.now();
+                        var password = window.external.password;
+                        if (!password && url.match(/#password=([^?&]+)/))
+                            password = url.match(/#password=([^?&]+)/)[1];
+                        if (!password && window.localStorage)
+                            password = window.localStorage.password;
+                        if (password) {
+                            api_url += '&passwd=' + password;
+                            //记录本地
+                            if (window.localStorage && window.localStorage.password != password)
+                                window.localStorage.password = password;
+                        }
+                        data = window.external.getHtmlCode(api_url, url);
+                        jo = JSON.parse(data);
+                        //http://tv.sohu.com/v/dXMvMTYwMTU1OTEvMzY5MzAxMzk5LnNodG1s.html 5701
+                        if (jo.mytvmsg && jo.mytvmsg == '视频设置了隐私。请输入密码：') {
+                            document.body.innerHTML = '$error=视频设置了隐私。请输入密码$';
+                            return;
+                        }
+                    }
+                    if (jo.data && jo.data.mp4PlayUrl && jo.data.mp4PlayUrl.length != 0) {
+                        title = jo.data.tvName || title;
+                        thumbnail = jo.data.coverImg || thumbnail;
+                        duration = jo.data.totalDuration;
+                        //> 1，走m3u8合并
+                        var m3u8 = '#EXTM3U\r\n';
+                        for (var i = 0; i <= jo.data.mp4PlayUrl.length - 1; i++) {
+                            var play_url = jo.data.mp4PlayUrl[i];
+                            //...这样的：//data.vod.itc.cn/ip?k=...
+                            if (play_url.indexOf('//') == 0)
+                                play_url = 'https:' + play_url;
+                            data = window.external.getHtmlCode(play_url, url);
+                            if (data.indexOf('url') != -1) {
+                                m3u8 += data.match(/url\":\"([^\"]+)/)[1] + '\r\n';
+                                //只一条，直接返回
+                                if (jo.data.mp4PlayUrl.length == 1)
+                                    video_url = data.match(/url\":\"([^\"]+)/)[1];
+                            }
+                        }
+                        // > 1，走m3u8合并
+                        if (jo.data.mp4PlayUrl.length > 1)
+                            video_url = window.external.saveData(m3u8.trim());
+                    }
+                }
+                //https://m.sohu.com/a/674270155_121196714/
+                if (!video_url && html.indexOf('var cfgs = ') != -1) {
+                    var data = html.match(/var\s+cfgs\s*=([^;]+);/)[1];
+                    if (data) {
+                        var jo = json(data);
+                        title = jo.title;
+                        thumbnail = jo.thumbnail;
+                        duration = jo.duration;
+                    }
+                    if (html.match(/data-url=\"[^\"]+/))
+                        video_url = html.match(/data-url=\"([^\"]+)/)[1];
+                }
+                if (!video_url && html.match(/\"[^\"]+\.(?:mp4|m3u8)\"/))
+                    video_url = html.match(/\"([^\"]+\.(?:mp4|m3u8))\"/)[1];
+                if (!video_url)
+                    video_url = window.external.url;
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

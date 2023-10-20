@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.05.27">
+    <url><![CDATA[https?://(?:www\.)?meipai\.com/media/(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.meipai.com/media/6794209933930552161
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            var thumbnail = (document.getElementsByTagName('video').length != 0) ? document.getElementsByTagName('video')[0].poster : '';
+            var duration = 0;
+            var video_url = '';
+            var url = window.external.url || window.location.href;
+            var id = url.match(/media\/(\d+)/)[1];
+            var t = Date.now();
+            var s = window.external.md5('medias/show.json' + id + 'bdaefd747c7d594f' + t + 'Tw5AY783H@EU3#XC');
+            var sig = '';
+            for (var i = 0; i <= s.length - 1; i++)
+            {
+                if (i % 2 == 0)
+                    sig += s[i + 1] + s[i];
+            }
+            var api_url = 'http://api.meipai.com/medias/show.json?id='+ id + '&sigTime=' + t + '&sig=' + sig + '&sigVersion=1.3';
+            var data = window.external.getHtmlCode(api_url);
+            if (data.indexOf('\"video\"') != -1) {
+                var jo = JSON.parse(data);
+                title = jo.caption || title;
+                thumbnail = jo.cover_pic || thumbnail;
+                duration = jo.time;
+                video_url = jo.video;
+            }
+            //...
+            if (!video_url && typeof(gvd) != 'undefined') {
+                var data = gvd(url);
+                var jo = JSON.parse(data);
+                if (jo.body && jo.body.video_url) {
+                    title = jo.body.title;
+                    thumbnail = jo.body.cover_url;
+                    video_url = jo.body.video_url;
+                }
+            }
+            if (!video_url)
+                video_url = (document.getElementsByTagName('video').length != 0) ? document.getElementsByTagName('video')[0].src : window.location.href;
+
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

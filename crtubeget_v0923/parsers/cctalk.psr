@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.11.07">
+    <url><![CDATA[https?://(?:www\.)?cctalk\.com/\w+/(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[hj_token]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://www.cctalk.com/v/16357548001877?sid=1635754800268123
+            //https://www.cctalk.com/v/16328229212605?sid=1632703725481608&xh_fshareuid=82191464
+            var title = document.title, thumbnail = '', duration = 0, video_url = '';
+            var url = window.external.url;
+            var vid = url.match(/\w+\/(\d+)/)[1];
+            var sid = (url.indexOf('sid') != -1) ? url.match(/sid=([^&]+)/)[1] : '';
+            var cookie = window.external.getCookieEx(url, 'hj_token', 2500) || window.external.getCookie(url) || document.cookie;
+            var headers = 'User-Agent: ' + navigator.userAgent + '\r\nReferer: ' + url + '\r\nCookie: ' + cookie;
+            var api_url = 'https://www.cctalk.com/webapi/content/v1.1/video/detail?videoId=' + vid + '&seriesId=' + sid + '&_timestamp=' + Date.now();
+            var data = window.external.getHtmlCodeEx(api_url, headers);
+            if (data.indexOf('videoUrl') != -1) {
+                var jo = JSON.parse(data);
+                title = jo.data.videoName || title;
+                thumbnail = jo.data.coverUrl;
+                duration = jo.data.mediaTotalTime / 1000;
+                video_url = jo.data.videoUrl;
+            }
+            video_url = video_url || url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

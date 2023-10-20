@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" date="2023.04.25">
+    <url><![CDATA[weixin\.qq\.com/\w+]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[,duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //避免干扰，duration前加,
+            //https://mp.weixin.qq.com/mp/readtemplate?t=pages/video_player_tmpl&action=mpvideo&auto=0&vid=wxv_1226641377421819906
+            //https://mp.weixin.qq.com/s/eQyaAA_0-DoQP9UZyqR7EQ
+            //https://mp.weixin.qq.com/mp/readtemplate?t=pages/video_player_tmpl&action=mpvideo&auto=0&vid=wxv_1882254265969131520
+            //https://mp.weixin.qq.com/s?__biz=MzA4NTIyMjMyMw==&idx=1&mid=2653167332&sn=db2f206564d12331a2bfcd9ab730a696&vid=wxv_2847210071255154694 来自列表
+            var title = document.title, thumbnail = '', duration = 0, video_url = '';
+            if (!title || title == '微信公众平台')
+                title = window.msg_title
+            if (!title && document.getElementsByTagName('h1').length != 0)
+                title = document.getElementsByTagName('h1')[0].innerText;
+            thumbnail = window.cgiData ? window.cgiData.cdn_url || '' : '';
+            var url = window.external.url;
+            var vid = (url.indexOf('vid=') != -1) ? url.match(/vid=([^&]+)/)[1] : '';
+            //https://mp.weixin.qq.com/s/HWIwp6nW14LHbXLUiHEwcA
+            if (window.videoPageInfos) {
+                var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                var vpi = window.videoPageInfos[0];
+                if (vid) {
+                    for (var i = 0; i <= window.videoPageInfos.length - 1; i++) {
+                        if (window.videoPageInfos[i].video_id == vid) {
+                            vpi = window.videoPageInfos[i];
+                            break;
+                        }
+                    }
+                }
+                thumbnail = vpi.cover_url || '';
+                video_url = vpi.mp_video_trans_info[0].url;
+                for (var i = 0; i <= vpi.mp_video_trans_info.length - 1; i++) {
+                    var vi = vpi.mp_video_trans_info[i];
+                    if (vi.duration_ms)
+                        duration = vi.duration_ms / 1000;
+                    if (vi.height == vq) {
+                        video_url = vi.url;
+                        break;
+                    }
+                }
+            }
+            if (!video_url) {
+                if (!vid && document.getElementsByTagName('iframe').length != 0) {
+                    var m = document.getElementsByTagName('iframe')[0].outerHTML.match(/vid=([^&\"]+)/);
+                    vid = m ? m[1] : vid;
+                }
+                //https://mp.weixin.qq.com/s?__biz=MzU2ODMyNjU5OA==&mid=2247551260&idx=1&sn=cdf365724da3b2e6ea9094170d848bce&chksm=fc8de9b5cbfa60a3ac40f190714e64af35d544e681caf2fd8a4465e9141ad0fea5df8c1f2a1e#rd
+                if (!vid && document.body.innerHTML.match(/source_link:.*?'(http[^']+)/))
+                    video_url = document.body.innerHTML.match(/source_link:.*?'(http[^']+)/)[1] + '#ra';
+                if (vid && !video_url) {
+                    if (vid.length <= 12) {
+                        video_url = 'https://v.qq.com/x/page/' + m[1] + '.html#ra';
+                        document.body.innerHTML = window.external.getHtmlCode(video_url);
+                    }
+                    else {
+                        var api_url = 'https://mp.weixin.qq.com/mp/videoplayer?action=get_mp_video_play_url&vid=' + vid;
+                        var data = window.external.getHtmlCode(api_url);
+                        if (data && data.indexOf('url_info') != -1) {
+                            var jo = JSON.parse(data);
+                            title = jo.title;
+                            video_url = jo.url_info[0].url;
+                            duration = jo.url_info[0].duration_ms / 1000;
+                        }
+                    }
+                }
+                if (!video_url && document.getElementsByTagName('iframe').length != 0) {
+                    var videos = document.getElementsByTagName('iframe')[0].contentDocument.getElementsByTagName('video');
+                    if (videos.length != 0) {
+                        m = videos[0].outerHTML.match(/src=\"([^\"]+)/);
+                        if (m)
+                            video_url = m[1];
+                    }
+                }
+                //https://work.weixin.qq.com/wework_admin/liveroom/v2/replay?ref=playend&roomid=6997956191855214997&notreplace=true
+                if (!video_url && window.external.url.indexOf('roomid') != -1) {
+                    var cookie = window.external.getCookieEx(window.external.url, 'wwh5.skey', 2500);
+                    if (cookie) {
+                        var data = window.external.getHtmlCodeEx(window.external.url, 'Cookie: ' + cookie);
+                        if (data.indexOf('\"video_url\"') != -1) {
+                            video_url = data.match(/video_url\":\"([^\"]+)/)[1];
+                            document.body.innerHTML = data;
+                        }
+                    }
+                }
+                //...
+                if (!video_url) {
+                    if (window.cgiData && window.cgiData.voiceid) {
+                        var mid = window.cgiData.voiceid;
+                        video_url = 'https://res.wx.qq.com/voice/getvoice?mediaid=' + mid;
+                        duration = window.cgiData.duration;
+                    }
+                    else if (document.getElementsByTagName('mpvoice').length != 0 && document.getElementsByTagName('mpvoice')[0].outerHTML.indexOf('voice_encode_fileid=') != -1) {
+                        var mid = document.getElementsByTagName('mpvoice')[0].outerHTML.match(/voice_encode_fileid=\"([^\"]+)/)[1];
+                        video_url = 'https://res.wx.qq.com/voice/getvoice?mediaid=' + mid;
+                        duration = parseInt(document.body.innerHTML.match(/play_length=\"([^\"]+)/)[1]) / 1000;
+                    }
+                    else if (document.getElementsByClassName('mid_play_box js_btn_play').length != 0) {
+                        document.getElementsByClassName('mid_play_box js_btn_play')[0].click();
+                        if (document.getElementsByTagName('video').length != 0) {
+                            video_url = document.getElementsByTagName('video')[0].src;
+                            if (document.getElementsByClassName('js_video_length video_length').length != 0)
+                                duration = document.getElementsByClassName('js_video_length video_length')[0].innerText;
+                        }
+                    }
+                    else if (document.body.innerHTML.match(/url:\s+'[^']+\.mp4.*?'/)) {
+                        video_url = document.body.innerHTML.match(/url:\s+'([^']+\.mp4.*?)'/)[1];
+                        video_url = video_url.replace(/\\x26amp;/g, '&');
+                        if (document.body.innerHTML.match(/duration_ms:\s+'[^']+'/))
+                            duration = parseInt(document.body.innerHTML.match(/duration_ms:\s+'([^']+)'/)[1]) / 1000;
+                    }
+                }
+                //https://mp.weixin.qq.com/s/eQyaAA_0-DoQP9UZyqR7EQ
+                if (!video_url && document.getElementsByTagName('video').length != 0)
+                    video_url = document.getElementsByTagName('video')[0].src;
+            }
+            if (!video_url)
+                video_url = window.location.href;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

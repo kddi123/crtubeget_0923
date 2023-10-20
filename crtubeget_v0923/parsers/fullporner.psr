@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" date="2021.08.25">
+    <url><![CDATA[https?://(?:www\.)?(?:fullporner|xiaoshenke)\.\w+/(?:watch|video)/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://fullporner.com/watch/60e640034a9b3647990d9b5e
+            //https://xiaoshenke.net/video/81b6bf4e488b9a42da/
+            var html = window.external.getHtmlCode(window.external.url);
+            var title = html.match(/<h2>([^<]+)/)[1];
+            var thumbnail = '';
+            var duration = html.match(/\d+:\d+/)[0];
+            var video_url = html.match(/<iframe[^>]+src=\"([^\"]+)/)[1];
+            if (video_url.indexOf('http') == -1)
+                video_url = 'https:' + video_url;
+            html = window.external.getHtmlCode(video_url);
+            if (html.indexOf('.mp4') != -1) {
+                video_url = html.match(/href='([^']+\.mp4)/)[1];
+                if (video_url.indexOf('http') == -1)
+                    video_url = 'https:' + video_url;
+                if (html.indexOf('1080.mp4') != -1)
+                    video_url = video_url.replace(/\d+\.mp4/, '1080.mp4');
+                else if (html.indexOf('720.mp4') != -1)
+                    video_url = video_url.replace(/\d+\.mp4/, '720.mp4');
+            }
+            if (html.indexOf('.jpg') != -1)
+                thumbnail = 'https://' + html.match(/poster=.*?\/\/(.*?\.jpg)/)[1];
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

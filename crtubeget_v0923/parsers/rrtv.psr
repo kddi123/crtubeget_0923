@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2022.08.09">
+    <url><![CDATA[https?://(?:\w+\.)?rr\.tv/detail/(?<id>[^?]+).*?episode=\d+]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://m.rr.tv/detail/40681?snum=1&episode=1
+            var did = window.external.url.match(/detail\/([^?]+)/)[1];
+            var eid = window.external.url.match(/episode=(\d+)/)[1];
+            var jo = window.__NUXT__.data[0];
+            var title = jo.title + ' ' + eid;
+            var thumbnail = jo.cover3Url;
+            var sid = jo.episodes[eid - 1].sid;
+            var api_url = 'https://web-api.rr.tv/web/drama/play?webChannel=M_STATION&dramaId=' + did + '&episodeId=' + sid;
+            var data = window.external.getHtmlCode(api_url);
+            //客户机上getHtmlCode不行？
+            if (!data) {
+                var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveObject('Microsoft.XMLHTTP');
+                xhr.open('GET', api_url, false);
+                xhr.send(null);
+                var data = xhr.responseText;
+            }
+            jo = JSON.parse(data);
+            var video_url = jo.data.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

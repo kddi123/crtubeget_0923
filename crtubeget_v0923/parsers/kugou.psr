@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2022.02.10">
+    <url><![CDATA[https?://(?:www\.)?kugou\.com/(?:(?:mix)?song|ts/album/\d+)/(?:(?<id>[^.]+)\.html?|#.*?hash=(?<id>[^&]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.kugou.com/mixsong/1rhmqv52.html
+            //https://www.kugou.com/mixsong/695qcca0.html#hash=2EAE2AF725E6444D5A5EEC618B59F44F&album_id=54147202&album_audio_id=378181020
+            //https://www.kugou.com/ts/album/50525964/350993324.html
+            var song = window.dataFromSmarty ? window.dataFromSmarty[0] : undefined;
+            var cookie = window.external.getCookieEx(window.external.url, 'kg_dfid', 2500) || document.cookie;
+            var dfid = cookie && (cookie.indexOf('kg_dfid') != -1) ? cookie.match(/kg_dfid=([^;]+)/)[1] : '';
+            var mid = cookie && (cookie.indexOf('kg_mid') != -1) ? cookie.match(/kg_mid=([^;]+)/)[1] : '';
+            var hash = song ? song.hash : window.hash;
+            var album_id = song ? song.album_id : window.album_id;
+            var album_audio_id = song ? song.album_audio_id : window.album_audio_id;
+            var api_url = 'https://wwwapi.kugou.com/yy/index.php?r=play/getdata&callback=&hash=' + hash + '&dfid=' + dfid + '&appid=1014&mid=' + mid + '&platid=4&album_id=' + album_id + '&album_audio_id=' + album_audio_id + '&_=' + Date.now();
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            var jo = JSON.parse(data);
+            song = jo.data;
+            //lrc...
+            if (song.lyrics && typeof(window.external.gcv) != 'undefined' && window.external.gcv('Subtitle', 'Enabled') != 'False') {
+                try {
+                    window.external.saveData(song.lyrics, song.song_name + '.lrc');
+                }
+                catch (ex) {
+                }
+            }
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + song.song_name + '\",thumbnail=' + song.img + ',duration=' + (song.timelength / 1000) + ',cr_video_url=' + (song.play_url || song.play_backup_url) + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

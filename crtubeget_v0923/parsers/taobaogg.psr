@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="7500" unescape="false" date="2023.04.18">
+    <url><![CDATA[(?:taobao\.com/app/tb-source-app/video-fullpage.*?id=([^&]+)|m\.tb\.cn/[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[_m_h5_tk]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //TB逛逛...2023.03.29前后多次改版
+            //https://m.tb.cn/h.fNcngqW
+            //https://m.tb.cn/h.fOc4Qod
+            //https://m.tb.cn/h.fGY3jSf?sm=efd7a0?tk=dteD2l4cAeG -> https://detail.tmall.com/item.htm?id=670911313566&ut_sk=1.YdagFnkO5hkDAGn2mNX4LjSc_21380790_1653630982524.Copy.ShareGlobalNavigation_1&sourceType=item&suid=DE6059EA-DA5B-4F99-BD35-5E164D9DF23E&un=13a8fed567b5f0db22a7d2c8bacf4d49&share_crt_v=1&un_site=0&spm=a2159r.13376460.0.0&sp_abtk=common_1_commonInfo&tbSocialPopKey=shareItem&sp_tk=ZHRlRDJsNGNBZUc=&cpp=1&shareurl=true&short_name=h.fGY3jSf&bxsign=scdvd5ky20G3ldnLaaVMVPLnrkQGspOiSTDnuvdf-LXCwWjbQHycTvDBIVN60s8ySqMjwrutPF-Q6Pdvy2rP9DNwi9xWP5ZdnZMsIaYAPoMzBGs1rJvrqYkcN7bsGLZwQbu&sm=efd7a0?tk=dteD2l4cAeG&app=chrome
+            //https://market.m.taobao.com/app/tb-source-app/video-fullpage/pages/index2?type=guangguang_homepage&source=guang_identified&forcemixflow=true&id=346482166071&extParams=%7B%22contentFilter%22%3A1%2C%22tab%22%3A%22guang_identified%22%7D&first=%7B%22firstImg%22%3A%22https%3A%2F%2Fimg.alicdn.com%2Fimgextra%2Fi1%2F6000000001471%2FO1CN01EBJamm1MjlLggiMTj_!!6000000001471-0-m_tb_svideo_preimg.jpg%22%2C%22imgHeight%22%3A%221080%22%2C%22imgWidth%22%3A%221920%22%2C%22userNick%22%3A%22%E5%A4%A7%E5%8F%A3%E6%A9%99%E6%B1%81%22%2C%22avatarImg%22%3A%22http%3A%2F%2Fimg.alicdn.com%2Fsns_logo%2Fi3%2F6000000003431%2FO1CN01d7botC1bDRYgdDypG_!!6000000003431-0-userheaderimgshow.jpg%22%7D&spm=a21awv.20479633&spm-pre=undefined
+            var href = window.location.href;
+            //若是淘宝链接，再解析
+            if (href.indexOf('detail.tmall') != -1 || href.indexOf('item.taobao') != -1) {
+                document.body.innerHTML = 'cr_video_url=' + href + '#ra$';
+                return;
+            }
+
+            var title = document.title, thumbnail = '', duration = 0;
+            //https://m.tb.cn/h.UUUGkIv
+            var video_url = (href.indexOf('videoUrl=') != -1) ? decodeURIComponent(href.match(/videoUrl=([^&]+)/)[1]) : '';
+            var cookie = window.external.getCookieEx('https://m.taobao.com/', '_m_h5_tk', 2500) || document.cookie;
+            var token = (cookie.indexOf('_m_h5_tk') != -1) ? cookie.match(/_m_h5_tk=([^_]+)/)[1] : '';
+            var url = window.external.url;
+            //短链接
+            if (url.indexOf('id=') == -1)
+                url = href;
+            //2023.03.29又改
+            if (url.indexOf('contentId%2522%253A%2522') != -1 || url.indexOf('&id=') != -1) {
+                var id = (url.indexOf('contentId%2522%253A%2522') != -1) ? url.match(/contentId%2522%253A%2522([^%]+)/)[1] :  url.match(/&id=([^&]+)/)[1];
+                var d = '{\"contentId\":\"' + id + '\"}';
+                var t = Date.now();
+                var sign = window.external.md5(token + '&' + t + '&12574478&' + d);
+                var api_url = 'https://h5api.m.taobao.com/h5/mtop.taobao.gcm.content.card.detail/1.0/?jsv=2.6.1&appKey=12574478';
+                api_url += '&t=' + t + '&sign=' + sign + '&data=' + encodeURIComponent(d);
+                var headers = 'Cookie: ' + cookie;
+                var data = window.external.getHtmlCodeEx(api_url, headers);
+                if (data.indexOf('content\":{') != -1) {
+                    var jo = JSON.parse(data);
+                    var item = jo.data.model.content;
+                    title = item.title || title;
+                    thumbnail = item.coverUrl;
+                    var video = item.video;
+                    duration = video.duration;
+                    video_url = video_url || video.playUrl;
+                }
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

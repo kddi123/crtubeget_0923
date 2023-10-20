@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" date="2022.09.03">
+    <url><![CDATA[https?://(?:\w+\.)?tudou\.com/\w+/(?<id>[^.?]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://play.tudou.com/v_show/id_XNDE0NjM0MTk4NA==.html
+            //https://play.tudou.com/v_show/id_XNDk3MTY4OTM4OA==.html?qq-pf-to=pcqq.group
+            var extra = undefined;
+            try {
+                extra = window.__INITIAL_DATA__.data.data.data.extra
+            }
+            catch (ex) {
+            }
+            var title = extra ? extra.videoTitle : document.title;
+            var thumbnail = extra ? (extra.videoImg || extra.videoImgV) : '';
+            if (thumbnail && thumbnail.indexOf('.webp') == -1)
+                thumbnail += '#.webp';
+            var duration = extra ? extra.duration : 0;
+            var vid = extra ? extra.videoId : window.external.url.match(/id_([^.?]+)/)[1];
+            var video_url = 'https://v.youku.com/v_show/id_' + vid + '.html';
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '#ra$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,280 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<language Id="CHS" Name="Simplified Chinese" LocaleName="简体中文" LangID="0x0804" CodePage="936">
+  <strings>
+    <INF_AppName>CR TubeGet - 视频下载</INF_AppName>
+    <INF_ShortcutDesc>全网视频无忌下载</INF_ShortcutDesc>
+    <INF_OK>确定</INF_OK>
+    <INF_Cancel>取消</INF_Cancel>
+    <INF_Yes>是</INF_Yes>
+    <INF_No>否</INF_No>
+    <INF_Retry>重试</INF_Retry>
+    <INF_Abort>中止</INF_Abort>
+    <INF_Ignore>忽略</INF_Ignore>
+    <INF_Default>默认</INF_Default>
+    <INF_ProjLoading>加载中... {0}/{1}</INF_ProjLoading>
+    <INF_Information>提示</INF_Information>
+    <INF_Start>开始</INF_Start>
+    <INF_Pause>暂停</INF_Pause>
+    <INF_Resume>继续</INF_Resume>
+    <INF_Waiting>等待中...</INF_Waiting>
+    <INF_Analyzing>解析中...</INF_Analyzing>
+    <INF_Paused>已暂停</INF_Paused>
+    <INF_Download>下载</INF_Download>
+    <INF_ReadyToDownload>准备下载...</INF_ReadyToDownload>
+    <INF_StartDownload>开始下载...</INF_StartDownload>
+    <INF_Merging>合并中...</INF_Merging>
+    <INF_Converting>转换中...</INF_Converting>
+    <INF_DownloadComplete>下载完成</INF_DownloadComplete>
+    <INF_Getting>获取中...</INF_Getting>
+    <INF_PlayList>播放列表</INF_PlayList>
+    <INF_Video>视频</INF_Video>
+    <INF_FeedBackSubmit>信息已提交，感谢您的反馈。</INF_FeedBackSubmit>
+    <INF_NetworkError>网络错误，请检查您的网络连接</INF_NetworkError>
+    <INF_ConfirmQuit>有下载任务正在运行中，确定退出吗？</INF_ConfirmQuit>
+    <INF_ReplaceYdl>youtube-dl组件更新完成，现在要应用它吗？&#13;&#10;youtube-dl组件会在CR TubeGet下次启动时完成替换。</INF_ReplaceYdl>
+    <!-- 列表操作 -->
+    <INF_ConfirmDeleteTask>您确定删除此项？</INF_ConfirmDeleteTask>
+    <INF_ConfirmDeleteSelected>你确定删除选中的项目么？</INF_ConfirmDeleteSelected>
+    <INF_UnShowNextTime>下次不再提示</INF_UnShowNextTime>
+    <INF_DeleteDownloaded>同时删除文件</INF_DeleteDownloaded>
+    <INF_ClearDownloadTasks>你确定清空下载任务列表吗？</INF_ClearDownloadTasks>
+    <INF_ClearMedias>确定要清空已下载的任务吗？</INF_ClearMedias>
+    <INF_PartOfPlaylist>这个视频属于播放列表一部分。&#13;&#10;&#13;&#10;您是想下载该视频，还是整个列表呢？</INF_PartOfPlaylist>
+    <INF_PlaylistLoading>列表加载中... {0}/{1}</INF_PlaylistLoading>
+    <INF_DownloadingTaskInfo>任务数：{0}，速度：{1}/秒</INF_DownloadingTaskInfo>
+    <INF_Downloaded>已下载：{0}，大小：{1}</INF_Downloaded>
+    <INF_NeedYouTubeDlCR>此视频下载需youtube-dl_cr组件支持，要下载它吗？</INF_NeedYouTubeDlCR>
+    <INF_NeedAccount>下载此视频需要账号支持，请在[设置]中加入[{0}]社交账号，之后再下载</INF_NeedAccount>
+    <INF_NeedPhantomJs>下载此视频需Phantomjs组件支持，下载它吗？</INF_NeedPhantomJs>
+    <INF_NeedPhantomRtmp>下载此视频需RtmpDump组件支持，下载它吗？</INF_NeedPhantomRtmp>
+    <INF_YdlMissing>下载所需组件不存在，此程序缺少它不能运行，下载它吗？</INF_YdlMissing>
+    <!--下载过程-->
+    <INF_Unknown>未知</INF_Unknown>
+    <INF_Second>秒</INF_Second>
+    <INF_Progress1>进度：{0}， 大小：{1}， 速度：{2}， 时间剩余：{3}</INF_Progress1>
+    <INF_Progress2>进度：{0}， 速度：{1}， 时间剩余：{2}</INF_Progress2>
+    <INF_Progress3>已下载：{0}， 速度：{1}</INF_Progress3>
+    <INF_Progress3_1>， 时间剩余：{0}</INF_Progress3_1>
+    <INF_Progress4>进度：{0}， 大小：{1}， 速度：{2}</INF_Progress4>
+    <INF_AnalyzeFail>解析失败：{0}</INF_AnalyzeFail>
+    <INF_AnalyzeFailLite>解析失败</INF_AnalyzeFailLite>
+    <INF_DownloadFail>下载失败：{0}</INF_DownloadFail>
+    <INF_MergeFail>合并失败：{0}</INF_MergeFail>
+    <INF_ConvertFail>转换失败：{0}</INF_ConvertFail>
+    <INF_CannotFindMedias>没找到有效的视频信息</INF_CannotFindMedias>
+    <!--账号检测-->
+    <INF_AccountChecking>账号检测中，请稍候...</INF_AccountChecking>
+    <INF_ValidationFailed>验证失败：</INF_ValidationFailed>
+    <INF_AccountError>账号错误。</INF_AccountError>
+    <INF_PasswordError>密码错误。</INF_PasswordError>
+    <INF_NetworkError>网络连接错误。</INF_NetworkError>
+    <INF_ConfirmDeleteAccount>您确定删除这个社交账号？</INF_ConfirmDeleteAccount>
+    <!--视频密码-->
+    <INF_VideoPassword>此视频被密码保护，请输入密码然后下载</INF_VideoPassword>
+    <INF_VideoPasswordError>密码错误，请重新输入</INF_VideoPasswordError>
+
+    <INF_FileDownloading>下载中：{0}%</INF_FileDownloading>
+    <INF_FileDownloadCancel>组件下载中，确定要取消吗？</INF_FileDownloadCancel>
+    <INF_FileDownloadFail>文件下载失败，请重试</INF_FileDownloadFail>
+    <INF_SelectOutputFolder>请选择视频输出文件夹：</INF_SelectOutputFolder>
+    <INF_CopyRight>版权所有 © {0} CR-Soft</INF_CopyRight>
+    <!--在线升级-->
+    <INF_UpdateCaption>CR在线升级</INF_UpdateCaption>
+    <INF_Quit>退出</INF_Quit>
+    <INF_Checking>新版本检测中...</INF_Checking>
+    <INF_CheckFailed>升级信息获取失败，请检查网络</INF_CheckFailed>
+    <INF_LatestVersion>当前版本即是最新版本，您无需更新</INF_LatestVersion>
+    <INF_NewVersionFound>发现新版本：{0}</INF_NewVersionFound>
+    <INF_Version>版本：</INF_Version>
+    <INF_FileSize>大小：</INF_FileSize>
+    <INF_Date>日期：</INF_Date>
+    <INF_WhatsNew>更新列表：</INF_WhatsNew>
+    <INF_Downloading>下载中...</INF_Downloading>
+    <INF_PkgDownloaded>新版本下载完成，可以更新了</INF_PkgDownloaded>
+    <INF_ValidateFailed>md5校验失败，请重新下载</INF_ValidateFailed>
+    <INF_UpdateNow>现在更新</INF_UpdateNow>
+    <INF_IgnoreThisVersion>此版本不再提示</INF_IgnoreThisVersion>
+    <INF_ConfrimCancelUpdate>您确定取消更新操作吗？</INF_ConfrimCancelUpdate>
+    <INF_CloseApp>检测到程序正在运行，请关闭它然后再进行升级。继续操作吗？</INF_CloseApp>
+  </strings>
+  <forms>
+    <MainForm>
+      <miOptions Text="设置" />
+      <miLanguage Text="语言" />
+      <miLocalize Text="本地化..." />
+      <miUI Text="界面" />
+      <miBackImage Text="背景图案" />
+      <miNone Text="无" />
+      <miDefault Text="默认" />
+      <miFlower Text="野花" />
+      <miSea Text="大海" />
+      <miHideNavi Text="隐藏导航栏" />
+      <miDesktopShortcut Text="创建桌面快捷方式" />
+      <miHelp Text="帮助" />
+      <miFaq Text="FAQ" />
+      <miFeedback Text="反馈" />
+      <miSupportedSites Text="支持的站点" />
+      <miUpdate Text="检测更新" />
+      <miDonate Text="打赏" />
+      <miAbout Text="关于..." />
+      <btnPasteUrl Text="+ 粘贴URL" ToolTip="粘贴URL并下载" />
+      <miDownloadMp3 Text="下载为Mp3" />
+      <miBatchDownload Text="批量下载" />
+      <miYouTubeSearch Text="YouTube搜索" />
+      <tpDownload Text="下载中" />
+      <tpComplete Text="已完成" />
+      <tpOnline Text="在线视频" />
+      <miShowWindow Text="显示窗体" />
+      <miOptions2 Text="设置" />
+      <miStartAll Text="全部开始" />
+      <miPauseAll Text="全部暂停" />
+      <miQuit Text="退出" />
+      <btnDelete ToolTip="删除选中项" />
+      <btnPause ToolTip="暂停下载" />
+      <btnStart ToolTip="全部开始" />
+      <txtSearch PlaceHolderText="搜索" />
+      <btnDownload ToolTip="下载" />
+      <btnRefresh ToolTip="刷新" />
+      <btnForward ToolTip="前进" />
+      <btnBack ToolTip="后退" />
+      <btnHome ToolTip="主页" />
+    </MainForm>
+    <DownloadPage>
+      <mediaBox EmptyText="沒有下载项&#13;&#10;拖条视频网址到这里试试？" />
+      <miDelete Text="删除" />
+      <miClear Text="清空" />
+      <miCopyUrl Text="复制URL" />
+      <miSource Text="来源页面" />
+    </DownloadPage>
+    <CompletePage>
+      <mediaBox EmptyText="没有完成项" />
+      <miPlay Text="播放" />
+      <miOpenFolder Text="打开文件夹" />
+      <miDelete Text="删除" />
+      <miClear Text="清空" />
+      <miClearInvalid Text="清除无效文件" />
+      <miCopyUrl Text="复制URL" />
+      <miSource Text="来源页面" />
+      <miSort Text="排序" />
+      <miByName Text="名称" />
+      <miByDate Text="日期" />
+      <miBySize Text="大小" />
+      <miByDuration Text="长度" />
+    </CompletePage>
+    <BatchDownloadForm Text="批量下载">
+      <cbDownloadMp3 Text="下载为Mp3" />
+      <lblTitle Text="请输入您要下载的URL地址，每个链接占一行" />
+      <txtUrls PlaceHolderText="比如：https://www.youtube.com/watch?v=WLxv2fj65zI" />
+      <btnDownload Text="下载" />
+    </BatchDownloadForm>
+    <SelectMediaForm Text="视频解析">
+      <lblTitle Text="视频解析中..." />
+      <format Text="格式" />
+      <resolution Text="分辨率" />
+      <frameRate Text="帧率" />
+      <audio Text="音频" />
+      <size Text="大小" />
+      <btnDownload Text="下载" />
+    </SelectMediaForm>
+    <PlaylistForm Text="列表解析">
+      <lblTitle Text="列表解析中..." />
+      <title Text="标题" />
+      <duration Text="时长" />
+      <btnDownload Text="下载" />
+    </PlaylistForm>
+    <OptionForm Text="参数设置">
+      <downloadPage Text="下载" />
+      <lblFolder Text="输出目录：" />
+      <btnSelectFolder Text="..." />
+      <lblMediaFormat Text="视频格式：" />
+      <lblQuality Text="清晰度：" />
+      <lblFormatTip Text="清晰度2K及以上视频建议选择默认或mkv格式。&#13;&#10;当网站视频不支持所选格式可分辨率时，将下载默认格式" />
+      <lblMaxTaskCount Text="并行任务个数：" />
+      <cbDownloadSubtitle Text="若视频有字幕，自动下载" />
+      <lblSubtitleLanguage Text="语言：" />
+      <lblSubtitleType Text="格式：" />
+      <cbDownloadThumbnail Text="下载视频缩略图" />
+      <cbAddPlaylistIndex Text="播放列表视频名字加入序号" />
+      <cbShowDownloadCompleteTip Text="下载完成弹出气泡提示" />
+      <cbShowRemoveTip Text="移除下载任务弹出提示" />
+      <accountPage Text="账号" />
+      <btnAddAccount Text="+添加" />
+      <domain Text="网站" />
+      <account Text="账号" />
+      <othersPage Text="其它" />
+      <lblOnlineUrl Text="在线视频网址：" />
+      <lblTaskComplete Text="下载任务完成后：" />
+      <cbTaskComplete>
+        <Items>无操作&#13;&#10;关机&#13;&#10;休眠&#13;&#10;退出程序</Items>
+      </cbTaskComplete>
+      <cbAdvanceMode Text="YouTube使用高级解析模式" />
+      <cbWatchClipboard Text="监测系统剪贴板" />
+      <cbResumeOnStartUp Text="程序启动自动开始未完成的下载任务" />
+      <cbAutoUpdate Text="启用程序自动更新" />
+      <cbToTrayIcon Text="主程序关闭到系统托盘" />
+      <cbProxy Text="代理服务器" />
+      <lblHost Text="地址：" />
+      <lblPort Text="端口：" />
+      <lblProxyType Text="类型：" />
+      <btnReset Text="重置" />
+      <btnOk Text="确定" />
+      <btnCancel Text="取消" />
+    </OptionForm>
+    <AccountForm Text="社交账号">
+      <lblWebSite Text="网站：" />
+      <lblAccount Text="账号：" />
+      <lblPassword Text="密码：" />
+      <txtAccount PlaceHolderText="请输入账号" />
+      <txtPassword PlaceHolderText="请输入密码" />
+      <btnOk Text="确定" />
+      <btnCancel Text="取消" />
+    </AccountForm>
+    <VideoPasswordForm Text="视频密码">
+      <txtPassword PlaceHolderText="请输入密码" />
+      <btnOk Text="确定" />
+      <btnCancel Text="取消" />
+    </VideoPasswordForm>
+    <FileDownloadForm Text="文件下载">
+      <btnCancel Text="取消" />
+    </FileDownloadForm>
+    <TaskCompleteForm Text="下载完成">
+      <cbHideTip Text="不要再显示" />
+    </TaskCompleteForm>
+    <ShutdownComputerForm Text="关闭计算机">
+      <lblInfo Text="您的计算机将在 {0} 秒后关闭" />
+      <btnCancel Text="取消" />
+    </ShutdownComputerForm>
+    <LocalizationForm Text="本地化">
+      <lblTitle Text="您可以帮我本地化CR TubeGet么？不胜感激！如果可以，请帮我：" />
+      <lblStep1 Text="1. 请打开语言文件夹：" />
+      <lblOpen Text="打开" />
+      <lblStep2 Text="2. 如果您修改语言，请打开对应的语言文件，比如英语文件english.lng。&#13;&#10;您可以用记事本或Notepad++等文本编辑器打开。" />
+      <lblStep3 Text="3. 请修改&lt;strings&gt;节点中&lt;INF_XXX&gt;...&lt;/INF_XXX&gt;中间的文本以及&lt;forms&gt;节点中&quot;...&quot;之间的文本，&#13;&#10;请保留{x}及&amp;#13;&amp;#10;占位符，然后保存它。" />
+      <lblStep4 Text="4. 如果您要添加新的语言比如法语，请复制english.lng为french.lng，&#13;&#10;并设置语言信息：&lt;language Id=&quot;FRA&quot; Name=&quot;French&quot; LocaleName=&quot;Français&quot; ...&#13;&#10;然后像第三步一样做文本修改。" />
+      <lblLangId Text="语言ID" />
+      <lblLastStep Text="最后：如果您修改或者添加了新的语言，请发一份给我：" />
+      <btnClose Text="关闭" />
+    </LocalizationForm>
+    <FeedBackForm Text="反馈">
+      <lblTitle Text="请相信，我们期待着您的问题与建议；您的反馈信息，可即时在CR-Soft网站[反馈]页查看&#13;&#10;中国大陆用户，请自行翻墙或设置服务器代理" />
+      <lblEmail Text="EMail：" />
+      <txtEmail PlaceHolderText="请输入Email地址" />
+      <lblContent Text="内容：" />
+      <txtContent PlaceHolderText="提示：&#13;&#10;1、您对程序有使用问题或功能建议，请反馈给我们&#13;&#10;2、使用过程中如有报错，请重启程序再试" />
+      <cbAttachLog Text="附送日志文件" />
+      <btnSubmit Text="发送" />
+    </FeedBackForm>
+    <DonateForm Text="打赏">
+      <lblTitle Text="如果您刚好今天心情不错，请我一杯咖啡可好？" />
+      <lblThanks Text="感谢您，给我帮助的人！" />
+      <lblWx Text="微信打赏" />
+      <lblZfb Text="支付宝" />
+    </DonateForm>
+    <AboutForm Text="关于...">
+      <lblAuthor Text="楚人无衣" />
+      <lblDesc Text="致敬：youtube-dl，功能基于其&#13;&#10;         ffmpeg&#13;&#10;致谢：CSkin，界面构于其&#13;&#10;致意：Wondershare AllMyTube&#13;&#10;&#13;&#10;纪念：异乡寒夜，曾空独眠的日子" />
+      <btnDonate Text="捐赠" />
+      <btnClose Text="关闭" />
+    </AboutForm>
+  </forms>
+</language>

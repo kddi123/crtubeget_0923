@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" referer="true" date="2020.12.043">
+    <url><![CDATA[https?://(?:www\.)?kaikeba\.com/open/item.*?=([^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.kaikeba.com/open/item?lpsc=212576
+            //https://www.kaikeba.com/open/item?c=191
+            var ci = window.__NEXT_DATA__.props.pageProps.openCourseInfo;
+            var title = ci.content_title;
+            var bpl = ci.boot_param_list[0];
+            var thumbnail = bpl.image;
+            var vid = bpl.boot_params.videoid;
+            var uid = bpl.boot_params.user_id;
+            var api_url = 'https://p.bokecc.com/servlet/getvideofile?vid=' + vid + '&siteid=' + uid + '&callback=cb';
+            var data = window.external.getHtmlCode(api_url);
+            data = data.substring(3, data.length - 1);
+            var jo = JSON.parse(data);
+            thumbnail = jo.img || thumbnail;
+            var video_url = jo.copies[jo.copies.length - 1].playurl;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" referer="true" date="2022.11.19">
+    <url><![CDATA[https?://(?:\w+\.)?(?:acfun|aixifan)\.(?:cn|com)/\w+/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //有些电脑IE打不开a站，因此用delegate
+            //https://www.acfun.cn/bangumi/aa6000986_36188_1714862
+            //https://www.acfun.cn/v/ac30323894
+            //https://www.acfun.cn/bangumi/aa6004592 vip
+            //https://www.acfun.cn/bangumi/aa6005342_36123_1780489
+            //https://m.acfun.cn/v/?ac=39178269
+            var html = window.external.getHtmlCode(window.external.url);
+            //window.pageInfo = window.bangumiData = ; window.pageInfo = window.videoInfo = 
+            var js = html.match(/(?:videoInfo|bangumiData)\s*=\s*(\{.*?\});/)[1];
+            var pageInfo = JSON.parse(js);
+            var title = pageInfo.title || pageInfo.showTitle;
+            var thumbnail = pageInfo.coverUrl || pageInfo.image;
+            thumbnail = thumbnail.substring(0, thumbnail.indexOf('?'));
+            var duration = pageInfo.currentVideoInfo.durationMillis / 1000;
+            var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+            //无480，取540
+            if (vq == 480)
+                vq = 540;
+            var jo = JSON.parse(pageInfo.currentVideoInfo.ksPlayJson);
+            var as = jo.adaptationSet.length != 0 ? jo.adaptationSet[0] : jo.adaptationSet;
+            var video_url = as.representation[0].url || as.representation[0].backupUrl;
+            for (var i = 0; i <= as.representation.length - 1; i++) {
+                var v = as.representation[i]
+                if (v.height == vq || vq <= 8 && v.height >= 2160 || v.qualityLabel.indexOf(vq + 'P') != -1) {
+                    video_url = v.url;
+                    break;
+                }
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

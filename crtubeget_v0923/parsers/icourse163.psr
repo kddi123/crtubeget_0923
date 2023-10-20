@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" referer="true" date="2023.06.19">
+    <url><![CDATA[https?://(?:www\.)?icourse163\.org/.*?tid=(?<id>[^&#]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[NTESSTUDYSI]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://www.icourse163.org/learn/NJU-1002190001?tid=1002759016#/learn/content?type=detail&id=1003790221
+            //https://www.icourse163.org/learn/STDX-1463368162?tid=1467357460#/learn/content?type=detail&id=1248739580&cid=1275821220&replay=true
+            //https://www.icourse163.org/course/STDX-1463368162?tid=1467357460
+            //https://www.icourse163.org/learn/STDX-1463368162?tid=1468387442#/learn/content?type=detail&id=1250267663&cid=1278345090 二次加密
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var cookie = window.external.getCookieEx(url, 'NTESSTUDYSI', 1500) || window.external.getCookie(url) || document.cookie;
+            if (cookie.indexOf('NTESSTUDYSI') != -1) {
+                var hs_id = cookie.match(/NTESSTUDYSI=([^;]+)/)[1];
+                var biz_id = (url.indexOf('cid=') != -1) ? url.match(/cid=([^&]+)/)[1] : '';
+                //get biz_id... https://www.icourse163.org/learn/XJTU-1002529011?tid=1470098613#/learn/content?type=detail&id=1253530227&sm=1
+                if (!biz_id) {
+                    var tid = url.match(/tid=([^#&]+)/)[1];
+                    var api_url = 'https://www.icourse163.org/web/j/courseBean.getLastLearnedMocTermDto.rpc?csrfKey=' + hs_id;
+                    var args = 'termId=' + tid;
+                    var headers = 'Content-Type: application/x-www-form-urlencoded\r\edu-script-token: ' + hs_id + '\r\nCookie: ' + cookie;
+                    var data = window.external.getPostResultEx(api_url, args, headers);
+                    if (data.indexOf('lastLearnUnitId') != -1)
+                        biz_id = data.match(/lastLearnUnitId\":(\d+)/)[1];
+                }
+                if (!biz_id)
+                    biz_id = url.match(/tid=([^&#]+)/)[1];
+                api_url = 'https://www.icourse163.org/web/j/resourceRpcBean.getResourceToken.rpc?csrfKey=' + hs_id;
+                args = 'bizId=' + biz_id + '&bizType=1&contentType=1';
+                headers = 'Content-Type: application/x-www-form-urlencoded\r\nCookie: ' + cookie;
+                data = window.external.getPostResultEx(api_url, args, headers);
+                if (data.indexOf('videoSignDto') == -1) {
+                    args = 'bizId=' + biz_id + '&bizType=2&contentType=1';
+                    data = window.external.getPostResultEx(api_url, args, headers);
+                }
+                var jo = JSON.parse(data);
+                if (jo.result && jo.result.videoSignDto) {
+                    var vi = jo.result.videoSignDto;
+                    title = jo.result.lessonUnitName;
+                    thumbnail = vi.videoImgUrl;
+                    duration = vi.duration;
+                    api_url = 'https://vod.study.163.com/eds/api/v1/vod/video?videoId=' + vi.videoId + '&signature=' + vi.signature + '&clientType=1';
+                    data = window.external.getHtmlCode(api_url, url);
+                    jo = JSON.parse(data);
+                    if (jo.result && jo.result.videos && jo.result.videos.length != 0) {
+                        vi = jo.result;
+                        title = title || vi.name.replace('.mp4', '').replace('.flv', '');
+                        thumbnail = thumbnail || vi.videoImgUrl || '';
+                        duration = duration || vi.duration;
+                        var videos = jo.result.videos;
+                        //sort...
+                        function sbs(a, b) {
+                            //mp4 first
+                            var sa = (a.format == 'mp4') ? a.size * 1.2 : a.size;
+                            var sb = (b.format == 'mp4') ? b.size * 1.2 : b.size;
+                            return sa - sb;
+                        }
+                        videos.sort(sbs);
+                        video_url = videos[videos.length - 1].videoUrl;
+                        //二次加密... 如何解？
+                        if (videos[videos.length - 1].secondaryEncrypt) {
+                            video_url += '&token=' + encodeURIComponent('https://vod.study.163.com/eds/api/v1/vod/hls/key?id=' + vi.videoId);
+                            data = window.external.getHtmlCode(video_url, url);
+                            video_url = window.external.saveData(sd(data, vi.videoId));
+                        }
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            if (!title)
+                title = document.title;
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$error=请在浏览器中登录您的MOOC账号然后再试$';
+
+            //...
+            function d(e) {
+                var t = e.trim();
+                var n = '0x' === t.substr(0, 2).toLowerCase() ? t.substr(2) : t;
+                var i = n.length;
+                if (i % 2 !== 0) {
+                    //alert('Illegal Format ASCII Code!');
+                    return ''
+                }
+                var a;
+                var o = [];
+                for (var s = 0; s < i; s += 2) {
+                    a = parseInt(n.substr(s, 2), 16);
+                    o.push(String.fromCharCode(a))
+                }
+                return o.join('')
+            }
+
+            function E(e) {
+                var t = atob(e);
+                var n = new Uint8Array(t.length);
+                Array.prototype.forEach.call(t, function(e, t) {
+                    n[t] = e.charCodeAt(0)
+                });
+                return n
+            }
+
+            function b(e) {
+                var t = Array.prototype.map.call(e, function(e) {
+                    return String.fromCharCode(e)
+                }).join('');
+                return btoa(t)
+            }
+
+            function m(e) {
+                var t = [], n, i, a;
+                for (i = 0; i < e.length; ++i) {
+                    n = e[i];
+                    for (a = 3; a >= 0; --a)
+                        t.push(n >> 8 * a & 255)
+                }
+                return t
+            }
+
+            function p(e) {
+                var t = '';
+                var n = 8192;
+                var i;
+                for (i = 0; i < e.length / n; i++)
+                    t += String.fromCharCode.apply(null, e.slice(i * n, (i + 1) * n));
+                t += String.fromCharCode.apply(null, e.slice(i * n));
+                return t
+            }
+
+            function c(e) {
+                var t = new Uint8Array(e.match(/[\da-f]{2}/gi).map(function(e) {
+                    return parseInt(e, 16)
+                }));
+                var n = t.buffer;
+                return n
+            }
+
+            function g(e) {
+                var t = new ArrayBuffer(e.length);
+                var n = new Uint8Array(t);
+                for (var i = 0, a = e.length; i < a; i++)
+                    n[i] = e.charCodeAt(i);
+                return n
+            }
+
+            function sd(e, t, i) {
+                e = d(e);
+                var a = new Date;
+                var o;
+                if (i)
+                    o = t.toString().slice(-7) + '66' + (+a).toString().substr(0, 4) + a.getFullYear().toString().slice(-3);
+                else
+                    o = t.toString().slice(-6) + '66' + (+a).toString().substr(0, 4) + a.getFullYear();
+                var s = E(e);
+                var r = new Uint8Array(s.buffer,0,16);
+                var n = CryptoJS;
+                o = n.enc.Base64.parse(b(g(o)));
+                r = n.enc.Base64.parse(b(r));
+                e = new Uint8Array(s.buffer,16,s.length - 16);
+                e = n.enc.Base64.parse(b(e));
+                try {
+                    var l = n.AES.decrypt({
+                        ciphertext: e
+                    }, o, {
+                        iv: r,
+                        mode: n.mode.CBC,
+                        padding: n.pad.Pkcs7
+                    });
+                    var _ = m(l.words);
+                    var h = p(_);
+                    if (i) {
+                        var u = h.substr(0, 32);
+                        return c(u)
+                    } else
+                        return h
+                } catch (f) {
+                    return !1
+                }
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

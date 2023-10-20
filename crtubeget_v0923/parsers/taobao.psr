@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" unescape="false" date="2023.09.05">
+    <url><![CDATA[(?:item|detail|traveldetail)\.(?:taobao|tmall|fliggy)\.com/item\.htm.*?id=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[_m_h5_tk]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://detail.tmall.com/item.htm?&id=616188832706 single
+            //https://detail.tmall.com/item.htm?id=629614457345
+            //https://item.taobao.com/item.htm?id=657045990528 m3u8
+            //https://traveldetail.fliggy.com/item.htm?id=539842111154&scene=taobao_shop
+            //https://chaoshi.detail.tmall.com/item.htm?spm=a230r.1.14.1.750f6bd3Bql9gs&id=616917531389&ns=1&abbucket=3
+            //unescape: 避免如下链接成https://tbm-auth.alicdn.com/87PVwArZPQKudEeo5mr/IUiPGN65DEc0EBid3jQ@@hd.m3u8?
+            //https://tbm-auth.alicdn.com/87PVwArZPQKudEeo5mr/IUiPGN65DEc0EBid3jQ%40%40hd.m3u8?auth_key=1637139405-0-0-c1b513626fc53def99a03b4be9c14f32
+            //硬解令牌易过期，因此老方法优先
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            var thumbnail = '', duration = 0, video_url = '';
+            if (document.getElementsByClassName('total-time').length != 0)
+                duration = document.getElementsByClassName('total-time')[0].innerText;
+            if (document.getElementsByTagName('video').length != 0) {
+                var oh = document.getElementsByTagName('video')[0].outerHTML;
+                if (oh.indexOf('poster=') != -1)
+                    thumbnail = oh.match(/poster=\"([^\"]*)/)[1];
+                if (oh.indexOf('src=') != -1)
+                    video_url = oh.match(/src=\"([^\"]+)/)[1];
+            }
+            if (document.body.innerHTML.indexOf('imgVedioUrl') != -1) {
+                var iv_url = document.body.innerHTML.match(/imgVedioUrl\":\"([^\"]+)/)[1];
+                if (iv_url.indexOf('cloud.video.taobao.com') != -1) {
+                    video_url = iv_url.replace('.swf', '.mp4').replace('/e/1/', '/e/6/').replace(/(\/t\/\d\/)/, '/t/1/');
+                    if (video_url.indexOf('http') == -1)
+                        video_url = 'https:' + video_url;
+                }
+            }
+            //硬解...
+            if (!video_url) {
+                var url = window.external.url;
+                var cookie = window.external.getCookieEx(url, '_m_h5_tk', 2500);
+                if (!cookie)
+                    cookie = window.external.getCookieEx('https://www.taobao.com/', '_m_h5_tk', 2500) || window.external.getCookie(url) || document.cookie;
+                var token = (cookie.indexOf('_m_h5_tk') != -1) ? cookie.match(/_m_h5_tk=([^_]+)/)[1] : '';
+                if (token) {
+                    var id = url.match(/id=([^&]+)/)[1];
+                    var d = '{\"id\":\"' + id + '\"}';
+                    var t = Date.now();
+                    var sign = window.external.md5(token + '&' + t + '&12574478&' + d);
+                    var api_url = 'https://h5api.m.tmall.com/h5/mtop.taobao.pcdetail.data.get/1.0/?jsv=2.6.1&appKey=12574478';
+                    if (url.indexOf('tmall') == -1)
+                        api_url = 'https://h5api.m.taobao.com/h5/mtop.taobao.pcdetail.data.get/1.0/?jsv=2.6.1&appKey=12574478';
+                    api_url += '&t=' + t + '&sign=' + sign + '&ttid=2022%40taobao_litepc_9.17.0&data=' + encodeURIComponent(d);
+                    var headers = 'Referer: ' + url + '\r\nCookie: ' + cookie;
+                    var data = window.external.getHtmlCodeEx(api_url, headers);
+                    if (data.indexOf('item\":{') != -1) {
+                        var jo = JSON.parse(data);
+                        var item = jo.data.item;
+                        title = item.title;
+                        var video = item.videos[0];
+                        thumbnail = video.videoThumbnailURL;
+                        video_url = video.url;
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

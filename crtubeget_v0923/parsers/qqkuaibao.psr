@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" date="2021.05.27">
+    <url><![CDATA[https?://(?:(kuaibao|kandianshare.html5)\.)?qq\.com/\w+/(?<id>[^?]+)]]></url>
+    <title><![CDATA[title="([^"]*)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <headers><![CDATA[User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.5414.75 Safari/537.36]]></headers>
+    <ckSign><![CDATA[userKey]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://kuaibao.qq.com/s/VID2019062000384002?refer=spider
+            //https://kandianshare.html5.qq.com/v2/video/4840239183837795706
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : '';
+            var thumbnail = '', vid = '', video_url = '';
+            if (window._configs && window._configs.videoContent) {
+                title = window._configs.videoContent.title;
+                thumbnail = window._configs.videoContent.imageUrl;
+                vid = window._configs.videoContent.sdkVid;
+            }
+            if (!vid && window.location.href.indexOf('VID') != -1) {
+                var api_url = 'https://kuaibao.qq.com/getSubNewsContent?id=' + window.location.href.match(/VID[^?]+/)[0];
+                var data = window.external.getHtmlCodeEx(api_url);
+                if (data.indexOf('vid=') != -1)
+                    vid = data.match(/vid=([^&]+)/)[1];
+            }
+            if (vid)
+                video_url = 'https://v.qq.com/x/page/' + vid + '.html#ra';
+            if (!video_url) {
+                var html = window.external.getHtmlCodeEx(window.location.href, 'Cookie: ' + document.cookie);
+                if (html.indexOf('window._configs=') != -1) {
+                    var data = html.match(/window\._configs=(.*?)<\/script>/)[1];
+                    if (data) {
+                        var jo = JSON.parse(data);
+                        if (jo.videoContent) {
+                            var video = jo.videoContent;
+                            title = video.title;
+                            thumbnail = video.imageUrl;
+                            video_url = video.cdnPlayInfo.playUrls[0];
+                        }
+                    }
+                }
+            }
+
+            if (!video_url)
+                video_url = window.location.href;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

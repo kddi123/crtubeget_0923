@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2020.08.16">
+    <url><![CDATA[https?://(?:www\.)?\w*hsck\w*\.\w+/vodplay/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            var title = (document.getElementsByTagName('h3').length >= 2) ? document.getElementsByTagName('h3')[1].innerText : document.title;
+            var video_url = player_data.url;
+            var re = new RegExp('title=\"' + title.trim() + '\"[^>]+data-original=\"([^\"]+)');
+            var m = document.body.innerHTML.match(re);
+            thumbnail = m ? m[1] : '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

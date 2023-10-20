@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" date="2023.07.03">
+    <url><![CDATA[https?://(?:\w+\.)?\w+\.fun/vodplay/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <exjs><![CDATA[http://www.cr-soft.net/js/aes.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //https://www.dmxq.fun/vodplay/929-1-1.html
+            //https://555dy.fun/vodplay/376186-4-1.html
+            var detail_url = 'https://' + window.location.host + '/voddetail/' + window.external.url.match(/vodplay\/([^-]+)/)[1] + '.html';
+            var html = window.external.getHtmlCode(detail_url);
+            var thumbnail = (html.indexOf('<img class=\"ls-is') != -1) ? html.match(/<img\s+class=\"ls-is[^>]+src=\"([^\"]+)/)[1] : '';
+            var title = vod_name + ' ' + vod_part, video_url = '';
+            var u = player_aaaa.url;
+            var k = stoh(atob(window.external.hmacSha256(u, '55ca5c4d11424dcecfe16c08a943afdc')));
+            var args = '{\"type\":\"getUrl\",\"url\":\"' + u + '\",\"sign\":\"' + k + '\"}';
+            var data = stoh(atob(encrypt(args))).toUpperCase();
+            var ws = new WebSocket('wss://player.sakurot.com:3458/wss');
+            ws.onopen = function () {
+                ws.send(data);
+            }
+            ws.onmessage = function (evt) {
+                var data = decrypt(evt.data);
+                video_url = JSON.parse(data).url;
+                document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+            }
+
+            //...
+            function stoh(s){
+                var val = '';
+                for (var i = 0; i <= s.length - 1; i++) {
+                    var ch = s.charCodeAt(i).toString(16);
+                    if (ch.length != 2)
+                        ch = '0' + ch;
+                    val += ch;
+                }
+                return val;
+            }
+
+            function encrypt(data) {
+                var l = CryptoJS;
+                var e = l.enc.Utf8.parse(data);
+                return t = l.enc.Utf8.parse('55ca5c48a943afdc'),
+                v = l.enc.Utf8.parse('d11424dcecfe16c0'),
+                l.AES.encrypt(data, t, {
+                    iv: v,
+                    mode: l.mode.CBC,
+                    padding: l.pad.Pkcs7
+                }).toString();
+            }
+
+            function decrypt(data) {
+                var l = CryptoJS;
+                var e = l.enc.Hex.parse(data);
+                e = l.enc.Base64.stringify(e);
+                return t = l.enc.Utf8.parse('55ca5c48a943afdc'),
+                v = l.enc.Utf8.parse('d11424dcecfe16c0'),
+                l.AES.decrypt(e, t, {
+                    iv: v,
+                    mode: l.mode.CBC,
+                    padding: l.pad.Pkcs7
+                }).toString(l.enc.Utf8);
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

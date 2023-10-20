@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.08.05">
+    <url><![CDATA[https?://(?:\w\.)?inmuu\.com/v\d+/live/news/(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://m.inmuu.com/v1/live/news/1187769/intro
+            var nid = window.external.url.match(/news\/(\d+)/)[1];
+            var api_url = 'https://m.inmuu.com/v1/srv/activity/customShare/' + nid;
+            var data = window.external.getHtmlCode(api_url);
+            var jo = JSON.parse(data);
+            var title = jo.data.title;
+            var thumbnail = jo.data.bannerUrl;
+            var html = window.external.getHtmlCode(window.external.url);
+            var vid = html.match(/(\d+),\d+,\"\[\]\"/)[1];
+            api_url = 'https://m.inmuu.com/v1/srv/activityMediaLib/playUrl/' + vid;
+            data = window.external.getHtmlCode(api_url);
+            jo = JSON.parse(data);
+            var video_url = jo.data.playUrl;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

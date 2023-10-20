@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" date="2023.03.09">
+    <url><![CDATA[https?://(?:www\.)?nfyingshi\.com/v_play/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.nfyingshi.com/v_play/bXZfMzM3Mi1ubV8x.html
+            var title = document.title, thumbnail = '', video_url = '';
+            var data = document.body.innerHTML.match(/var\s\w{6}=\"([^\"]+)/)[1];
+            var md5 = window.md5;
+            var des = function dncry(data) {
+                var v = document.body.innerHTML.match(/md5.*?parse\(\"([^\"]+)/)[1];
+                var k19b3a = md5.enc.Utf8.parse(v);
+                var iv = md5.enc.Utf8.parse(1234567890983456);
+                var decrypted = md5.AES.decrypt(data, k19b3a, {
+                    iv: iv,
+                    mode: md5.mode.CBC,
+                    padding: md5.pad.Pkcs7
+                });
+                return decrypted.toString(md5.enc.Utf8);
+            };
+            var js = des(data);
+            js = js.replace('new DPlayer(', '');
+            js = js.substr(0, js.indexOf('};') + 2).replace(');', ';');
+            eval(js);
+            title = watch.title;
+            thumbnail = watch.cover;
+            if (dp.video.quality) {
+                for (var i = 0; i <= dp.video.quality.length - 1; i++)
+                    video_url = dp.video.quality[i].url;
+            }
+            else
+                video_url = dp.video.url;
+            //为&time转义计
+            document.body.innerText = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

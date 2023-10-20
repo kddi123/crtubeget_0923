@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2022.10.06">
+    <url><![CDATA[https?://(?:\www\.)?zxx\.edu\.cn/.*?activityId=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <ckSign><![CDATA[cna]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://www.zxx.edu.cn/syncClassroom/classActivity?activityId=26d77680-d05e-47cd-aa9b-3c3d84ac2eb2
+            //https://www.zxx.edu.cn/syncClassroom/classActivity?activityId=d00a983e-7f90-4b2c-a478-908232fd9fa8
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var url = window.external.url;
+            var aid = url.match(/activityId=([^&]+)/)[1];
+            var api_url = 'https://s-file-1.ykt.cbern.com.cn/zxx/s_course/v1/x_class_hour_activity/' + aid + '/resources.json';
+            var data = window.external.getHtmlCode(api_url, url);
+            if (data.indexOf('video_extend') != -1) {
+                var jo = JSON.parse(data);
+                for (var i = 0; i <= jo.length - 1; i++) {
+                    if (jo[i].video_extend) {
+                        var video = jo[i].video_extend;
+                        title = video.title;
+                        thumbnail = video.front_cover_url;
+                        duration = video.duration;
+                        for (var j = 0; j <= video.urls.length - 1; j++)
+                            video_url = video.urls[j].urls[0];
+                        break;
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

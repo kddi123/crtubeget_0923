@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" referer="true" crpj="true" aria2c="true" delegate="true" date="2023.08.01">
+    <url><![CDATA[tiktok\.com/(?:.*?/video/(?<id>\d+)|(?<id>[^/]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[tt_webid]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://www.tiktok.com/@aries_8248/video/6941615126386674945
+            //https://www.tiktok.com/@sweetsinsation86/video/7025576992607161647
+            //https://www.tiktok.com/@thuhang__21/video/7073288572756905242?is_copy_url=1&is_from_webapp=v1
+            //https://tiktok.com/@6916439814260081669/video/7080863109967170862->https://www.tiktok.com/@polly.mr/video/7080863109967170862
+            //https://vt.tiktok.com/ZS8a7r8fo/
+            //https://www.tiktok.com/t/ZTdENDGya/?k=1
+            //接口于2022.06.24抽了，首选ytdl
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var url = window.external.url;
+            //加上www.，gvd才认
+            if (url.indexOf('/video/') == -1 || url.indexOf('www') == -1)
+                url = window.external.getRedirectedUrl(url);
+            //全局梯子...有些电脑上，不能返回，不用其
+            /*if (url.indexOf('/video/') != -1) {
+                var vid = url.match(/video\/([^&?]+)/)[1];
+                //var api_url = 'https://api-h2.tiktokv.com/aweme/v1/aweme/detail/?aweme_id=' + vid;
+                var api_url = 'https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id=' + vid + '&aid=1180';
+                var data = window.external.getHtmlCode(api_url, url);
+                if (data.indexOf('aweme_list\":[{') != -1) {
+                    var jo = JSON.parse(data);
+                    var aweme = jo.aweme_list[0];
+                    if (aweme.video) {
+                        var video = aweme.video;
+                        title = aweme.desc;
+                        thumbnail = video.origin_cover ? video.origin_cover.url_list[0] : '';
+                        duration = video.duration / 1000;
+                        video_url = video.bit_rate ? video.bit_rate[0].play_addr.url_list[0] : video.play_addr.url_list[0];
+                    }
+                }
+            }*/
+            //...
+            if (!video_url && (fv[0] != '1' || em)) {
+                //避免太多字符干扰
+                if (url.indexOf('?') != -1)
+                    url = url.substr(0, url.indexOf('?') + 1) + 'is_copy_url=1&is_from_webapp=v1';
+                var data = gvd(url);
+                //try again
+                if (data.indexOf('\"body\":[]') != -1) {
+                    delay(1500);
+                    data = gvd(url);
+                }
+                var jo = JSON.parse(data);
+                if (jo.body && jo.body.video_url) {
+                    title = jo.body.title || title;
+                    thumbnail = thumbnail || jo.body.cover_url;
+                    video_url = jo.body.video_url;
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser crpj="true" date="2021.07.05">
+    <url><![CDATA[https?://(?:k\.)?sina\.cn/article_(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[<title>([^<]+)</title>]]></title>
+    <thumbnail><![CDATA[poster":"([^"]+)]]></thumbnail>
+    <duration><![CDATA[data-vLength":([^,]+)\d{3}]]></duration>
+    <mediaUrl><![CDATA[baseUrl":"([^"]+)]]></mediaUrl>
+    <!--https://k.sina.cn/article_6691676694_v18edae2160010178tu.html-->
+</parser>

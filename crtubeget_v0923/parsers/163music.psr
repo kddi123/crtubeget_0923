@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" date="2022.03.18">
+    <url><![CDATA[(?:music\.)?163\.com/.*?song(?:/(?<id>[^/]+)|\?id=(?<id>\w+))]]></url>
+    <title><![CDATA[<meta\s+content="([^"]+)"\s+property="og:title">]]></title>
+    <thumbnail><![CDATA[<meta\s+content="([^"]+)"\s+property="og:image">]]></thumbnail>
+    <duration><![CDATA[<meta\s+content="([^"]+)"\s+property="music:duration">]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[MUSIC_U]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://music.163.com/#/song/31165165/?userid=368195593&app_version=7.3.20
+            //https://y.music.163.com/m/song?id=27639209&userid=609465119&app_version=8.6.25
+            var html = document.getElementsByTagName('iframe')[0].contentDocument.getElementsByTagName('html')[0].innerHTML;
+            var video_url = '';
+            //须得取跳转后的url，youtap才识得
+            var href = window.location.href;
+            var id = href.match(/song\/(\d+)/) ? href.match(/song\/(\d+)/)[1] : href.match(/id=(\d+)/)[1];
+            var p = { ids: '[' + id + ']', br: 320000, csrf_token: '' };
+            var m = '00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7';
+            var r = window.asrsea(JSON.stringify(p), '010001', m, '0CoJUm6Qyw8W8jud');
+            var args = 'params=' + encodeURIComponent(r.encText) + '&encSecKey=' + encodeURIComponent(r.encSecKey);
+            var api_url = 'https://music.163.com/weapi/song/enhance/player/url?csrf_token=';
+            var cookie = window.external.getCookieEx(href, 'MUSIC_U', 2500) || window.external.getCookieEx(href, 'csrfToken', 2500) || document.cookie;
+            var headers = 'Content-Type: application/x-www-form-urlencoded\r\nReferer: ' + window.external.url + '\r\nCookie: ' + cookie;
+            var data = window.external.getPostResultEx(api_url, args, headers);
+            if (data) {
+                var jo = JSON.parse(data);
+                if (jo.data && jo.data.legnth != 1)
+                    video_url = jo.data[0].url;
+            }
+            if (!video_url) {
+                //https://music.163.com/song?id=480768023&userid=298384683 -> https://music.163.com/#/song?id=480768023&userid=298384683
+                args = 'filter=url&type=_&input=' + encodeURIComponent(href);
+                var sites = ['https://music.liuzhijin.cn/', 'http://www.youtap.xin/'];
+                for (var i = 0, len= sites.length; i <= len - 1; i++) {
+                    data = window.external.getPostResultEx(sites[i], args, 'X-Requested-With: XMLHttpRequest\r\nContent-Type: application/x-www-form-urlencoded');
+                    if (data) {
+                        var jo = JSON.parse(data);
+                        if (jo.data) {
+                            video_url = jo.data[0].url;
+                            break;
+                        }
+                    }
+                }
+            }
+            //sometimes it return null
+            if (!video_url)
+                video_url = 'http://music.163.com/song/media/outer/url?id=' + id + '.mp3';
+
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

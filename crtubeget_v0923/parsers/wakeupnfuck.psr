@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2022.06.28">
+    <url><![CDATA[https?://(?:www\.)?(?:woodmancastingx|wakeupnfuck)\.com/.*?/(?<id>[^.]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://www.woodmancastingx.com/casting-x/lili-charmelle_29245.html 4k
+            //https://www.woodmancastingx.com/casting-x/lyava-brown_6365.html 720
+            //https://www.wakeupnfuck.com/scene/candie-luciani-wunf-359_31085
+            var url = window.external.url;
+            var cookie = window.external.getCookieEx(url, 'wsid', 2500);
+            //wakeupnfuck
+            if (!cookie)
+                cookie = window.external.getCookieEx(url, 'wunfid', 2500);
+            var headers = 'User-Agent: ' + navigator.userAgent + '\r\nCookie: ' + cookie;
+            var html = window.external.getHtmlCodeEx(window.external.url, headers);
+            var title = html.match(/<h[12][^>]*>([^<]+)/)[1];
+            var thumbnail = (html.indexOf('og:image') != -1) ? html.match(/\"og:image\"\s+content=\"([^\"]+)/)[1] : html.match(/<img\s*src=\"([^\"]+\.jpg)/)[1];
+            var duration = (html.indexOf('estimatedDuration') != -1) ? html.match(/estimatedDuration:\s*([^,]+)/)[1] : html.match(/Length\s*:\s*([^<]+)/)[1];
+            var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+            if (vq <= 8)
+                vq = 2160;
+            var re = new RegExp('resolution:\\s*\'' + vq + '\',\\s*url:\\s*\"([^\"]+)', 'm');
+            var m = html.match(re);
+            var video_url = m ? m[1].trim() : url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

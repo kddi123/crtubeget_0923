@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2022.12.30">
+    <url><![CDATA[https?://(?:live\.)?kuaishou\.com/playback/(?<id>[^?]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://live.kuaishou.com/playback/3xvyqkg68hixziq
+            var href = window.external.url || window.location.href;
+            var video_url = '', thumbnail = '', duration = 0;
+            var title = (document.getElementsByTagName('h2').length != 0) ? document.getElementsByTagName('h2')[0].innerText : document.title;
+            var html = window.external.getHtmlCode(href);
+            if (html.indexOf('__APOLLO_STATE__') != -1) {
+                var text = html.match(/\{\"baseUrl.*?PlaybackProduct\"\}/)[0];
+                var jo = JSON.parse(text);
+                title = jo.caption || title;
+                video_url = jo.m3u8Url || href;
+                thumbnail = jo.coverUrl;
+                duration = jo.duration;
+            }
+            else {
+                var pid = window.external.url.match(/playback\/([^\/&]+)/)[1];
+                var api_url = 'https://live.kuaishou.com/live_api/playback/detail?productId=' + pid;
+                var data = window.external.getHtmlCode(api_url, href);
+                var jo = JSON.parse(data);
+                var cw = jo.data.currentWork;
+                title = cw.author.description;
+                thumbnail = cw.poster;
+                video_url = cw.playUrl;
+            }
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

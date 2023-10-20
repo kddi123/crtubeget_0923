@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2020.11.27">
+    <url><![CDATA[https?://(?:www\.)?qingting\.fm/channels/.*?programs/(?<id>[^/]+)]]></url>
+    <title><![CDATA[<h1[^>]+>([^<]+)</h1>]]></title>
+    <thumbnail><![CDATA[<img\s+title=[^>]+src="([^"]+)">]]></thumbnail>
+    <duration><![CDATA[时长: </span><span>([^<]+)</span>]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[qingting_id]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://www.qingting.fm/channels/182626/programs/14653888
+            if (typeof(window.external.hmacMd5) != 'undefined') {
+                var href = window.location.href;
+                var cid = href.match(/channels\/([^/]+)/)[1];
+                var pid = href.match(/programs\/([^/]+)/)[1];
+                var qid = (document.cookie.indexOf('qingting_id') != -1) ? document.cookie.match(/qingting_id=([^;]+)/)[1] : '';
+                var args = '';
+                var at = '';
+                //vip...
+                if (window.localStorage.refresh && qid) {
+                    var rt = window.localStorage.refresh;
+                    rt = rt.substr(1, rt.length - 2);
+                    args = 'grant_type=refresh_token&refresh_token=' + rt + '&qingting_id=' + qid;
+                    var data = window.external.getPostResult('https://u2.qingting.fm/u2/api/v4/auth', args, 'application/x-www-form-urlencoded');
+                    var jo = JSON.parse(data);
+                    at = jo.data.access_token;
+                }
+
+                args = '/audiostream/redirect/' + cid + '/' + pid + '?access_token=' + at + '&device_id=MOBILESITE&qingting_id=' + qid + '&t=' + Date.now();
+                var key = 'fpMn12&38f_2e';
+                var sign = window.external.hmacMd5(args, key);
+                args += '&sign=' + sign;
+                var video_url = 'https://audio.qingting.fm' + args;
+                video_url = window.external.getRedirectedUrl(video_url);
+
+                document.body.innerHTML = 'cr_video_url=' + video_url + '$' + document.body.innerHTML;
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

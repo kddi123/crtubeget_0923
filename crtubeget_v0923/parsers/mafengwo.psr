@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" wait="7500" date="2022.04.29">
+    <url><![CDATA[https?://(?:\w+\.)?mafengwo\.cn/i/(?<id>\d+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.mafengwo.cn/i/23428972.html
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            var thumbnail = (document.getElementsByClassName('set_bg _j_load_cover').length != 0) ? document.getElementsByClassName('set_bg _j_load_cover')[0].firstElementChild.src : '';
+            var video_url = (document.getElementsByClassName('play_area').length != 0) ? document.getElementsByClassName('play_area')[0].dataset.link : '';
+            var html = '';
+            //再找
+            if (!video_url) {
+                var id = window.external.url.match(/i\/(\d+)/)[1];
+                var data = window.external.getHtmlCode('http://www.mafengwo.cn/note/ajax/detail/getNoteDetailContentChunk?id=' + id, window.external.url);
+                var jo = JSON.parse(data);
+                html = jo.data.html;
+                if (html.indexOf('.m3u8') != -1)
+                    video_url = html.match(/\"(http.*?\.m3u8)\"/)[1];
+            }
+            if (!video_url)
+                video_url = thumbnail;
+
+            html = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+            if (typeof(window.external.receive) != 'undefined')
+                window.external.receive(html);
+            else {
+                document.head.innerHTML = '';
+                document.body.innerHTML = html;
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

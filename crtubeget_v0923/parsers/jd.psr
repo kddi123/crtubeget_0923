@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" date="2022.03.23">
+    <url><![CDATA[jd\.com/(?:(?<id>\d+)\.html?|.*?id=(?<id>[^&]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://h5.m.jd.com/active/faxian/video/index.html?id=284516891
+            //https://item.jd.com/10037482467809.html
+            var title = (document.getElementsByClassName('sku-name').length != 0) ? document.getElementsByClassName('sku-name')[0].innerText : document.title;
+            var thumbnail = '', duration = 0, video_url = window.external.url;
+            var html = document.body.innerHTML;
+            if (html.indexOf('data-vu') != -1) {
+                var vid = html.match(/data-vu=\"([^\"]+)/)[1];
+                var api_url = 'https://cd.jd.com/tencent/video_v3?callback=&vid='+ vid + '&type=1&from=1&appid=24&_=' + Date.now();
+                var data = window.external.getHtmlCode(api_url, window.external.url);
+                if (data.indexOf('playUrl') != -1) {
+                    var jo = JSON.parse(data);
+                    thumbnail = jo.imageUrl;
+                    duration = jo.duration;
+                    video_url = jo.playUrl;
+                }
+            }
+            //h5.m.jd.com...
+            else if (window.external.url.indexOf('id=') != -1) {
+                var id = window.external.url.match(/id=([^&]+)/)[1];
+                var args = '{\"id\":\"' + id + '\",\"modeid\":\"2\"}';
+                var api_url = 'https://api.m.jd.com/video_videoDetail?functionId=video_videoDetail&appid=content_H5&body=' + encodeURIComponent(args);
+                var data = window.external.getPostResult(api_url, '', 'application/x-www-form-urlencoded', window.external.url);
+                if (data.indexOf('playInfo') != -1) {
+                    var jo = JSON.parse(data);
+                    var item = jo.list[0];
+                    title = item.title;
+                    thumbnail = item.playInfo.videoImg;
+                    duration = item.playInfo.videoDuration;
+                    video_url = item.playInfo.videoUrl;
+                }
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2023.01.31">
+    <url><![CDATA[https?://(?:\w+\.)?(?:cctv|docuchina|12371|ncpa-classic)\.\w+/.*/(?<id>\w+[^.]+)\.s?html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://tv.cctv.com/2021/01/15/VIDE9wBaPD0WracfCxc6ORcM210115.shtml
+            //http://www.docuchina.cn/2020/06/14/VIDE6on8uNzpCR6uNZOP0qOh200614.shtml
+            //https://sannong.cctv.com/2021/04/25/ARTIe0aJnw0h69HS0kFWkrJM210425.shtml
+            //https://xuexi.12371.cn/2015/07/01/VIDE1435728608917192.shtml
+            //https://app.cctv.com/special/m/livevod/index.html?guid=46e6ce958a3a4d928df90f1597e6d310&vtype=2&vsetId=C10616
+            //https://www.ncpa-classic.com/2021/09/11/VIDEmxhLN8vdyZhNp9M6se0M210911.shtml
+            var title = '', thumbnail = '', video_url = window.external.url;
+            var html = window.external.getHtmlCode(window.external.url);
+            title = html.match(/<title>([^<]+)/)[1];
+            var vid = (window.external.url.indexOf('guid=') != -1) ? window.external.url.match(/guid=([^&]+)/)[1] : '';
+            //video_guid='6206d49551114f54838998c5a9de88cb'...
+            if (!vid && html.match(/guid\s*=/))
+                vid = html.match(/guid\s*=\s*['\"]([^'\"]+)/)[1];
+            if (!vid && html.match(/videoCenterId:/))
+                vid = html.match(/videoCenterId:\s*\"([^\"]+)/)[1];
+            var api_url = 'https://vdn.apps.cntv.cn/api/getHttpVideoInfo.do?pid=' + vid;
+            var data = window.external.getHtmlCode(api_url);
+            if (data.indexOf('\"image\"') != -1)
+                thumbnail = data.match(/image\":\"([^\"]*)/)[1]
+            if (data.indexOf('hls_url') != -1) {
+                if (data.indexOf('\"title\"') != -1)
+                    title = data.match(/title\":\"([^\"]+)/)[1];
+                var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                //以正则取hls_url，避免JSON.parse(data)出错...1080p为加密源，因此最高取到720...hls_h5e_url，2000亦是加密源
+                var hls_url = data.match(/hls_url\":\"([^\"]+)/)[1];
+                data = window.external.getHtmlCode(hls_url);
+                video_url = data.substr(data.lastIndexOf('/asp'));
+                var re = new RegExp('x' + vq + '([^.]+\.m3u8)');
+                var m = data.match(re);
+                video_url = m ? m[1].trim() : video_url;
+                video_url = hls_url.substr(0, hls_url.indexOf('/asp')) + video_url;
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

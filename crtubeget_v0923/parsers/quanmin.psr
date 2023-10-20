@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2021.12.29">
+    <url><![CDATA[quanmin\.\w+\.com/(?:v/(?<id>[^\?]+)|.*?vid=(?<id>[^&]+))]]></url>
+    <title><![CDATA[<h1[^>]+>([^<]+)]]></title>
+    <thumbnail><![CDATA[<meta\s+content="([^"]+)"\s+property="og:image"]]></thumbnail>
+    <duration><![CDATA[duration":"([^"]+)]]></duration>
+    <mediaUrl><![CDATA[<meta\s+content="([^"]+)"\s+property="og:videosrc"]]></mediaUrl>
+    <ckSign><![CDATA[ignore_cks]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://quanmin.hao222.com/sv3?source=share-h5&pd=qm_share_mvideo&vid=4775273017102211849&...
+            https://quanmin.baidu.com/v/4240209019394745281?source=share-1024102t-0&tab=share&pd=1024102t&autoplay=1&autoplay=1
+            document.head.innerHTML = '';
+            document.body.innerHTML = window.external.getHtmlCode(window.location.href);
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

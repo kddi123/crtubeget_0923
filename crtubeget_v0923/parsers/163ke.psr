@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" date="2023.08.05">
+    <url><![CDATA[https?://(?:\w+\.)?163\.com/(?:[^/]+/)?movie/(?:.*/(?<id>[^.]+)\.html?|free\?pid=(?<id>[^&]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <subtitle><![CDATA[subtitle=([^,]+)]]></subtitle>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://open.163.com/newview/movie/free?pid=MAEBT595K&mid=MAEEL8V3F
+            //https://open.163.com/newview/movie/free?pid=ZETLK9UQS&mid=PETLKAU0A
+            var html = window.external.getHtmlCode(window.external.url);
+            var title = html.match(/<title>([^<]+)/)[1].replace('-网易公开课', '');
+            var thumbnail = (html.indexOf('og:image') != -1) ? html.match(/og:image.*?content=\"([^\"]+)/)[1] : '';
+            var duration = 0;
+            var subtitle = '';
+            var video_url = window.external.url;
+            //视频源
+            html = html.substring(html.indexOf('<body>'));
+            var js = html.match(/window.__NUXT__=(.*?);<\/script>/)[1];
+            var jo = eval(js);
+            var mid = jo.state.movie.mid;
+            for (var i = 0; i <= jo.state.movie.moiveList.length - 1; i++) {
+                var movie = jo.state.movie.moiveList[i];
+                if (movie.mid == mid) {
+                    duration = movie.mLength;
+                    if (movie.subList && movie.subList.length != 0)
+                        subtitle = movie.subList[0].subVttUrl || movie.subList[0].subUrl;
+                    video_url = movie.mp4ShdUrlOrign || movie.mp4ShdUrl || movie.mp4HdUrlOrign || movie.mp4HdUrl || movie.mp4SdUrlOrign || movie.mp4SdUrl || movie.mp4ShareUrl;
+                    break;
+                }
+            }
+
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',subtitle=' + subtitle + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2022.03.11">
+    <url><![CDATA[https?://(?:www\.)?wasu\.cn/.*?/show/id/(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <exjs><![CDATA[https://s.wasu.cn/portal/js/mainplayer.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //https://www.wasu.cn/Play/show/id/10119970
+            var title = document.title, thumbnail = '', duration = 0, video_url = '';
+            var html = window.external.getHtmlCode(window.external.url);
+            var key = (html.indexOf('_playKey') != -1) ? html.match(/_playKey\s*=\s*'([^']+)/)[1] : '';
+            var id = window.external.url.match(/id\/(\d+)/)[1];
+            var api_url = 'https://www.wasu.cn/Api/getPlayInfoById/id/' + id + '/type/2';
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            if (data.indexOf('hdlist') != -1) {
+                var jo = JSON.parse(data);
+                title = jo.title;
+                thumbnail = jo.picUrl;
+                duration = jo.duration;
+                var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                var url_data = jo.hdlist[0].url;
+                for (var i = 0; i <= jo.hdlist.length - 1; i++) {
+                    var item = jo.hdlist[i];
+                    if (vq == 720 && item.key == 'hd1' || vq == 480 && item.key == 'hd0') {
+                        url_data = item.url;
+                        break;
+                    }
+                }
+                api_url = 'https://apiontime.wasu.cn/Auth/getVideoUrl?id=' + id + '&key=' + key + '&url=' + url_data + '&type=jsonp&callback=&_=' + Date.now();
+                data = window.external.getHtmlCode(api_url, window.external.url);
+                data = data.substring(2, data.length - 2).replace(/\\/g, '');
+                var k = CryptoJS.enc.Utf8.parse('1402436458600819');
+                var v = CryptoJS.enc.Utf8.parse('5162271485900109');
+                video_url = CryptoJS.AES.decrypt(data, k, {
+                    iv: v,
+                }).toString(CryptoJS.enc.Utf8);
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

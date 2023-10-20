@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2022.09.22">
+    <url><![CDATA[https?://(?:www\.)?xinpianchang\.com/a(?<id>[^?]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.xinpianchang.com/a10568858?from=search_post
+            //https://www.xinpianchang.com/a10731237?from=search_post
+            var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+            if (vq == 8 || vq == 4)
+                vq = 2160;
+            else if (vq == 2)
+                vq = 1440;
+            var title = (document.getElementsByTagName('h2').length != 0) ? document.getElementsByTagName('h2')[0].innerText : document.title;
+            var html = document.body.innerHTML;
+            var thumbnail = (html.indexOf('cover') != -1) ? html.match(/cover\":\"([^\"]+)/)[1] : '';
+            var duration = (html.indexOf('duration') != -1) ? html.match(/duration\":([^,]+)/)[1] : 0;
+            var vid = (html.indexOf('vid') != -1) ? html.match(/vid\":\"([^\"]+)/)[1] : '';
+            var appKey = (html.indexOf('appKey') != -1) ? html.match(/appKey\":\"([^\"]+)/)[1] : '';
+            var api_url = 'https://mod-api.xinpianchang.com/mod/api/v2/media/' + vid + '?appKey=' + appKey;
+            var data = window.external.getHtmlCode(api_url, 'https://www.xinpianchang.com/');
+            var jo = JSON.parse(data);
+            title = jo.data.title || title;
+            thumbnail = jo.data.cover || thumbnail;
+            duration = jo.data.duration;
+            var video_url = window.external.url;
+            if (jo.data.resource) {
+                video_url = jo.data.resource.progressive[0].url;
+                for (var i = 0; i <= jo.data.resource.progressive.length - 1; i++) {
+                    var item = jo.data.resource.progressive[i];
+                    if (item.height == vq) {
+                        video_url = item.url;
+                        break;
+                    }
+                }
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

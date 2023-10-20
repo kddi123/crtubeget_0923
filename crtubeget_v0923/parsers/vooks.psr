@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2023.07.03">
+    <url><![CDATA[vooks\.com/(?:videos|watch)/(?<id>[^?]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <exjs><![CDATA[http://www.cr-soft.net/js/aes.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //https://watch.vooks.com/videos/we-are-not-friends?channel=new-releases
+            var title = document.title;
+            var thumbnail = '';
+            var duration = 0;
+            var video_url = window.location.href;
+            if (window.localStorage) {
+                var s = JSON.stringify(window.localStorage);
+                if (s.indexOf('token') != -1) {
+                    var token = s.match(/token.*?\\\\\\\\\\\"([^\\]+)/)[1];
+                    token = 'Bearer ' + token;
+                    //book id 
+                    var bn = window.location.href.match(/(?:videos|watch)\/([^?]+)/)[1];
+                    var api_url = 'https://api.vooks.com/api/books/slug/' + bn;
+                    var data = window.external.getHtmlCode(api_url, window.location.href);
+                    var jo = JSON.parse(data);
+                    title = jo.title;
+                    thumbnail = jo.cover_original_img;
+                    duration = jo.duration;
+                    var bid = jo.id;
+                    api_url = 'https://api.vooks.com/api/books/' + bid + '/video';
+                    data = window.external.getHtmlCodeEx(api_url, 'Authorization: ' + token);
+                    jo = JSON.parse(data);
+                    video_url = jo.url;
+                }
+            }
+
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

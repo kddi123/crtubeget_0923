@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2023.03.01">
+    <url><![CDATA[https?://(?:www\.)?babybus\.com/.*?video/detail\?video_id=(?<id>[^&]+)]]></url>
+    <title><![CDATA[name:"([^"]+)]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[duration:"([^"]+)]]></duration>
+    <mediaUrl><![CDATA[standby_url:"([^"]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.babybus.com/product/video/detail?video_id=3723&id=36b990fa876b4d9f884c5c0e02b410cf
+            var data = document.body.innerHTML.match(/videoDetail:(.*?)\]\,fetch/)[1];
+            document.body.innerHTML = data + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

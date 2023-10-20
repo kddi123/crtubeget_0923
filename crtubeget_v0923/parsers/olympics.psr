@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" referer="true" date="2021.10.25">
+    <url><![CDATA[https?://(?:www\.)?olympics\.com/\w+/\w+/(?<id>[^?]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://olympics.com/en/video/2021-absa-cape-epic-stage-4-highlights?uxreference=playlist
+            //https://olympics.com/en/news/alexandra-trusova-quad-wins-grand-prix-figure-skating-skate-america-2021
+            var title = document.getElementById('article-body-title') ? document.getElementById('article-body-title').innerText : document.title;
+            var thumbnail = document.head.innerHTML.indexOf('og:image') != -1 ? document.head.innerHTML.match(/og:image\"\s*content=\"([^\"]+)/)[1] : '';
+            var video_url = window.external.url;
+            if (document.head.innerHTML.indexOf('video_url') != -1) {
+                video_url = document.head.innerHTML.match(/name=\"video_url\"\s*content=\"([^\"]+)\"/)[1];
+                var tg_url = 'https://olympics.com/tokenGenerator?url=' + video_url + '&domain=https://vod.olympicchannel.com&_ts=' + Date.now();
+                video_url = window.external.getHtmlCode(tg_url).match(/\"([^\"]+)\"/)[1];
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

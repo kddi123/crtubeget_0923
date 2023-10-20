@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2023.07.05">
+    <url><![CDATA[https?://(?:\w+\.)?(?:360kuai|360video.so)\.com/(?:(?:pc/|link/)?(?<id>\w{17})[#?]?|pc/detail\?url=)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.360kuai.com/9129efea33c33b469
+            //https://www.360kuai.com/pc/detail?url=http%3A%2F%2Fvideo.news.so.com%2Ff3b722a949490f9a4d819d56d78b39da&check=a8e1e192ce8788ba&uid=66415028%2E1570658265126653200%2E1676606199418%2E2344&sign=360%5Fc109fef1&tj_url=96164002404227924&scene=101&refer_scene=&nsid=4aed20739c250ad02c5a74ff056947ea#sv_funny
+            //http://m.360video.so.com/link/46c6668aeb11f1654c2aca1b1db16771/mohe-short_video-new
+            //https://www.360kuai.com/pc/925ea186626619354?sign=360_c9d79732&tag_kuaizixun=%E5%8A%A8%E7%89%A9
+            var title = (document.getElementsByTagName('h3').length != 0) ? document.getElementsByTagName('h3')[0].innerText : document.title;
+            var video = window.__INITIAL_DATA__.detail.video_data[0];
+            var thumbnail = video.cover_picture;
+            var duration = video.duration;
+            var video_url = video.play_url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

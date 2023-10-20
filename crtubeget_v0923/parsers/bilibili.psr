@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" referer="true" date="2022.06.19">
+    <url><![CDATA[https?://(?:(?:www\.|m\.|bangumi\.)?bilibili\.(?:tv|com)/(?:\w+/)?(?:video/(?:av|BV)|anime/(?<id>\d+)/play#|bangumi/play/(?:ep|ss)|watchlater/#/)(?<id>[^/?#&]+)|b\d+\.tv/(?<id>[^&]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <audioUrl><![CDATA[cr_audio_url=([^\$]+)]]></audioUrl>
+    <danmuUrl><![CDATA[cr_danmu_url=([^\$]+)]]></danmuUrl>
+    <ckSign><![CDATA[SESSDATA]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //主力是ytdl_cr，此为备用支路...2022.08.23渐弃ytdl_cr
+            //https://b23.tv/PBVqm6
+            //https://www.bilibili.com/video/av1245037/
+            //https://m.bilibili.com/video/BV1WL4y177ye?p=53&unique_k=nhDD72d
+            //https://www.bilibili.com/video/BV1nr4y1T7xX/?spm_id_from=333.788.recommend_more_video.3 4k
+            //https://www.bilibili.com/video/BV11J411i742/?spm_id_from=333.788.recommend_more_video.1 tv无水印
+            //番剧
+            //http://bangumi.bilibili.com/anime/5802/play#100643
+            //https://www.bilibili.com/bangumi/play/ep467561?from_spmid=666.25.episode.0
+            //不用SESSDATA做cookie标记，虽然点击观看后才会有SESSDATA
+            var title = '', thumbnail = '', duration = 0, video_url = '', audio_url = '', danmu_url = '';
+            //https://www.bilibili.com/watchlater/#/av48146282/p1
+            if (window.external.url.indexOf('watchlater') != -1) {
+                var vid = video_url.match(/#\/([^\/]+)/)[1];
+                video_url = 'https://www.bilibili.com/video/' + vid + '#ra';
+            }
+            //b23.tv->bilibili.com... https://b23.tv/WqTykya
+            else if (window.external.url.indexOf('.tv') != -1 || window.external.url.indexOf('m.bilibili') != -1) {
+                video_url = window.location.href;
+                //避免特殊字符影响...&timestamp
+                if (video_url.indexOf('?') != -1)
+                    video_url = video_url.substring(0, video_url.indexOf('?'));
+                video_url += '#ra';
+            }
+
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : '';
+            var cid = '';
+            var videoData = window.__INITIAL_STATE__ ? window.__INITIAL_STATE__.videoData : undefined;
+            if (videoData && videoData.title) {
+                cid = videoData.cid;
+                title = videoData.title;
+                thumbnail = videoData.pic;
+                duration = videoData.duration;
+            }
+            //4k&1080p+
+            var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+            if (!video_url && (vq >= 1080 || vq <= 8) && window.location.href.indexOf('video/BV') != -1 && videoData) {
+                var url = window.location.href;
+                var cookie = window.external.getCookieEx(url, 'SESSDATA', 2500) || window.external.getCookie(url);
+                if (cookie) {
+                    var bvid = url.match(/video\/([^\/?]+)/)[1];
+                    //若是多页，取对应页之cid
+                    if (window.external.url.indexOf('p=') != -1) {
+                        var p = parseInt(window.external.url.match(/p=(\d+)/)[1]);
+                        for (var i = 0; i <= videoData.pages.length - 1; i++) {
+                            var page = videoData.pages[i];
+                            if (page.page == p) {
+                                cid = page.cid;
+                                title = page.part || title;
+                                duration = page.duration;
+                                break;
+                            }
+                        }
+                    }
+                    var session = window.__playinfo__ ? window.__playinfo__.session : '';
+                    var headers = 'User-Agent: ' + navigator.userAgent + '\r\nReferer: ' + url + '\r\nCookie: ' + cookie;
+                    var qn = (vq <= 8) ? [125, 120] : [116, 112];
+                    for (var i = 0; i <= qn.length - 1; i++) {
+                        var api_url = 'https://api.bilibili.com/x/player/playurl?cid=' + cid + '&qn=' + qn[i] + '&type=&otype=json&fourk=1&bvid=' + bvid + '&fnver=0&fnval=976&session=' + session;
+                        var data = window.external.getHtmlCodeEx(api_url, headers);
+                        if (data.indexOf('base_url') != -1) {
+                            var jo = JSON.parse(data);
+                            if (jo.data.dash.audio.length != 0) {
+                                //取有效值
+                                for (var j = 0; j <= jo.data.dash.audio.length - 1; j++) {
+                                    audio_url = jo.data.dash.audio[j].base_url;
+                                    if (window.external.getHeaders(audio_url, 'HEAD', window.external.url, navigator.userAgent))
+                                        break;
+                                }
+                                for (var j = 0; j <= jo.data.dash.video.length - 1; j++) {
+                                    video_url = jo.data.dash.video[j].base_url;
+                                    if (window.external.getHeaders(video_url, 'HEAD', window.external.url, navigator.userAgent))
+                                        break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = window.location.href;
+            if (cid)
+                danmu_url = 'https://comment.bilibili.com/' + cid + '.xml';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$cr_audio_url=' + audio_url + '$cr_danmu_url=' + danmu_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

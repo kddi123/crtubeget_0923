@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2022.06.07">
+    <url><![CDATA[https?://(?:\w+\.)?gsadm\.cn.*?id=(?<id>[^&]+).*?access_key=[^&]+]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://share1.gsadm.cn/html/001/bj6/NMb3YODa9bj6.html?id=NMb3YODa9bj6&access_key=yl1nu155c94y
+            var url = window.external.url;
+            var id = url.match(/id=([^&]+)/)[1];
+            var api_url = 'https://openapis.yladm.com/plat/v3/h5ad?vid=' + id;
+            var data = window.external.getHtmlCode(api_url, url);
+            var jo = JSON.parse(data);
+            var title = jo.video_info.name;
+            var thumbnail = jo.video_info.still;
+            var ak = url.match(/access_key=([^&]+)/)[1];
+            var t = Date.now();
+            var s = '/video/playaccess_key' + ak + 'id' + id + 'timestamp' + t + 'x_yl_h5abc';
+            var key = 'MARexyHggm5YDfbc3fCbqnXTziXSYFbL' + t;
+            var sign = window.external.hmacSha256(s, key);
+            api_url = 'https://play.yladm.com/video/play?id=' + id + '&access_key=' + ak + '&x_yl_h5=abc&timestamp=' + t + '&sign=' + encodeURIComponent(sign);
+            data = window.external.getHtmlCode(api_url);
+            jo = JSON.parse(data);
+            var video_url = jo.bitrates[jo.bitrates.length - 1].uri;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

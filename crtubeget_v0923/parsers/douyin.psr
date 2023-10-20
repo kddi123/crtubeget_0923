@@ -1,0 +1,357 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" aria2c="true" unescape="false" delegate="true" date="2023.09.11">
+    <url><![CDATA[(?:v\.douyin\.com/(?<id>\w{6,})/?|douyin\.com/(?:share/video/(?<id>\d+)|(?:video|note|collection)/(?<id>[^\?]+)|.*?modal_id=(?<id>[^&]+)))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <dateTime><![CDATA[date_time=([^,]+)]]></dateTime>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <imageUrl><![CDATA[cr_image_url=([^\$]+)]]></imageUrl>
+    <ckSign><![CDATA[sid_tt]]></ckSign>
+    <exjs><![CDATA[http://www.cr-soft.top/js/xb.js|https://sf1-ttcdn-tos.pstatp.com/obj/rc-web-sdk/acrawler.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //https://www.douyin.com/video/6871581732542450944?previous_page=others_homepage
+            //https://www.douyin.com/video/7006130308504505636
+            //https://www.douyin.com/video/7014860134300126501?
+            //https://www.douyin.com/discover?modal_id=7076365672925629732
+            //https://www.douyin.com/user/MS4wLjABAAAAo8_-HsqUKIymitIzQYwfloCKQFwh5fvahnZMJtvexas?modal_id=7096679722125413645
+            //https://www.douyin.com/collection/7092332201315928076/9
+            //https://www.douyin.com/video/7130453146278628638 片尾去不了
+            //https://v.douyin.com/r4tGBVv/ 下载错误？
+            //https://v.douyin.com/DBj4dA6/点击链接直接打开
+            //ckSign为私密视频所用，aria2c加cookie可下
+            var url = (window.external.url.indexOf('/video/') == -1) ? window.external.getRedirectedUrl(window.external.url) : window.external.url;
+            if (url.indexOf('iesdouyin') != -1 && url.indexOf('/?') != -1)
+                url = url.substring(0, url.indexOf('/?')).replace('iesdouyin.com/share', 'douyin.com');
+            var title = '', thumbnail = '', video_url = '', image_url = '';
+            var duration = 0, date_time = 0;
+            //unescape，为封面
+            //若是主页链接，提示以主页解析
+            if (url.match(/share\/user\/[^\/+]/)) {
+                document.head.innerHTML = '';
+                document.body.innerHTML = '$error=此为用户主页链接。请不要批量下载，而以单条复制然后解析。$';
+                return;
+            }
+
+            //https://v.douyin.com/MtfkyJP/->https://m.ixigua.com/douyin/share/video/7158363275573494306?aweme_type=107&schema_type=1&utm_source=copy&utm_campaign=client_share&utm_medium=android&app=aweme
+            if (url.indexOf('m.ixigua.com/douyin/share/video') != -1) {
+                var vid = url.match(/video\/([^?]+)/)[1];
+                video_url = 'https://www.ixigua.com/' + vid + '#ra$';
+                document.body.innerHTML = 'cr_video_url=' + video_url;
+                return;
+            }
+            //https://v.douyin.com/jw9Ms8q/->https://webcast.amemv.com/douyin/webcast/reflow/episode/7133095438987727908?->https://www.douyin.com/vsdetail/7133095438987727908?enter_from_merge=web_share_link
+            if (url.indexOf('/episode') != -1) {
+                var vid = url.match(/episode\/([^?]+)/)[1];
+                video_url = 'https://www.douyin.com/vsdetail/' + vid + '#ra$';
+                document.body.innerHTML = 'cr_video_url=' + video_url;
+                return;
+            }
+            var cookie = window.external.getCookieEx(url, 'sid_tt', 2500) || window.external.getCookieEx(url, 'ttwid', 2500) || window.external.getCookieEx(window.external.url, 'ttwid', 2500);
+            if (url.indexOf('/collection') != -1) {
+                var html = window.external.getHtmlCodeEx(window.external.url, 'User-Agent: ' + navigator.userAgent + '\r\nCookie: ' + cookie);
+                if (html.indexOf('www.douyin.com/video') != -1) {
+                    title = html.match(/douyin\.com\/video.*?<span>([^<]+)/)[1];
+                    video_url = 'https://' + html.match(/www\.douyin\.com\/video\/[^\"]+/)[0] + '#ra$';
+                    document.body.innerHTML = 'title=\"' + title + '\",cr_video_url=' + video_url;
+                    return;
+                }
+            }
+            //https://v.douyin.com/F2oVSnw/->https://www.ixigua.com/6618538801213997581?previous_page=app_code_link
+            if (url.indexOf('ixigua') != -1) {
+                url = window.external.getRedirectedUrl(url);
+                document.body.innerHTML = 'cr_video_url=' + url + '#ra$';
+                return;
+            }
+            if (url.indexOf('modal_id') != -1) {
+                var vid = url.match(/modal_id=([^/&?]+)/)[1];
+                document.body.innerHTML = 'cr_video_url=https://www.douyin.com/video/' + vid + '#ra$';
+                return;
+            }
+            //有些电脑，无法打开短链接
+            if (url.indexOf('v.douyin') != -1)
+                video_url = url;
+            else if (url.indexOf('/video/') == -1 && url.indexOf('/note/') == -1) {
+                document.head.innerHTML = '';
+                document.body.innerHTML = '$error=抱歉，此链接不被支持。$';
+                return;
+            }
+
+            //xb&sign based ua
+            var ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36';
+            navigator.__defineGetter__('userAgent', function() {
+                return ua;
+            });
+            var data = '';
+            if (!video_url) {
+                var item_id = url.match(/(?:video|note)\/([^\/?]+)/)[1];
+                //参数须全，以求1080p h265源及竖版封面
+                var args = 'app_name=aweme&aid=1128&device_platform=iphone&os_version=12.3.1&device_id=' + Date.now() + '&aweme_id=' + item_id;
+                var api_url = 'https://www.douyin.com/aweme/v1/web/aweme/detail/?' + args;
+                if (window.xb)
+                    api_url += '&X-Bogus=' + window.xb(args);
+                var headers ='User-Agent: ' + ua + '\r\nReferer: ' + url + '\r\nCookie: ' + cookie;
+                data = window.external.getHtmlCodeEx(api_url, headers);
+                if (data.indexOf('aweme_detail\":{') == -1) {
+                    var data2 = data;
+                    args = 'item_ids=' + item_id;
+                    api_url = 'https://www.douyin.com/web/api/v2/aweme/iteminfo/?' + args;
+                    if (window.xb)
+                        api_url += '&X-Bogus=' + window.xb(args);
+                    cookie = cookie || 'douyin.com';
+                    headers = 'Referer: ' + url + '\r\nUser-Agent: ' + ua + '\r\nCookie: ' + cookie + '\r\nAccept: application/json\r\nAccept-Encoding: deflate\r\nAccept-Language: zh-CN';
+                    data = window.external.getHtmlCodeEx(api_url, headers);
+                    //收集错误信息
+                    if (data.indexOf('item_list\":[{') == -1)
+                        data += data2;
+                }
+                if (data.indexOf('aweme_detail\":{') != -1 || data.indexOf('item_list\":[{') != -1) {
+                    var item = (data.indexOf('aweme_detail\":{') != -1) ? JSON.parse(data).aweme_detail : JSON.parse(data).item_list[0];
+                    title = item.desc;
+                    //此为封面，origin_cover为视频第一帧缩略图... https://v.douyin.com/Skxgr4m/
+                    if (item.video.optimized_cover && item.video.optimized_cover.url_list.length != 0)
+                        thumbnail = item.video.optimized_cover.url_list[0];
+                    else {
+                        thumbnail = item.video.cover.url_list[0].replace('-sign', '').replace('_300x400', '');
+                        if (!window.external.urlExists(thumbnail)) {
+                            var domain = thumbnail.match(/https?:\/\/[^/]+/)[0];
+                            thumbnail = thumbnail.replace(domain, 'https://p3-dy-ipv6.byteimg.com/img');
+                            if (!window.external.urlExists(thumbnail))
+                                thumbnail = item.video.cover.url_list[0];
+                        }
+                    }
+                    if (item.duration)
+                        duration = item.duration / 1000;
+                    else if (item.music && item.music.duration)
+                        duration = item.music.duration;
+                    date_time = item.create_time;
+                    //https://www.douyin.com/note/7151333361703849257
+                    if (item.images) {
+                        video_url = item.video.play_addr.uri;
+                        //音乐无效
+                        if (!window.external.urlExists(video_url))
+                            video_url = '';
+                        for (var i = 0; i <= item.images.length - 1; i++) {
+                            var image = '';
+                            for (var j = 0; j <= item.images[i].url_list.length - 1; j++) {
+                                image = item.images[i].url_list[j];
+                                if (image.match(/\.jpe?g/))
+                                    break;
+                            }
+                            if (!video_url && i == 0) {
+                                video_url = image;
+                                continue;
+                            }
+                            if (!image_url)
+                                image_url = image;
+                            else
+                                image_url += '|' + image;
+                        }
+                    }
+                    if (!video_url && item.video.play_addr.url_list.length != 0) {
+                        video_url = item.video.play_addr.url_list[0].replace('playwm', 'play');
+                        //若取到了576的，转720:
+                        if (item.video.play_addr.width && item.video.play_addr.height && Math.min(item.video.play_addr.width, item.video.play_addr.height) < 720)
+                            video_url = 'https://aweme.snssdk.com/aweme/v1/play/?video_id=' + item.video.play_addr.uri + '&ratio=720p&line=0';
+                        //求跳转地址，与1080p比码率，有些1080实为576，没720大
+                        if (video_url.indexOf('play') != -1) {
+                            var r = window.external.getRedirectedUrl(video_url, url, 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6 Mobile/15E148 Safari/604.1');
+                            if (r && r != video_url)
+                                video_url = r;
+                        }
+                        //找1080p视频源...，只判断height为1080，其可能是横屏，做替换
+                        //https://www.douyin.com/video/7063737477034429710 接口可1080，此为替换也不行？
+                        var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                        //尝试求1080p支路...须得判断1080才行，如后面链接，不中：https://www.douyin.com/video/6863660291553627405
+                        var h = Math.min(item.video.width, item.video.height);
+                        if ((vq >= 1080 || vq <= 8) && h > 720) {
+                            var video_1080 = 'https://aweme.snssdk.com/aweme/v1/play/?video_id=' + item.video.play_addr.uri + '&ratio=1080p&line=0';
+                            var r = window.external.getRedirectedUrl(video_1080, url, 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6 Mobile/15E148 Safari/604.1');
+                            if (r && r != video_1080) {
+                                //大码率者
+                                if (video_url.indexOf('br=') != -1 && r.indexOf('br=') != -1) {
+                                    var br1 = parseInt(video_url.match(/br=([^&]+)/)[1]);
+                                    var br2 = parseInt(r.match(/br=([^&]+)/)[1]);
+                                    if (br1 < br2)
+                                        video_url = r;
+                                }
+                                else
+                                    video_url = r;
+                            }
+                        }
+                        //再做尝试
+                        https://www.douyin.com/video/7232242277828021561
+                        if ((vq >= 1080 || vq <= 8) && item.video.height > 1080) {
+                            var video_h = 'https://aweme.snssdk.com/aweme/v1/play/?video_id=' + item.video.play_addr.uri + '&ratio=' + item.video.height + 'p&line=0';
+                            var r = window.external.getRedirectedUrl(video_h, url, 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6 Mobile/15E148 Safari/604.1');
+                            if (r && r != video_h && video_url.indexOf('br=') != -1 && r.indexOf('br=') != -1) {
+                                var br1 = parseInt(video_url.match(/br=([^&]+)/)[1]);
+                                var br2 = parseInt(r.match(/br=([^&]+)/)[1]);
+                                if (br1 < br2)
+                                    video_url = r;
+                                //h265... https://www.douyin.com/video/7275860620627447094
+                                else if (item.video.bit_rate && item.video.bit_rate.length != 0) {
+                                    for (var i = 0; i <= item.video.bit_rate.length - 1; i++) {
+                                        var video = item.video.bit_rate[i];
+                                        if (!video.play_addr)
+                                            continue;
+                                        if (video.play_addr.height == item.video.height) {
+                                            video_url = video.play_addr.url_list[0];
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            //...1
+            if (!video_url) {
+                cookie = getcks(url);
+                headers = 'User-Agent: ' + ua + '\r\nCookie: ' + cookie;
+                var html = window.external.getHtmlCodeEx(url, headers);
+                if (html.indexOf('RENDER_DATA') != -1) {
+                    var text = decodeURIComponent(html.match(/RENDER_DATA[^>]+>(.*?)<\/script>/)[1]);
+                    var jo = JSON.parse(text);
+                    var aweme = undefined;
+                    for (var i = 0; i <= 9; i++) {
+                        if (jo['4' + i] && jo['4' + i].aweme) {
+                            aweme = jo['4' + i].aweme;
+                            break;
+                        }
+                    }
+                    if (aweme) {
+                        var item = aweme.detail;
+                        title = item.desc;
+                        if (!thumbnail || thumbnail.indexOf('-sign.') != -1 && thumbnail.indexOf('~noop') == -1) {
+                            thumbnail = item.video.cover;
+                            var domain = thumbnail.match(/\/\/[^/]+/)[0];
+                            thumbnail = thumbnail.replace(domain, 'https://p3-dy-ipv6.byteimg.com/img').replace('330', '1080');
+                            //复原
+                            if (!window.external.urlExists(thumbnail))
+                                thumbnail = item.video.cover;
+                        }
+                        if (!video_url) {
+                            duration = item.video.duration / 1000;
+                            date_time = item.create_time;
+                            if (!video_url && item.video.playAddr.length != 0) {
+                                //为的是某类长视频求1080p
+                                video_url = item.video.playAddr[0].src;
+                                //找1080p视频源...，只判断height为1080，其可能是横屏，做替换
+                                //https://www.douyin.com/video/7063737477034429710 接口可1080，此为替换也不行？
+                                var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                                //尝试求1080p支路...须得判断1080才行，如后面链接，不中：https://www.douyin.com/video/6863660291553627405
+                                var h = Math.min(item.video.width, item.video.height);
+                                if ((vq >= 1080 || vq <= 8) && h > 720) {
+                                    var video_1080 = 'https://aweme.snssdk.com/aweme/v1/play/?video_id=' + item.video.uri + '&ratio=1080p&line=0';
+                                    var r = window.external.getRedirectedUrl(video_1080, url, 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6 Mobile/15E148 Safari/604.1');
+                                    if (r && r != video_1080) {
+                                        //大码率者
+                                        if (video_url.indexOf('br=') != -1 && r.indexOf('br=') != -1) {
+                                            var br1 = parseInt(video_url.match(/br=([^&]+)/)[1]);
+                                            var br2 = parseInt(r.match(/br=([^&]+)/)[1]);
+                                            if (br1 < br2)
+                                                video_url = r;
+                                        }
+                                        else
+                                            video_url = r;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            //https://www.douyin.com/video/7216611213642353979... 不能直接判断video_url是否存在，会影响：https://v.douyin.com/AaNJFrK/
+            if (video_url && video_url.indexOf('ratio=') != -1) {
+                var r = window.external.getRedirectedUrl(video_url, url, 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6 Mobile/15E148 Safari/604.1');
+                if (r == video_url && !window.external.urlExists(video_url))
+                    video_url = '';
+            }
+            //置后判断，以使可能解析到私密视频
+            if (!video_url) {
+                //deleted... https://www.douyin.com/video/7199424820570819898
+                if (data.indexOf('抱歉，作品不见了') != -1 || data.indexOf('作品暂时无法查看') != -1) {
+                    title = '你要下载的视频不存在';
+                    var err = (data.indexOf('抱歉，作品不见了') != -1) ? '你要下载的视频不存在……抱歉，作品不见了。' : '作品暂时无法查看';
+                    document.body.innerHTML = 'title=\"' + title + '\"$error=' + err + '$';
+                    return;
+                }
+                //https://www.douyin.com/video/7144911623373819139...
+                if (data.indexOf('私密帐号作品无法查看') != -1) {
+                    title = '你要下载的视频不存在';
+                    document.body.innerHTML = 'title=\"' + title + '\"$error=私密帐号作品无法查看$';
+                    return;
+                }
+            }
+            if (video_url.indexOf('v.douyin') != -1)
+                video_url = '';
+            //某些用户电脑上，硬解地址不能下载... 重启电脑解决，还是保留判断吧
+            if (video_url && (fv[0] != '1' || em) && !window.external.urlExists(video_url))
+                video_url = ''
+            if (!video_url && (fv[0] != '1' || em)) {
+                if (url.indexOf('?') != -1)
+                    url = url.substring(0, url.indexOf('?'));
+                data = gvd(url);
+                var jo = JSON.parse(data);
+                if (jo.body && (jo.body.video_url || jo.body.music)) {
+                    title = jo.body.title;
+                    thumbnail = thumbnail || jo.body.cover_url;
+                    if (!duration && jo.body.duration)
+                        duration = jo.body.duration / 1000;
+                    video_url = jo.body.video_url || jo.body.music.url;
+                    if (jo.body.images) {
+                        //音乐无效
+                        if (!window.external.urlExists(video_url))
+                            video_url = '';
+                        for (var i = 0; i <= jo.body.images.length - 1; i++) {
+                            var image = jo.body.images[i];
+                            if (!video_url && i == 0) {
+                                video_url = image;
+                                continue;
+                            }
+                            if (!image_url)
+                                image_url = image;
+                            else
+                                image_url += '|' + image;
+                        }
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+
+            title = title.replace('版本过低，升级后可展示全部信息', '');
+            var html = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',date_time=' + date_time + ',cr_video_url=' + video_url + '$cr_image_url=' + image_url + '$';
+            if (typeof(window.external.receive) != 'undefined')
+                window.external.receive(html);
+            else
+                document.body.innerHTML = html;
+
+            //...
+            function getcks(url) {
+                try {
+                    window.byted_acrawler.init({
+                        aid: 99999999,
+                        dfp: 0
+                    });
+
+                    var h = window.external.getHeaders(url, 'GET', '', navigator.userAgent);
+                    if (h.indexOf('__ac_nonce') != -1) {
+                        var an = h.match(/__ac_nonce=([^;]+)/)[1];
+                        var as = window.byted_acrawler.sign('', an);
+                        return '__ac_nonce=' + an + ';__ac_signature=' + as;
+                    }
+                    return window.external.getCookieEx(url, '__ac_nonce');
+                }
+                catch (ex) {
+                    return window.external.getCookieEx(url, '__ac_nonce');
+                }
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

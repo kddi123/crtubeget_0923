@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" delegate="true" date="2023.07.13">
+    <url><![CDATA[https?://(?:\w+\.)?meiyouad\.com/vplay/(?<id>\d+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <exjs><![CDATA[http://www.cr-soft.net/js/pako.es5.min.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //https://www.meiyouad.com/vplay/3682834.html
+            //https://www.meiyouad.com/vplay/4636465.html
+            var title = document.title, thumbnail = '', video_url = '';
+            var url = window.external.url;
+            var id = url.match(/vplay\/([^.]+)/)[1];
+            var api_url = 'https://ip880110127.mobgslb.tbcache.com/video/get_album';
+            var t = window.external.getCookieEx(url, 'token', 500, true, true);
+            if (t) {
+                t = t.replace('token=', '');
+                var headers = 'Content-Type: application/x-www-form-urlencoded\r\ntoken: ' + t;
+                var args = 'id=' + id;
+                var data = window.external.getPostResultEx(api_url, args, headers);
+                if (data.indexOf('\"vid\":') != -1) {
+                    var jo = JSON.parse(data);
+                    title = jo.video.title;
+                    thumbnail = jo.album.pic;
+                    video_url = jo.album.url;
+                    var vid = jo.video.vid;
+                    api_url = 'https://ip880110127.mobgslb.tbcache.com/?code=' + vid + 'g3&lang=&token=ok&sign=fast';
+                    data = window.external.getHtmlCode(api_url, url);
+                    if (data.indexOf('m3u8') != -1) {
+                        jo = JSON.parse(data);
+                        data = decrypt(jo.m3u8, jo.id);
+                        data = data.replace(/d::/g, atob(jo.base));
+                        video_url = window.external.saveData(data);
+                    }
+                }
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+
+            //...
+            function decrypt(data, id) {
+                var s = '', id_m = id % 2 ? -1 : 1, id_0 = id[0];
+                for (var i = data.length - 1; i >= 0; i--)
+                    s += String.fromCharCode((data.charCodeAt(i) ^ id_0) + id_m);
+                data = atob(s), s = [];
+                for (var i = 0, j = data.length; i < j; ++i)
+                    s.push(data.charCodeAt(i));
+                data = new Uint8Array(s);
+                return pako.ungzip(data, {to: 'string'});
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

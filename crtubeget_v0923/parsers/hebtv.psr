@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" referer="true" date="2022.04.12">
+    <url><![CDATA[https?://(?:\w+\.)?hebtv\.com/.*/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.hebtv.com/tv/nmpd/fcbz/2022-04-11/Ojg4fpfTqW1QQ7hG.html
+            var title = (document.getElementsByClassName('video_tv_brief').length != 0) ? document.getElementsByClassName('video_tv_brief')[0].firstElementChild.innerText : document.title;
+            var thumbnail = (document.getElementsByClassName('index_pic').length != 0) ? document.getElementsByClassName('index_pic')[0].value : '';
+            var video_url = (document.getElementsByClassName('m3u8').length != 0) ? document.getElementsByClassName('m3u8')[0].value : window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2021.06.25">
+    <url><![CDATA[(?:new.3qtt.cn/(?<id>\w+)|qktoutiao\.com/detail/.*/(?<id>[^.]+)\.html?|(?:share/)?detail/.*?content_id=(?<id>\d+))]]></url>
+    <title><![CDATA[<title>(.+?)</title>]]></title>
+    <thumbnail><![CDATA[(?is)cover_image.*?url":"([^"]+)]]></thumbnail>
+    <duration><![CDATA[duration":"([^"]*)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://html2.qktoutiao.com/detail/2019/12/24/1472042039.html?content_id=1472042039
+            //http://html2.qktoutiao.com/detail/2021/06/25/1630679789.html?content_id=1630679789
+            //http://art.xmsyhmy.cn/share/detail/video_out.html?content_id=1465139403&key=...
+            //http://art.session123.cn/share/detail/video_out.html?content_id=1481165795&key=...
+            //http://new.3qtt.cn/1iJazA
+            var url = decodeURIComponent(window.location.href);
+            var data = document.body.innerHTML;
+            if (url.indexOf('jsonp=') != -1) {
+                var json_url = 'http:' + url.substring(url.indexOf('jsonp=') + 6, url.lastIndexOf('.js') + 3);
+                data = window.external.getHtmlCode(json_url);
+                data = data.substring(3, data.length - 1);
+                var jo = JSON.parse(data);
+                jo = JSON.parse(jo.detail.replace(/\\/g, ''));
+                data = JSON.stringify(jo);
+            }
+
+            var file_id = data.match(/file_id\":\"([^\"]+)/)[1];
+            var api_url = 'http://mpapi.qutoutiao.net/video/getAddressByFileId?file_id=' + file_id;
+            data = window.external.getHtmlCode(api_url);
+            var jo = JSON.parse(data);
+            var video_url = jo.data.hd.url || jo.data.sd.url;
+            document.body.innerHTML = data + 'cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

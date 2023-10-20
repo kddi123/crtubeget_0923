@@ -1,0 +1,264 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" referer="true" date="2021.12.03">
+    <url><![CDATA[ximalaya\.com/(?:sound/(?<id>\d+)|.*?/\d+/(?<id>\d+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[1&_token]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //m4a https://www.ximalaya.com/lishi/34094526/259133240
+            //mv https://www.ximalaya.com/yinyue/14254905/298612780
+            //vip https://www.ximalaya.com/lishi/51524656/441992351 https://mobile.ximalaya.com/mobile-playpage/track/v3/baseInfo/1630564655788?device=web&trackId=441992351?
+            //https://www.ximalaya.com/youshengshu/45410971/373606026 试听
+            //2021.12.02改版，为：
+            //https://www.ximalaya.com/sound/3573540
+            var title = document.getElementsByTagName('h1').length != 0 ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            var thumbnail = '', duration = 0, video_url = '', audio_url = '', err = '';
+            var url = window.external.url;
+            var cookie = window.external.getCookieEx(url, '1&_token', 2500) || document.cookie;
+            var headers = 'Cookie: ' + cookie + '\r\nReferer: ' + url;
+            var tid = window.location.href.match(/(\d+)$/)[1];
+            var api_url = 'https://www.ximalaya.com/revision/track/simple?trackId=' + tid;
+            var data = window.external.getHtmlCodeEx(api_url, headers);
+            var jo = JSON.parse(data);
+            if (jo.data && jo.data.trackInfo) {
+                var ti = jo.data.trackInfo;
+                title = ti.title || title;
+                thumbnail = ti.coverPath;
+                duration = ti.duration;
+            }
+            //audio
+            api_url = 'https://www.ximalaya.com/revision/play/v1/audio?id=' + tid + '&ptype=1';
+            data = window.external.getHtmlCodeEx(api_url, headers);
+            if (data.indexOf('src\":\"') == -1) {
+                api_url = 'http://www.ximalaya.com/revision/play/tracks?trackIds=' + tid;
+                data = window.external.getHtmlCodeEx(api_url, headers);
+            }
+            if (data.indexOf('src\":\"') != -1)
+                audio_url = data.match(/src\":\"([^\"]+)/)[1];
+            //试听类
+            else {
+                api_url = 'http://mobile.ximalaya.com/v1/track/baseInfo?device=android&trackId=' + tid;
+                data = window.external.getHtmlCodeEx(api_url, headers);
+                jo = JSON.parse(data);
+                audio_url = jo.downloadUrl || '';
+                if (!jo.isFree)
+                    err = '此为vip视频，不被支持';
+            }
+            //video
+            if (!audio_url)
+                video_url = getVideoUrl(tid);
+            video_url = video_url || audio_url;
+            var html = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$error=' + err + '$';
+            //有些用户机子crpj不退出？
+            if (typeof(window.external.receive) != 'undefined')
+                window.external.receive(html);
+            else {
+                document.head.innerHTML = '';
+                //为&time转义计
+                document.body.innerText = html;
+            }
+
+            //...
+            function getVideoUrl(tid) {
+                try {
+                    //video...
+                    var api_url = 'https://mpay.ximalaya.com/mobile/track/pay/video/' + tid + '/' + Date.now() + '?device=pc&isBackend=false&isDownload=true&videoQualityLevel=1&_=' + Date.now();
+                    var data = window.external.getHtmlCode(api_url, window.location.href, 200);
+                    //audio...
+                    if (data.indexOf('seed') == -1) {
+                        api_url = 'https://mpay.ximalaya.com/mobile/track/pay/' + tid + '/?device=pc';
+                        data = window.external.getHtmlCode(api_url, window.location.href, 200);
+                    }
+                    if (data.indexOf('seed') == -1)
+                        return '';
+
+                    var jo = JSON.parse(data);
+                    var e = {}, t = {}, n = function(){};
+                    x(e, t, n);
+                    var fn = t.getEncryptedFileName(jo.seed, jo.fileId);
+                    var p = t.getEncryptedFileParams(jo.ep);
+                    p.duration = jo.duration;
+                    p = stringify(p).replace('×', '&times');
+                    var domain = jo.domain.indexOf('audio.pay.xmcdn.com') > -1 ? 'https://vod.xmcdn.com' : jo.domain;
+                    if (domain.indexOf('http:') != -1)
+                        domain = domain.replace('http:', 'https:');
+                    if (fn.indexOf('_preview') != -1)
+                        fn = fn.replace(/_preview[^.]+/, '');
+                    return domain + '/download/' + jo.apiVersion + fn + '?' + p;
+                }
+                catch (ex) {
+                    return '';
+                }
+            }
+
+            function stringify(p) {
+                var e = [];
+                for (var n in p)
+                    if (p.hasOwnProperty(n)) {
+                        var r = encodeURIComponent(p[n])
+                          , o = encodeURIComponent(n);
+                        e.push(''.concat(o, '=').concat(r))
+                    }
+                return e.join('&')
+            }
+
+            function x(e, t, n) {
+                function o(e, t) {
+                    return function(e) {
+                        if (Array.isArray(e))
+                            return e
+                    }(e) || function(e, t) {
+                        if (!(Symbol.iterator in Object(e) || '[object Arguments]' === Object.prototype.toString.call(e)))
+                            return;
+                        var n = []
+                          , o = !0
+                          , r = !1
+                          , a = void 0;
+                        try {
+                            for (var i, u = e[Symbol.iterator](); !(o = (i = u.next()).done) && (n.push(i.value),
+                            !t || n.length !== t); o = !0)
+                                ;
+                        } catch (e) {
+                            r = !0,
+                            a = e
+                        } finally {
+                            try {
+                                o || null == u.return || u.return()
+                            } finally {
+                                if (r)
+                                    throw a
+                            }
+                        }
+                        return n
+                    }(e, t) || function() {
+                        throw new TypeError('Invalid attempt to destructure non-iterable instance')
+                    }()
+                }
+                function r(e, t) {
+                    for (var n, o = [], r = 0, a = '', i = 0; 256 > i; i++)
+                        o[i] = i;
+                    for (i = 0; 256 > i; i++)
+                        r = (r + o[i] + e.charCodeAt(i % e.length)) % 256,
+                        n = o[i],
+                        o[i] = o[r],
+                        o[r] = n;
+                    for (var u = r = i = 0; u < t.length; u++)
+                        r = (r + o[i = (i + 1) % 256]) % 256,
+                        n = o[i],
+                        o[i] = o[r],
+                        o[r] = n,
+                        a += String.fromCharCode(t.charCodeAt(u) ^ o[(o[i] + o[r]) % 256]);
+                    return a
+                }
+                function a(e) {
+                    this._randomSeed = e,
+                    this.cg_hun()
+                }
+                Object.defineProperty(t, '__esModule', {
+                    value: !0
+                }),
+                t.getEncryptedFileParams = t.getEncryptedFileName = void 0,
+                a.prototype = {
+                    cg_hun: function() {
+                        this._cgStr = '';
+                        var e = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/\\:._-1234567890'
+                          , t = e.length
+                          , n = 0;
+                        for (n = 0; n < t; n++) {
+                            var o = this.ran() * e.length
+                              , r = parseInt(o);
+                            this._cgStr += e.charAt(r),
+                            e = e.split(e.charAt(r)).join('')
+                        }
+                    },
+                    cg_fun: function(e) {
+                        e = e.split('*');
+                        var t = ''
+                          , n = 0;
+                        for (n = 0; n < e.length - 1; n++)
+                            t += this._cgStr.charAt(e[n]);
+                        return t
+                    },
+                    ran: function() {
+                        return this._randomSeed = (211 * this._randomSeed + 30031) % 65536,
+                        this._randomSeed / 65536
+                    },
+                    cg_decode: function(e) {
+                        var t = ''
+                          , n = 0;
+                        for (n = 0; n < e.length; n++) {
+                            var o = e.charAt(n)
+                              , r = this._cgStr.indexOf(o);
+                            -1 !== r && (t += r + '*')
+                        }
+                        return t
+                    }
+                };
+                t.getEncryptedFileName = function(e, t) {
+                    var n = new a(e).cg_fun(t);
+                    return '/' === n[0] ? n : '/'.concat(n)
+                }
+                ;
+                var i = 'g3utf1k6yxdwi0'
+                  , u = [19, 1, 4, 7, 30, 14, 28, 8, 24, 17, 6, 35, 34, 16, 9, 10, 13, 22, 32, 29, 31, 21, 18, 3, 2, 23, 25, 27, 11, 20, 5, 15, 12, 0, 33, 26];
+                t.getEncryptedFileParams = function(e) {
+                    var t = o(r(function(e, t) {
+                        for (var n = [], o = 0; o < e.length; o++) {
+                            for (var r = 'a' <= e[o] && 'z' >= e[o] ? e[o].charCodeAt() - 97 : e[o].charCodeAt() - 48 + 26, a = 0; 36 > a; a++)
+                                if (t[a] == r) {
+                                    r = a;
+                                    break
+                                }
+                            n[o] = 25 < r ? String.fromCharCode(r - 26 + 48) : String.fromCharCode(r + 97)
+                        }
+                        return n.join('')
+                    }('d' + i + '9', u), function(e) {
+                        if (!e)
+                            return '';
+                        var t, n, o, r, a, i = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1];
+                        for (r = (e = e.toString()).length,
+                        o = 0,
+                        a = ''; o < r; ) {
+                            do {
+                                t = i[255 & e.charCodeAt(o++)]
+                            } while (o < r && -1 == t);if (-1 == t)
+                                break;
+                            do {
+                                n = i[255 & e.charCodeAt(o++)]
+                            } while (o < r && -1 == n);if (-1 == n)
+                                break;
+                            a += String.fromCharCode(t << 2 | (48 & n) >> 4);
+                            do {
+                                if (61 == (t = 255 & e.charCodeAt(o++)))
+                                    return a;
+                                t = i[t]
+                            } while (o < r && -1 == t);if (-1 == t)
+                                break;
+                            a += String.fromCharCode((15 & n) << 4 | (60 & t) >> 2);
+                            do {
+                                if (61 == (n = 255 & e.charCodeAt(o++)))
+                                    return a;
+                                n = i[n]
+                            } while (o < r && -1 == n);if (-1 == n)
+                                break;
+                            a += String.fromCharCode((3 & t) << 6 | n)
+                        }
+                        return a
+                    }(e)).split('-'), 4)
+                      , n = t[0];
+                    return {
+                        sign: t[1],
+                        buy_key: n,
+                        token: t[2],
+                        timestamp: t[3]
+                    }
+                }
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

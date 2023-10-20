@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" delegate="true" date="2023.07.03">
+    <url><![CDATA[https?://(?:\w+\.)?kuke99\.com/course\?id=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^$]+)]]></mediaUrl>
+    <ckSign><![CDATA[access_token]]></ckSign>
+    <exjs><![CDATA[http://www.cr-soft.net/js/aes.js|https://npmcdn.com/jsencrypt@2.3.1/bin/jsencrypt.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //列表之虚拟页...少部分可下，v1103加密不可解
+            //https://www.kuke99.com/course?id=415630&type=3
+            var url = window.external.url;
+            //token
+            var cookie = window.external.getCookieEx(url, 'access_token', 2500);
+            var headers = 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8\r\nReferer: ' + url + '\r\nCookie: ' + cookie;
+            api_url = 'https://www.kuke99.com/lesson/play_info';
+            var id = url.match(/id=([^&]+)/)[1];
+            var type = url.match(/type=([^&]+)/)[1];
+            args = 'node_id=' + id + '&goods_type=' + type;
+            data = dpi(window.external.getPostResultEx(api_url, args, headers));
+            jo = JSON.parse(data);
+            var thumbnail = jo.cdn_goods_img;
+            var vid = jo.video_id
+            var token = jo.playsafe;
+
+            var api_url = 'https://player.polyv.net/secure/' + vid + '.js';
+            var data = window.external.getHtmlCodeEx(api_url, 'Referer: ' + url + '\r\nCookie: ' + cookie);
+            var jo = JSON.parse(data);
+            //var sc = jo.seed_const.toString();
+            var duration = jo.duration;
+            var video_url = jo.hls[jo.hls.length - 1];
+
+            data = window.external.getHtmlCode(video_url, url);
+            var key_url = data.match(/URI=\"([^\"]+)/)[1] +  '?token=' + token;
+            var kd = window.external.getHtmlCode(key_url, url);
+            data = data.replace(/URI=\"[^\"]+/, 'URI=\"' + key_url);
+            video_url = window.external.saveData(data);
+            document.body.innerHTML = 'title=\"' + url + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+
+            //...
+            function dpi(data) {
+                var private_key = '-----BEGIN PRIVATE KEY-----' + 'MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAPbm41E9lg04G9XL' + 'WcV5LJDDejb+rkwnPJr2IygmQIYLuLKHU0MAijEmaamL070bF7+iJeqDt5N/mZ7T' + '85i3Ykky9SaMuC9TbsdjokYink6ngscCev76ReF8NLK5y1vzMI5M5RpEXK339D9w' + 't9Q/DEYjVa605EQ5Xv3it5ONBVk7AgMBAAECgYBWY7U4ENd26qH6rXtMuDhasrsJ' + 'kRVFehkfk237t16uSF2oweblM8QmrG0eMNm2ektV9xNTOiE6j9QdmcXLMqdFi4lu' + 'XKTRFe9Qx97+EWmu3paxX6ZXpok0aSVIzGp6u+u5D+KJnJ3rFMx5EzlCqX18IcLN' + 'wdxtGSJ+kJPPhiPeWQJBAPzzJB75NiQTEfcPfDoM13fYEVYZBOpghnBNOPaA0qYQ' + 'Q91mYuLW/Rm0sTI5H6ZC8JW1bUyUitQqD9Mjtt/lpKcCQQD54RO4hR0f27TO2hrD' + 'puLQiGGJxxinEXngmkzPHy9kyd7518PzJlT+AOH89X2sT37NGtRiYZ7UgSY/guRH' + 'ifVNAkEAteTF6bv9kc1g0s+A3mGTo+ts9APDxCKrKiBtwNz8HUx+8LuKimJc2NpV' + 'va7UMoPaa11ufm4mstCYVpVNEQ4a6wJAXM2vGVS24GIk4L44Onn8ux4ru5PqIAJp' + 'lXU5GaOnYnNnELuF1wRhhISnad9y8VAE9AAG6RMAfkQJBIWEat1d8QJBAPb/oHbl' + 'onkrpwIrUX8yVvCDSr9JJF4ei8xfMSGXtElJuSKLrqh5cSGWphpu+T8+6MJfgSrz' + '8c7aTkk7cvRs/8g=' + '-----END PRIVATE KEY-----';
+                var decrypt = new JSEncrypt();
+                decrypt.setPrivateKey(private_key);
+                var jo = JSON.parse(data);
+                var s = jo.data.sdk_string;
+                var e = decrypt.decrypt(jo.data.key);
+                var t = jo.data.iv;
+                var l = CryptoJS;
+                var e = l.enc.Utf8.parse(e);
+                var t = l.enc.Utf8.parse(t);
+                var k = l.AES.decrypt(s, e, {
+                    iv: t,
+                    mode: l.mode.CBC,
+                    padding: l.pad.Pkcs7
+                });
+                return k.toString(l.enc.Utf8);
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

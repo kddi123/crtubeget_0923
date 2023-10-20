@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" date="2020.03.21">
+    <url><![CDATA[https?://vc\.bilibili\.com/video/(?<id>\d+)]]></url>
+    <title><![CDATA["description":"([^"]+)"]]></title>
+    <thumbnail><![CDATA["first_pic":"([^"]+)"]]></thumbnail>
+    <duration><![CDATA["video_time":([^,]+)]]></duration>
+    <mediaUrl><![CDATA["video_playurl":"([^"]+)"]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://vc.bilibili.com/video/2889567
+            //https://vc.bilibili.com/video/2702757
+            var vid = window.location.href.match(/video\/(\d+)/)[1];
+            var api_url = 'https://api.vc.bilibili.com/clip/v1/video/detail?video_id=' + vid;
+            document.body.innerHTML = window.external.getHtmlCode(api_url, window.location.href);
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

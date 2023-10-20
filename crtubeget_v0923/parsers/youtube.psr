@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" referer="true" delegate="true" date="2023.06.03">
+    <url><![CDATA[https?://(?:www\.)?youtu(?:be)?\.(?:com|be)/(?:watch\?v=)?(?<id>[^&?]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <subtitle><![CDATA[subtitle=([^,]+)]]></subtitle>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.youtube.com/embed/7N_OGczL5CI -> https://www.youtube.com/watch?v=7N_OGczL5CI&t=2s
+            var title = '', thumbnail = '', duration = '', subtitle = '', video_url = '';
+            var api_url = 'https://10downloader.com/download?v=' + encodeURIComponent(url);
+            var data = window.external.getHtmlCode(api_url);
+            if (data.indexOf('<title>Download video:') != -1) {
+                title = data.match(/class=\"title\">([^<]+)/)[1];
+                thumbnail = data.match(/https:\/\/i\.ytimg\.com[^\"]+/)[0];
+                duration = data.match(/Duration:\s*<[^>]+>([^<]+)/)[1].trim();
+                video_url = data.match(/downloadBtn[^>]+href=\"([^\"]+)/)[1].replace('&amp;', '&');
+            }
+
+            //subtitle
+            if (video_url && window.external.sub_lang) {
+                var api_url = 'https://downsub.com/?url=' + encodeURIComponent(window.location.href);
+                data = window.external.getHtmlCode(api_url);
+                if (data.indexOf('context=') != -1) {
+                    var ct = atob(data.match(/context='([^\']+)/)[1]);
+                    var jo = JSON.parse(ct);
+                    if (jo.id) {
+                        data = window.external.getHtmlCode('https://get-info.downsub.com/' + jo.id, api_url);
+                        if (data) {
+                            var lang = window.external.sub_lang;
+                            if (lang == 'Default' || lang == 'All') {
+                                lang = navigator.language;
+                                lang = lang.replace('zh-CN', 'zh-Hans').replace('zh-TW', 'zh-Hant').replace('zh-HK', 'zh-Hant');
+                            }
+
+                            jo = JSON.parse(data);
+                            for (let i in jo.subtitles) {
+                                //default->en
+                                var sub_code = jo.subtitles[i].code;
+                                sub_code = sub_code.replace('zh-CN', 'zh-Hans').replace('zh-TW', 'zh-Hant').replace('zh-HK', 'zh-Hant');
+                                if (!subtitle && sub_code == 'en')
+                                    subtitle = jo.subtitles[i].url;
+                                if (lang.indexOf(sub_code) != -1) {
+                                    subtitle = jo.subtitles[i].url;
+                                    break;
+                                }
+                            }
+                            if (!subtitle && jo.subtitlesAutoTrans.length != 0) {
+                                for (let i in jo.subtitlesAutoTrans) {
+                                    var sub_name = jo.subtitlesAutoTrans[i].name;
+                                    var sub_code = sub_name.replace('English', 'en').replace('Chinese Simplified', 'zh-Hans').replace('Chinese Traditional', 'zh-Hant');
+                                    if (lang.indexOf(sub_code) != -1) {
+                                        subtitle = jo.subtitlesAutoTrans[i].url;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (subtitle)
+                                subtitle = 'https://subtitle.downsub.com/?title=' + lang + '&url=' + subtitle;
+                        }
+                    }
+                }
+            }
+
+            title = title.replace(/,/g, '_');
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',subtitle=' + subtitle + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

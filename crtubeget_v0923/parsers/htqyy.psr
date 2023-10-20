@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" referer="true" date="2021.08.27">
+    <url><![CDATA[https?://(?:\w+\.)?htqyy\.com/.*?play/(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.htqyy.com/play/329
+            //http://www.htqyy.com/gedan/play/286
+            var title = window.bdText;
+            if (!title && document.getElementsByTagName('h1').length != 0)
+                title = document.getElementsByTagName('h1')[0].innerText;
+            var thumbnail = window.imgUrl;
+            if (window._bd_share_config) {
+                var bc = window._bd_share_config.common;
+                thumbnail = bc.bdPic;
+            }
+            document.body.innerText = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + mp3 + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

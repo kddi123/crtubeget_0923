@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2023.02.25">
+    <url><![CDATA[https?://(?:\w+\.)?91porny\.com/videos?/.*/(?<id>[^/?]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <ckSign><![CDATA[CLOUDFLAREID]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://91porny.com/video/viewhd/49313859949854c4f602
+            //https://91porny.com/videos/view/116297/av-101618-774-best23/
+            var url = window.external.url;
+            var cookie = window.external.getCookieEx(url, 'CLOUDFLAREID', 2500) || window.external.getCookieEx(url, 'auto', 2500) || window.external.getCookieEx(url, 'PHPSESSID', 2500) || window.external.getCookie(url);
+            var headers = 'Cookie: ' + cookie + '\r\nReferer: ' + url + '\r\nUser-Agent: ' + navigator.userAgent;
+            var html = window.external.getHtmlCodeEx(url, headers, 0, true, true);
+            var title = (html.indexOf('og:title') != -1) ? html.match(/og:title\"\s*content=\"([^\"]+)/)[1] : html.match(/<title>([^<]+)/)[1];
+            var thumbnail = (html.indexOf('og:image') != -1) ? html.match(/og:image\"\s*content=\"([^\"]+)/)[1] : '';
+            var duration = (html.indexOf('video:duration') != -1) ? html.match(/video:duration\"\s*content=\"([^\"]+)/)[1] : 0;
+            var video_url = html.match(/<video[^>]+data-src=\"([^\"]+)/) ? html.match(/<video[^>]+data-src=\"([^\"]+)/)[1] : url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

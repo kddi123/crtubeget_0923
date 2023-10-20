@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2020.12.27">
+    <url><![CDATA[https?://(?:www\.)?tingdegang\.com/[^/]+/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[description\s+content=([^>]+)>]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.tingdegang.com/guodegang/3560.html
+            var video_url = '';
+            for (var i = 0; i <= document.getElementsByTagName('iframe').length - 1; i++) {
+                var src = document.getElementsByTagName('iframe')[i].src;
+                if (src.indexOf('url=') != -1) {
+                    video_url = src.substring(src.indexOf('url=') + 4) + '#ra';
+                    break;
+                }
+            }
+            if (!video_url)
+                video_url = window.location.href
+            document.body.innerHTML = 'cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

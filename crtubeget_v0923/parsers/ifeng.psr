@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2023.04.03">
+    <url><![CDATA[ifeng\.com/detail/(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://live.house.ifeng.com/detail/17685
+            //https://v.ifeng.com/c/8LYJO5wUt7z crpj支持，不特别解析
+            var url = window.external.url;
+            var host = url.match(/(https?:\/\/[^\/]+)/)[1];
+            var id= url.match(/detail\/(\d+)/)[1];
+            var api_url = host + '/api/live/detail?liveId=' + id;
+            var data = window.external.getHtmlCode(api_url, url);
+            var jo = JSON.parse(data);
+            var item = jo.data.qcLive;
+            document.body.innerHTML = 'title=\"' + item.name + '\",thumbnail=' + item.imgUrl + ',cr_video_url=' + item.videoUrl + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

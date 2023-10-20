@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2020.09.08">
+    <url><![CDATA[https?://(?:www\.)?wxtv\.net/vodplay/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[<h3[^>]+>([^<]+)</h3>]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            var video_url = window.location.href;
+            var thumbnail = 'https://www.wxtv.net' + document.body.innerHTML.match(/data-original=\"([^\"]+)/)[1];
+            var len = document.getElementsByTagName('iframe').length;
+            for (var i = 0; i <= len - 1; i++) {
+                 var src = document.getElementsByTagName('iframe')[i].src;
+                 if (src.indexOf('url=') != -1) {
+                     video_url = src.substr(src.indexOf('url=') + 4);
+                     break;
+                 }
+            }
+            document.body.innerHTML = 'thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

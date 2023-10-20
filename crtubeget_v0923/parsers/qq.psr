@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" speed="8M" delegate="true" date="2023.10.07">
+    <url><![CDATA[v\.qq\.com/.*?(?:/(?<id>\w{11,})\.html?|vid=(?<id>[^&]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[main_login]]></ckSign>
+    <exjs><![CDATA[http://www.cr-soft.net/js/jx.js|http://www.cr-soft.net/js/ckey81.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //2023.09.21, ckey 8.1及以下限速
+            //有些电脑上IE打不开了，会跳到此页：https://v.qq.com/ie-compatible/index.html?vid=j32493qlrvr
+            //https://v.qq.com/x/cover/mzc00200i3mfmyf/f0042phf762.html 此种为体育vip加密视频，不支持
+            //https://v.qq.com/x/cover/mzc00200kf65gbf/d0045x6p68u.html 下不了
+            //https://v.qq.com/x/cover/mzc002000pcdwox/u00445z1gcx.html 4k
+            //https://v.qq.com/x/cover/i43tfclvbhiy0kn/a0030h7pjsj.html?start=561&cut_vid=d0037xunta8&scene_id=3 去除vid之影响
+            //https://v.qq.com/x/cover/w9gk2xdkyvez6yp/r00130kb7db.html 加密源，不中
+            //清风的手呀试探她的等待
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var url = window.external.url;
+            //https://m.v.qq.com/z/msite/play-short/index.html?cid=&vid=t08695so5rh&qqVersion=0&second_share=1
+            //https://v.qq.com/txp/iframe/player.html?vid=j3153vs690e&ad=0&autoplay=true
+            if (url.match(/[?&]vid=([^&]+)/)) {
+                var vid = url.match(/[?&]vid=([^&]+)/)[1];
+                video_url = 'https://v.qq.com/x/page/' + vid + '.html#ra';
+                document.head.innerHTML = '';
+                document.body.innerHTML = 'title=\"' + video_url + '\",cr_video_url=' + video_url + '$';
+                return;
+            }
+            //跳转http://m.v.qq.com/x/cover/x/mzc002006uaums6/w3344st1uzy.html?&url_from=share&second_share=0&share_from=copy
+            if (url.indexOf('m.v.qq') != -1) {
+                video_url = url.replace('m.v.qq.com/x/cover/x', 'v.qq.com/x/cover') + '#ra';
+                document.head.innerHTML = '';
+                document.body.innerHTML = 'title=\"' + video_url + '\",cr_video_url=' + video_url + '$';
+                return;
+            }
+
+            var html = window.external.getHtmlCode(url, 'https://v.qq.com/');
+            var vi = undefined;
+            //避免currentVideoInfo\":undefined
+            if (html.match(/currentVideoInfo\":(\{.*?),\"nextVideoInfo/)) {
+                var js = html.match(/currentVideoInfo\":(.*?),\"nextVideoInfo/)[1];
+                js = js.replace(/,?\"[^\"]*\":undefined/g, '').replace('{,', '{').replace(',}', '}');
+                vi = JSON.parse(js);
+            }
+            //https://v.qq.com/x/page/p33121e41m5.html
+            //https://v.qq.com/x/cover/1o5k7k9g9muxvpd/e0024b0wjjt.html?n_version=2021
+            //https://v.qq.com/x/cover/mzc00200gcwwgog.html
+            if (!vi && html.indexOf('currentVid') != -1) {
+                vi = {};
+                vi.vid = url.match(/\/(\w+)\.html/)[1];
+                //https://v.qq.com/x/cover/mzc002000li3fi0.html -> https://v.qq.com/x/cover/mzc002000li3fi0/f0041jaxwoi.html
+                if (html.match(/currentVid\":\"([^\"]+)/))
+                    vi.vid = html.match(/currentVid\":\"([^\"]+)/)[1];
+                else if (html.match(/\"vid\":\"([^\"]+)/))
+                    vi.vid = html.match(/\"vid\":\"([^\"]+)/)[1];
+                vi.title = (html.indexOf('videoInfo\":{\"') != -1) ? html.match(/videoInfo.*?title\":\"([^\"]+)/)[1] : (html.indexOf('coverInfo\":{\"') != -1) ? html.match(/coverInfo.*?\"title\":\"([^\"]+)/)[1] : html.match(/<title>([^<]+)/)[1].replace('腾讯视频_', '');
+            }
+            if (!vi || html.indexOf('那条视频不见了') != -1) {
+                var title = (html.indexOf('那条视频不见了') != -1) ? 'Sorry, 那条视频不见了' : url;
+                document.body.innerHTML = 'title=\"' + title + '\",cr_video_url=' + url + '$' + html;
+                return;
+            }
+
+            //https://v.qq.com/x/page/f0909o8f3mv.html
+            title = vi.title;
+            duration = vi.duration;
+            var vid = vi.vid;
+            thumbnail = 'http://puui.qpic.cn/qqvideo_ori/0/' + vid + '_1280_720/0';
+            //http://puui.qpic.cn/qqvideo_ori/0/z0373iic4t9_1280_720/0
+            if (!window.external.urlExists(thumbnail, 12000, 5*1024)) {
+                thumbnail = vi.pic160x90;
+                if (thumbnail) {
+                    thumbnail = thumbnail.replace('160_90', '1280_720');
+                    if (!window.external.urlExists(thumbnail, 12000, 5*1024))
+                        thumbnail = '';
+                }
+                thumbnail = thumbnail || vi.pic_640_360;
+            }
+            if (!thumbnail && html.indexOf('pic_new\"') != -1)
+                thumbnail = html.match(/pic_new\":\"([^\"]+)/)[1].replace(/\\u002F/g, '\/');
+            if (!thumbnail && html.match(/\"og:image\"\s+content=\"([^\"]+)/))
+                thumbnail = html.match(/\"og:image\"\s+content=\"([^\"]+)/)[1];
+
+            //https://v.qq.com/x/page/f0909o8f3mv.html
+            var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+            var url = window.external.url;
+            var cookie = window.external.getCookieEx(url, 'main_login', 2500) || window.external.getCookie(url);
+            cookie = cookie.replace(/ptag=[^;]+/, '');
+            //非vip，下面亦取不到格式，不理会
+            var userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.5672.93 Safari/537.36';
+            var headers = 'Referer: ' + url + '\r\nUser-Agent: ' + userAgent + '\r\nCookie: ' + cookie;
+            var defn = (vq <= 8) ? 'uhd' : (vq >= 1080 ? 'fhd' : (vq == 720 ? 'shd' : 'hd'));
+            //pc...without watermark 非vip，走下面支路，以避免获取分辨率小
+            var t = Date.now().toString().substr(0, 10);
+            var flowid = window.external.md5(t) + '_10201';
+            var ckey = window.external.md5('4244ce1b' + vid + t + '*#06#10201');
+            //h264...
+            var hevclv = (defn != 'uhd') ? '' :'&hevclv=28';
+            var args = '{\"buid\":\"vinfoad\",\"vinfoparam\":\"charge=0&otype=ojson&defnpayver=3&spau=1&spaudio=0&spwm=1&sphls=2&host=v.qq.com' +
+                '&sphttps=1&encryptVer=7.2&cKey=' + ckey + '&clip=4&guid=' + guid() + '&flowid=' + flowid + '&platform=10201&sdtfrom=v1010' +
+                '&appVer=3.5.57&unid=&auth_from=&auth_ext=&vid=' + vid + '&defn=' + defn + '&fhdswitch=0&dtype=3&spsrt=2&tm=' + t + '&lang_code=0' +
+                '&spvvpay=1&spadseg=3&spav1=15' + hevclv + '&spsfrhdr=0&spvideo=0&spm3u8tag=67&spmasterm3u8=3&drm=40\"}';
+            var data = window.external.getPostResultEx('https://vd6.l.qq.com/proxyhttp', args, headers);
+            //h264...
+            if (hevclv && data.indexOf('超高清SDR') == -1)
+                hevclv = '';
+            if (data.indexOf('[{') == -1)
+                data = window.external.getPostResultEx('https://vd.l.qq.com/proxyhttp', args, headers);
+            vh = (data.indexOf('vh\\\\\"') != -1) ? parseInt(data.match(/vh\\\\\":([^,]+)/)[1]) : 480;
+            //try 8.1, 某些源7.2整不出1080，它可以，但为h265
+            if (vh <= 720 && (vq <= 8 || vq >= 1080) && cookie && typeof(ckey81) == 'function') {
+                //vqq_vusession&vusession, qq&wx
+                var g = guid(), vs = (cookie.indexOf('vusession') != -1) ? cookie.match(/vusession=([^;]+)/)[1] : '', vu = (cookie.indexOf('vuserid') != -1) ? cookie.match(/vuserid=([^;]+)/)[1] : '';
+                var lt = encodeURIComponent('{\"vusession\":\"' + vs + '\",\"vuserid\":\"' + vu + '\"}');
+                ckey = ckey81(vid, t, '3.5.57', g, '10201', url);
+                args = '{\"buid\":\"onlyvinfo\",\"vinfoparam\":\"charge=0&otype=ojson&defnpayver=3&spau=1&spaudio=0&spwm=1&sphls=2&host=v.qq.com' +
+                    '&sphttps=1&encryptVer=8.1&cKey=' + ckey + '&clip=4&guid=' + g + '&flowid=' + flowid + '&platform=10201&sdtfrom=v1010&appVer=3.5.57' +
+                    '&unid=&auth_from=&auth_ext=&vid=' + vid + '&defn=' + defn + '&fhdswitch=0&dtype=3&spsrt=2&tm=' + t + '&lang_code=0&logintoken=' + lt +
+                    '&spvvpay=1&spadseg=3&spav1=15' + hevclv + '&spsfrhdr=0&spvideo=0&spm3u8tag=67&spmasterm3u8=3&drm=40\"}';
+                var d81 = window.external.getPostResultEx('https://vd6.l.qq.com/proxyhttp', args, headers);
+                if (d81.indexOf('.m3u8') != -1)
+                    data = d81;
+            }
+            //final...
+            if (cookie && typeof(cr_ckey) == 'function') {
+                var g = guid(), vs = (cookie.indexOf('vusession') != -1) ? cookie.match(/vusession=([^;]+)/)[1] : '', vu = (cookie.indexOf('vuserid') != -1) ? cookie.match(/vuserid=([^;]+)/)[1] : '';
+                var lt = encodeURIComponent('{""vusession"":""' + vs + '"",""vuserid"":""' + vu + '""}');
+                ckey = cr_ckey(vid, g, url, userAgent, t);
+                if (ckey) {
+                    //h264...
+                    args = '{""buid"":""onlyvinfo"",""vinfoparam"":""charge=0&otype=ojson&defnpayver=1&spau=1&spaudio=0&spwm=1&sphls=2&host=v.qq.com' +
+                        '&sphttps=1&encryptVer=9.2&cKey=' + ckey + '&clip=4&guid=' + g + '&flowid=' + flowid + '&platform=10201&sdtfrom=v1010&appVer=1.27.2' +
+                        '&unid=&auth_from=&auth_ext=&vid=' + vid + '&defn=' + defn + '&fhdswitch=0&dtype=3&spsrt=2&tm=' + t + '&lang_code=0&logintoken=' + lt +
+                        '&spvvpay=1&spadseg=3&spav1=15' + hevclv + '&spsfrhdr=0&spvideo=0&spm3u8tag=67&spmasterm3u8=3&drm=40""}';
+                    var df = window.external.getPostResultEx('https://vd6.l.qq.com/proxyhttp', args, headers);
+                    if (df.indexOf('.m3u8') != -1)
+                        data = df;
+                }
+            }
+            if (data.indexOf('[{') != -1) {
+                var jo = JSON.parse(data);
+                if (jo.vinfo) {
+                    jo = JSON.parse(jo.vinfo.replace(/\\\"/g, '\"'));
+                    if (jo.vl) {
+                        var vi = jo.vl.vi[0];
+                        title = vi.ti || title;
+                        //if (!vi.drm) {   ...不再判断，虽然其为1，但仍能下载播放
+                        video_url = vi.ul.ui[0].url;
+                        if (vi.ul.ui[0].hls)
+                            video_url += (vi.ul.ui[0].hls.pt != '') ? vi.ul.ui[0].hls.pt : vi.fn;
+                        if (video_url.indexOf('.m3u8') == -1 && vi.fvkey) {
+                            if (video_url.indexOf(vi.fn) == -1)
+                                video_url += vi.fn;
+                            video_url += '?vkey=' + vi.fvkey;
+                        }
+                    }
+                }
+            }
+            //annie&you-get，限速...非vip情况：https://v.qq.com/x/cover/1pn8h870s9ujr9y/r0022t99fda.html
+            //https://v.qq.com/x/cover/mzc00200jt3v6yy/u0935uqz9gm.html, 下面支路不行
+            if (!video_url || !window.external.urlExists(video_url)) {
+                //platform须为4100201，否则取不到720。而10201，可取1080
+                if (defn == 'uhd')
+                    defn = 'fhd';
+                api_url = 'https://vv.video.qq.com/getinfo?defn=' + defn + '&platform=10201&otype=ojson&appver=3.2.19.333&vid=' + vid;
+                data = window.external.getHtmlCodeEx(api_url, headers);
+                if (data.indexOf('fvkey') != -1) {
+                    jo = JSON.parse(data);
+                    var vi = jo.vl.vi[0];
+                    title = vi.ti || title;
+                    var fid = 10701;
+                    if (vq >= 1080 || vq <= 8)
+                        vq = 1080;
+                    var host = vi.ul.ui[0].url;
+                    for (var i = 0; i <= jo.fl.fi.length - 1; i++) {
+                        fid = jo.fl.fi[i].id;
+                        if (jo.fl.fi[i].resolution.indexOf(vi.vh) != -1)
+                            break;
+                    }
+
+                    if (!vi.cl.fc)
+                        video_url = getvu(host, vi.fn, fid, vid, headers);
+                    else {
+                        //构建m3u8给ffmpeg下载，第一片之后，都给Found duplicated MOOV Atom. Skipped it了，还是走自下通道
+                        //只有一个，直接返回video_url：https://v.qq.com/x/page/v0174a2gbb5.html
+                        var m3u8 = '#EXTM3U\r\n';
+                        duration = 0;
+                        for (var i = 0; i <= vi.cl.fc - 1; i++) {
+                            var fns = vi.fn.split('.');
+                            if (fns.length > 3)
+                                fns[2] = i + 1;
+                            duration += parseFloat(vi.cl.ci[i].cd);
+                            var fn = (fns.length <= 3) ? fns[0] + '.' + fns[1] + '.' + (i + 1) + '.' + fns[2] : fns.join('.');
+                            video_url = getvu(host, fn, fid, vid, headers);
+                            m3u8 += video_url + '\r\n';
+                        }
+                        if (vi.cl.fc > 1)
+                            video_url = window.external.saveData(m3u8.trim());
+                    }
+                }
+            }
+            //https://v.qq.com/x/cover/uvc09hlifmqc05l/k0011vl6prz.html -> https://lmbsy.qq.com/
+            //2022.07.25: 取到的不能下了，是因为.mp4判为.m3u8，主程序已修复...单.ts认为无效，而m3u8通常为.ts.m3u8
+            if ((vq >= 1080 || vq <= 8) && !cookie || video_url.length <= 32 || video_url.indexOf('.ts') != -1 && video_url.indexOf('.m3u8') == -1)
+                video_url = getol(window.external.url);
+            //2023.09.21 v8.1限速故
+            //if (fv[0] > 1 || em)
+            //    video_url = getol(window.external.url) || video_url;
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$' + html;
+
+            //...
+            function getvu(host, fn, fid, vid, headers) {
+                //此处，platform须为11
+                var api_url = 'http://vv.video.qq.com/getkey?otype=json&platform=11&appver=3.2.19.333&filename=' + fn + '&format=' + fid + '&vid=' + vid;
+                var data = window.external.getHtmlCodeEx(api_url, headers);
+                var vkey = (data.indexOf('\"key\":') != -1) ? data.match(/key\":\"([^\"]+)/)[1] : vi.fvkey;
+                var result = host + fn;
+                if (vkey)
+                    result += '?vkey=' + vkey;
+                return result;
+            }
+
+            function guid(a) {
+                a = a || 32;
+                for (var b = '', c = 1; c <= a; c++) {
+                    var d = Math.floor(16 * Math.random()).toString(16);
+                    b += d
+                }
+                return b
+            }
+        }
+        catch (ex) {
+            document.body.innerHTML = 'cr_video_url=' + window.external.url + '$' + document.body.innerHTML;
+        }
+    ]]></jsCode>
+</parser>

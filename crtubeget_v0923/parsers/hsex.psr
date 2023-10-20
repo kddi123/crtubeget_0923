@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" date="2021.10.08">
+    <url><![CDATA[https?://(?:www\.)?hsex\.\w+/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://hsex.men/video-535800.htm
+            var title = (document.getElementsByTagName('h3').length != 0) ? document.getElementsByTagName('h3')[0].innerText : document.title;
+            var thumbnail = (document.getElementsByTagName('video').length != 0) ? document.getElementsByTagName('video')[0].poster : '';
+            var video_url = document.body.innerHTML.match(/videoSrc\s*=\s*'([^']+)/)[1];
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

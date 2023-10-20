@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2020.11.17">
+    <url><![CDATA[https?://(?:www\.)?djivideos\.com/watch/(?<id>[^?]+)]]></url>
+    <title><![CDATA[vid:\s+'([^']+)']]></title>
+    <thumbnail><![CDATA[poster:\s+'([^']+)']]></thumbnail>
+    <duration><![CDATA[duration:\s+([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+            var video_url = videoDefinitions[videoDefinitions.length - 1].src;
+            for (var f in videoDefinitions) {
+                if (parseInt(videoDefinitions[f].text) == vq) {
+                    video_url = videoDefinitions[f].src;
+                    break;
+                }
+            }
+            document.body.innerHTML = 'cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

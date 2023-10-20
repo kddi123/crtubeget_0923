@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.01.10">
+    <url><![CDATA[https?://(?:\w+\.)?81\.cn/.*?(?<id>\d+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://tv.81.cn/special/2020-05/29/content_9824804.htm
+            //http://tv.81.cn/jszqy/9963068.html
+            //http://tv.81.cn/mtxsx/16205240.html
+            var title = document.title.substr(0, document.title.indexOf(' - '));
+            var thumbnail = document.getElementById('wxsimg') ? document.getElementById('wxsimg').src : '';
+            var video_url = '';
+            if (document.getElementById('cmplayer') && document.getElementById('cmplayer').outerHTML.indexOf('data-media=') != -1) {
+                var api_url = document.getElementById('cmplayer').outerHTML.match(/data-media\s*=\s*\"([^&]+)/)[1];
+                var fmts = ['fhd', 'hd', 'sd', 'ld'];
+                for (var f in fmts) {
+                    video_url = window.external.getHtmlCode(api_url + '&ttype=pc&ctype=' + fmts[f]);
+                    if (video_url.trim())
+                        break;
+                }
+            }
+            if (!video_url)
+                video_url = (document.getElementsByTagName('video').length != 0) ? document.getElementsByTagName('video')[0].src : window.location.href;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

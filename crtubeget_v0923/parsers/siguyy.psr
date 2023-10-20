@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2023.03.09">
+    <url><![CDATA[https?://(?:www\.)?siguyy\.com/play/(?<id>[^/]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.siguyy.com/play/54792-1-1.html
+            var title = (document.getElementsByTagName('h3').length != 0) ? document.getElementsByTagName('h3')[0].innerText : document.title;
+            var thumbnail = (document.getElementsByClassName('vod_history hide').length != 0) ? document.body.innerHTML.match(/data-pic=\"([^\"]+)/)[1] : '';
+            var video_url = unescape(player_aaaa.url);
+            if (player_aaaa.encrypt == 2 && video_url.indexOf('http') == -1)
+                video_url = unescape(atob(player_aaaa.url));
+            if (video_url.indexOf('.mp4') == -1 && video_url.indexOf('.m3u8') == -1)
+                video_url += '#ra';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

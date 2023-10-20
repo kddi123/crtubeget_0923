@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2022.11.06">
+    <url><![CDATA[https?://(?:\w+\.)?mfan\.tv/play/.*/(\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://www.mfan.tv/play/hC666U/1/3/
+            //https://www.mfan.tv/play/h9666U/1/1/
+            var url = window.external.url;
+            var html = window.external.getHtmlCode(url, 'https://www.mfan.tv');
+            var title = html.match(/<title>([^-]+)/)[1].replace('在线观看', '');
+            var url_data = html.match(/player_aaaa.*?url\":\"([^\"]+)/)[1];
+            var api_url = 'https://video1.beijcloud.com/meiplayer/?url=' + url_data;
+            var data = window.external.getHtmlCode(api_url, url);
+            url_data = data.match(/url\":\"([^\"]+)/)[1];
+            //https://www.mfan.tv/play/Yl666U/1/1/
+            var video_url = (url_data.indexOf('.m3u8') != -1) ? url_data : '';
+            if (!video_url) {
+                var time = data.match(/time\":\"([^\"]+)/)[1];
+                var key = data.match(/key\":\"([^\"]+)/)[1];
+                var args = 'url=' + url_data + '&time=' + time + '&key=' + key;
+                api_url = 'https://video1.beijcloud.com/meiplayer/api_config.php';
+                data = window.external.getPostResult(api_url, args, 'application/x-www-form-urlencoded; charset=UTF-8');
+                video_url = JSON.parse(data).url;
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

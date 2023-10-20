@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" referer="true" date="2020.05.08">
+    <url><![CDATA[https?://(?:play\.)?yunxi\.tv/livestream/.*?id=(?<id>[^#]+)]]></url>
+    <title><![CDATA[activityTitle":"([^"]+)"]]></title>
+    <thumbnail><![CDATA[coverUrl":"([^"]+)"]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[playUrl":"([^"]+)"]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            var id = window.location.href.match(/id=([^#]+)/)[1];
+            var api_url = 'https://play.yunxi.tv/livestream/play/info?id=' + id;
+            var data = window.external.getHtmlCode(api_url);
+            var jo = JSON.parse(data);
+            document.body.innerHTML = JSON.stringify(jo);
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

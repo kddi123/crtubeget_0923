@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" referer="true" date="2022.06.15">
+    <url><![CDATA[https?://(?:www\.)?bilibili\.com/cheese/play/ep(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <audioUrl><![CDATA[cr_audio_url=([^\$]+)]]></audioUrl>
+    <danmuUrl><![CDATA[cr_danmu_url=([^\$]+)]]></danmuUrl>
+    <ckSign><![CDATA[SESSDATA]]></ckSign>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://www.bilibili.com/cheese/play/ep5745?spm_id_from=333.999.0.0
+            var url = window.external.url;
+            var title = '', thumbnail = '', duration = 0, video_url = '', audio_url = '', danmu_url = '';
+            var aid = '', cid = '';
+            var ep_id = parseInt(url.match(/ep([^?&]+)/)[1]);
+            var api_url = 'https://api.bilibili.com/pugv/view/web/season?ep_id=' + ep_id;
+            var data = window.external.getHtmlCode(api_url, url);
+            var jo = JSON.parse(data);
+            for (var i = 0; i <= jo.data.episodes.length - 1; i++) {
+                var ep = jo.data.episodes[i];
+                if (ep.id == ep_id) {
+                    title = ep.title;
+                    thumbnail = ep.cover;
+                    duration = ep.duration;
+                    aid = ep.aid;
+                    cid = ep.cid;
+                    break;
+                }
+            }
+
+            var cookie = window.external.getCookieEx(url, 'SESSDATA', 2500) || window.external.getCookie(url);
+            var headers = 'User-Agent: ' + navigator.userAgent + '\r\nReferer: ' + url + '\r\nCookie: ' + cookie;
+            var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+            var qn = (vq <= 8) ? [125, 120] : [116, 112, 80];
+            if (vq == 720)
+                qn = [74, 64, 48, 32];
+            for (var i = 0; i <= qn.length - 1; i++) {
+                var api_url = 'https://api.bilibili.com/pugv/player/web/playurl?avid' + aid + '&cid=' + cid + '&qn=' + qn[i] + '&fnver=0&fnval=16&fourk=1&ep_id=' + ep_id + '&session=';
+                var data = window.external.getHtmlCodeEx(api_url, headers);
+                if (data.indexOf('base_url') != -1) {
+                    var jo = JSON.parse(data);
+                    if (jo.data.dash.audio.length != 0) {
+                        //取有效值
+                        for (var j = 0; j <= jo.data.dash.audio.length - 1; j++) {
+                            audio_url = jo.data.dash.audio[j].base_url;
+                            if (window.external.getHeaders(audio_url, 'HEAD', url, navigator.userAgent))
+                                break;
+                        }
+                        for (var j = 0; j <= jo.data.dash.video.length - 1; j++) {
+                            video_url = jo.data.dash.video[j].base_url;
+                            if (window.external.getHeaders(video_url, 'HEAD', url, navigator.userAgent))
+                                break;
+                        }
+                    }
+                    break;
+                }
+            }
+
+            if (!video_url)
+                video_url = url;
+            if (cid)
+                danmu_url = 'https://comment.bilibili.com/' + cid + '.xml';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$cr_audio_url=' + audio_url + '$cr_danmu_url=' + danmu_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

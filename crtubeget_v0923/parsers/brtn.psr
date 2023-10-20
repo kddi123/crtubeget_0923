@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2021.12.05">
+    <url><![CDATA[https?://(?:\w+\.)?brtn\.cn/detail/.*?chapter/(?<id>[^?]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://edu.brtn.cn/detail/17d5989e7e074e27a3292d8d4cec088a/chapter/e6b0056909fa11eba32a6805caa3e708?frpo=pc_user_center_prof&orderfrom=pc_user_center_prof
+            var did = window.external.url.match(/detail\/([^\/]+)/)[1];
+            var cid = window.external.url.match(/chapter\/([^?]+)/)[1];
+            var api_url = 'https://dynamicedu.wps.cn/API_V2/course/chapter_detail/v2?courseId=' + did + '&chapterId=' + cid;
+            var data = window.external.getHtmlCode(api_url, 'https://edu.brtn.cn/');
+            var jo = JSON.parse(data);
+            var title = jo.data.chapterTitle;
+            var thumbnail = jo.data.chapterImage;
+            var duration = jo.data.mediaLength;
+            var video_url = jo.data.mediaUrl;
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

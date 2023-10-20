@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" referer="true" date="2021.02.18">
+    <url><![CDATA[https?://(?:www\.)?yizhuan5\.com/.*?/ToUrl\?data=(?<id>[^%]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[Token]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://www.yizhuan5.com/Common/Tool/ToUrl?data=UY9OJNx0ipIANCSPkXeB70uM7NCX%2bDfd3lD4rSnwfwTflk9HLhAio3oOIuytGcPP%2bIQLNYwNcrx3LFshHPMMdwjsLK1RZRqcq38obe86vJdC5fO6HpPnQqQBx1E8KkIcmiIFrrTbGsezkBtcL7ck5QiyqWdP1ehu5%2f4EdtF%2fRWc%3d
+            //get redirected url
+            document.body.innerHTML = 'cr_video_url=' + window.location.href + '#ra$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.01.17">
+    <url><![CDATA[https?://d\.tube/.*?v/[^/]+/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://d.tube/#!/v/brishtiteveja0595/QmNVNaJqxGsAccFyD5y7CaWENRNbEMxjpazXCa3izknSA3
+            //https://d.tube/v/matrixartm05/QmQ9ccfw3DmKFyv31fXSx7uVhsi2z6dXoxtMQVxnB4W2Cq
+            var video_url = window.location.href;
+            var title = document.title;
+            var thumbnail = '';
+            var duration = 0;
+            var api_url = 'https://avalon.d.tube/content/' + window.location.href.substr(window.location.href.indexOf('/v/') + 3);
+            var data = window.external.getHtmlCode(api_url);
+            var jo = JSON.parse(data);
+            if (jo.json.files) {
+                title = jo.json.title;
+                duration = jo.json.dur;
+                var files = jo.json.files;
+                if (files.youtube)
+                    video_url = 'https://www.youtube.com/watch?v=' + jo.json.files.youtube + '#ra';
+                else if (files.ipfs && files.ipfs.vid) {
+                    var vid = files.ipfs.vid['1080'] || files.ipfs.vid['720'] || files.ipfs.vid['480'] || files.ipfs.vid.src;
+                    video_url = 'https://player.d.tube/ipfs/' + vid;
+                    var iid = files.ipfs.img['360'] || files.ipfs.img.spr
+                    thumbnail = 'https://snap1.d.tube/ipfs/' + iid;
+                }
+            }
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

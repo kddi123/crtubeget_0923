@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2020.04.07">
+    <url><![CDATA[https?://(?:www\.)?ku6\.com/video/detail\?id=(?<id>[^/]+)]]></url>
+    <title><![CDATA[<h2[^>]+>([^<]+)</h2>]]></title>
+    <thumbnail><![CDATA["poster":\s+"([^"]+)"]]></thumbnail>
+    <duration><![CDATA[Duration\s+Time</span>([^<]+)]]></duration>
+    <mediaUrl><![CDATA[(?:"video/mp4",\s+src:\s+"(?<video_url>[^"]+)"|<video[^>]+\bsrc="(?<video_url>[^"]+?)")]]></mediaUrl>
+</parser>

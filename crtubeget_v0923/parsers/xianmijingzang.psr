@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2022.06.08">
+    <url><![CDATA[https?://(?:www\.)?xianmijingzang\.com/fojing/menuid=.*?book=(?<id>[^?]+)]]></url>
+    <title><![CDATA[]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://www.xianmijingzang.com/fojing/menuid=43|67&book=2071
+            //https://www.xianmijingzang.com/fojing/menuid=277|484&book=5955
+            var url = window.external.url;
+            var args = url.substring(url.indexOf('menuid'));
+            var api_url = 'http://www.xianmijingzang.com/wapajax/tripitaka/';
+            var data = window.external.getPostResult(api_url, args, 'application/x-www-form-urlencoded; charset=UTF-8');
+            var jo = JSON.parse(data);
+            var video_url = 'http://www.xianmijingzang.com' + jo.audiolinks;
+            document.body.innerHTML = 'cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

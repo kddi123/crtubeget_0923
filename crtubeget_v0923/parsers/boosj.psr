@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2023.03.06">
+    <url><![CDATA[https?://(?:www\.)?boosj\.com/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[videoName\s+:(?:'|")([^'"]+)]]></title>
+    <thumbnail><![CDATA[bigImageUrl\s+:(?:'|")([^'"]+)]]></thumbnail>
+    <duration><![CDATA[playLength":"([^"]+)"]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.boosj.com/9183169.html
+            var api_url = 'http://gslb.boosj.com/ips.json';
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            var jo = JSON.parse(data);
+            var vid = PlayVideoInfo.vid;
+            api_url = 'http://gslb.boosj.com/gslb?_id=' + vid + '&country=' + jo.country + '&area=' + jo.area + '&region=' + jo.region + '&isp=' + jo.isp + '&ip=' + jo.ip + '&s=' + jo.s + '&gslb=' + jo.gslb;
+            data = window.external.getHtmlCode(api_url);
+            jo = JSON.parse(data);
+            var video_url = jo.url + '?' + jo.t;
+            document.body.innerHTML = 'cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

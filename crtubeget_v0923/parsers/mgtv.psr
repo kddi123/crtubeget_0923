@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" referer="true" delegate="true" date="2023.07.12">
+    <url><![CDATA[https?://(?:\w+\.)?mgtv\.com/\w/(?:[^/]+/)*(?<id>\d+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[loginAccount]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://www.mgtv.com/b/330499/11649514.html?cxid=95kqkw8n6
+            //https://www.mgtv.com/b/365619/11776841.html?fpa=9349&fpos=6&lastp=ch_home
+            //https://www.mgtv.com/s/11698406.html?fpa=22489&fpos=1&lastp=ch_home
+            //https://www.mgtv.com/b/303464/3636211.html?lastp=v_progdtl
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var url = window.external.url;
+            var vid = url.match(/\/(\d+)\.html/)[1];
+            var cid = url.match(/\w\/(\d+)\//) ? url.match(/\w\/(\d+)\//)[1] : '';
+            var api_url = 'https://pcweb2.api.mgtv.com/video/info?vid=' + vid + '&cid=' + cid;
+            var data = window.external.getHtmlCode(api_url, url);
+            if (data) {
+                var jo = JSON.parse(data);
+                var info = jo.data.info;
+                title = info.videoName;
+                thumbnail = info.videoImage;
+                duration = info.time;
+            }
+            //...
+            var cookie = window.external.getCookieEx(url, 'loginAccount', 2500) || window.external.getCookieEx(url, '__STKUUID', 2500) || window.external.getCookie(url);
+            var did = (cookie.indexOf('__STKUUID') != -1) ? cookie.match(/__STKUUID=([^;]+)/)[1] : guid();
+            var t = ~~(+new Date / 1e3);
+            var tk2 = btoa('did=' + did + '|pno=1030|ver=0.3.0301|clit=' + t).replace(/\+/g, '_').replace(/\//g, '~').replace(/=/g, '-').split('').reverse().join('');
+            api_url = 'https://pcweb.api.mgtv.com/player/video?tk2=' + tk2 + '&video_id=' + vid;
+            var headers = 'User-Agent: ' + navigator.userAgent + '\r\nReferer: https://www.mgtv.com\r\nCookie: ' + cookie;
+            data = window.external.getHtmlCodeEx(api_url, headers);
+            if (data && data.indexOf('atc') != -1) {
+                var jo = JSON.parse(data);
+                var info = jo.data.info;
+                title = info.desc || title;
+                if (info.series)
+                    title = info.series + ' ' + title;
+                thumbnail = info.thumb || thumbnail;
+                duration = info.duration || duration;
+                var atc = jo.data.atc;
+                api_url = 'https://pcweb.api.mgtv.com/player/getSource?tk2=' + atc.tk2 + '&pm2=' + atc.pm2 + '&video_id=' + vid;
+                data = window.external.getHtmlCodeEx(api_url, headers);
+                var jo = JSON.parse(data);
+                var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                var def = '4';
+                if (vq == 720)
+                    def = '3';
+                else if (vq == 480)
+                    def = '2';
+                else if (vq == 360)
+                    def = '1';
+                if (jo.data && jo.data.stream.length != 0) {
+                    var s_url = '';
+                    for (var i = 0; i <= jo.data.stream.length - 1; i++) {
+                        var stream = jo.data.stream[i];
+                        if (!stream.url)
+                            break;
+                        s_url = stream.url;
+                        if (def == stream.def)
+                            break;
+                    }
+                    api_url = jo.data.stream_domain[0] + s_url;
+                    data = window.external.getHtmlCodeEx(api_url, headers);
+                    if (data.indexOf('\"info\":') != -1)
+                        video_url = data.match(/\"info\":\"([^\"]+)/)[1];
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+
+            function guid() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+                    return v.toString(16);
+                });
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

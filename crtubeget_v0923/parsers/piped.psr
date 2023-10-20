@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" referer="true" unescape="false" date="2022.12.15">
+    <url><![CDATA[https?://(?:\w+\.)?piped\.\w+/.*?v=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <audioUrl><![CDATA[cr_audio_url=([^\$]+)]]></audioUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://piped.video/watch?v=KEK03Nzxswg
+            //最可直接转为油管链接，但为非梯子计，重解析
+            var url = window.external.url;
+            var id = url.match(/v=([^&]+)/)[1];
+            var video_url = 'https://www.youtube.com/watch?v=' + id + '#ra';
+            var title = video_url, thumbnail = '', duration = 0;
+            //直解，此址getHtmlCode()不行
+            var api_url = 'https://pipedapi.kavin.rocks/streams/' + id;
+            var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveObject('Microsoft.XMLHTTP');
+            xhr.open('GET', api_url, false);
+            xhr.send(null);
+            var data = xhr.responseText;
+            if (data.indexOf('audioStreams') != -1 && data.indexOf('videoStreams') != -1) {
+                var jo = JSON.parse(data);
+                title = jo.title;
+                thumbnail = jo.thumbnailUrl;
+                duration = jo.duration;
+                audio_url = jo.audioStreams[0].url;
+                video_url = jo.videoStreams[0].url;
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$cr_audio_url=' + audio_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

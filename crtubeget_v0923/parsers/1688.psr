@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2020.11.19">
+    <url><![CDATA[https?://(?:\w+\.)?1688\.com/course/video\.htm\?spm=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[cookie2]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://peixun.1688.com/course/video.htm?spm=a26eo.10621422.0.0.7b7d5c0etVhXMG&code=PXL2NCVJ
+            var cookie = window.external.getCookie(window.location.href) || document.cookie;
+            if (cookie.indexOf('cookie2') != -1) {
+                var headers = 'User-Agent: ' + navigator.userAgent + '\r\nCookie: ' + cookie;
+                var html = window.external.getHtmlCodeEx(window.external.url, headers);
+                if (html.indexOf('course-dto') != -1) {
+                    var data = html.match(/course-dto[^>]+>(.*?)<\/script>/)[1];
+                    var jo = JSON.parse(data);
+                    var cv = jo.courseVideoDto;
+                    var title = cv.name;
+                    var thumbnail = cv.coverUrl;
+                    var duration = cv.duration;
+                    var video_url = 'https://cloud.video.taobao.com/play/u/' + cv.uploader + '/p/1/e/6/t/1/' + cv.videoId + '.mp4';
+                    document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+                }
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

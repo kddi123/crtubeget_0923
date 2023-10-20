@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" unescape="false" date="2023.07.13">
+    <url><![CDATA[https?://(?:www\.)?instagram\.com/\w+/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.instagram.com/p/CPWu06hj9p5/
+            //https://www.instagram.com/reel/Ce7PdAeu3FM/?igshid=YmMyMTA2M2Y=
+            //其最后一个%2F不能做/转义，否则引起签名验证错误
+            var title = document.title, thumbnail = '', duration = 0, video_url = '';
+            var url = window.external.url;
+            var html = document.body.innerHTML;
+            if (html.indexOf('\"media_id\"') == -1) {
+                var cookie = window.external.getCookieEx(url, 'ds_user_id', 2500) || document.cookie;
+                var headers = 'User-Agent: ' + navigator.userAgent + '\r\nSec-Fetch-Site: none\r\nCookie: ' + cookie;
+                html = window.external.getHtmlCodeEx(url, headers);
+            }
+            var mid = (html.indexOf('\"media_id\"') != -1) ? html.match(/media_id\":\"([^\"]+)/)[1] : '';
+            if (mid) {
+                var appId = (html.indexOf('\"X-IG-App-ID\"') != -1) ? html.match(/X-IG-App-ID\":\"([^\"]+)/)[1] : '';
+                var cookie = window.external.getCookieEx(url, 'sessionid', 2500) || document.cookie;
+                var headers = 'X-IG-App-ID: ' + appId + '\r\nReferer: https://www.instagram.com/\r\nCookie: ' + cookie;
+                var api_url = 'https://i.instagram.com/api/v1/media/' + mid + '/info/';
+                var data = window.external.getHtmlCodeEx(api_url, headers);
+                if (data.indexOf('video_versions') != -1) {
+                    var jo = JSON.parse(data);
+                    var item = jo.items[0];
+                    title = item.caption.text || title;
+                    thumbnail = item.image_versions2.candidates[0].url;
+                    duration = item.video_duration;
+                    //https://www.instagram.com/p/CudErjASTYP/?igshid=MzRIODBiNWFIZA%3D%3D
+                    var videos = item.video_versions || item.carousel_media[0].video_versions;
+                    video_url = videos[0].url;
+                }
+            }
+
+            if (!video_url) {
+                var m = html.match(/video_url\":\"([^\"]+)/) || html.match(/display_url\":\"([^\"]+)/);
+                video_url = m ? m[1]: window.external.url;
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

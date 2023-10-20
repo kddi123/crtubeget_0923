@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" unescape="false" date="2023.04.10">
+    <url><![CDATA[https?://(?:h5\.)?pipix\.com/(?:\w|item)/(?<id>[^/?]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://h5.pipix.com/s/JAowfJn/
+            //https://h5.pipix.com/s/JAEA9bS/
+            //https://h5.pipix.com/item/6829134825899694343
+            //https://h5.pipix.com/item/6875952343070808320?app_id=1319&app=super&timestamp=1600953531&carrier_region=cn&region=cn&language=zh&utm_source=weixin
+            //https://h5.pipix.com/s/L2vKuv8/ -> https://h5.pipix.com/item/7012912451368786206?user_id=4301702219170717&cell_type=8&cell_id=7023296406030915876&carrier_region=&region=&language=&app_id=1319
+            //unescape，封面
+            //2021.06.19始h5此类电脑上504
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var url = window.external.url;
+            if (url.indexOf('item') == -1)
+                url = window.external.getRedirectedUrl(url.replace('h5.', ''));
+            if (url.indexOf('/item') != -1) {
+                var id = url.match(/item\/([^?&]+)/)[1];
+                var aid = url.match(/app_id=([^&]+)/) ? url.match(/app_id=([^&]+)/)[1] : '1319';
+                var app = url.match(/app=([^&]+)/) ? url.match(/app=([^&]+)/)[1] : 'super';
+                var api_url = 'https://i.snssdk.com/bds/item/detail/?item_id=' + id + '&aid=' + aid + '&app_name=' + app;
+                var data = window.external.getHtmlCode(api_url, url);
+                var jo = JSON.parse(data);
+                var item = jo.data.data;
+                title = item.content || item.share.title;
+                thumbnail = item.cover.download_list[0].url;
+                //https://h5.pipix.com/s/JAowfJn/
+                if (data.indexOf('origin_video_download\":{') != -1) {
+                    var video = item.origin_video_download;
+                    duration = video.duration;
+                    video_url = video.url_list[0].url;
+                }
+                //https://h5.pipix.com/item/7205824212932499767
+                else {
+                    api_url = 'https://i-lq.snssdk.com/bds/cell/cell_comment/?cell_id=' + id + '&aid=' + aid + '&app_name=' + app;
+                    data = window.external.getHtmlCode(api_url, url);
+                    if (data.indexOf('cell_comments\":[{') != -1) {
+                        var jo = JSON.parse(data);
+                        var item = jo.data.cell_comments[0].comment_info.item;
+                        title = item.content || item.share.title;
+                        thumbnail = item.cover.download_list[0].url;
+                        var video = item.video.video_high;
+                        duration = video.duration;
+                        video_url = video.url_list[0].url;
+                    }
+                }
+            }
+            if (!video_url) {
+                var args = 'text=' + encodeURIComponent(url) + '&uid=49ce9733-e1a9-439c-9f2e-66fc3d976598';
+                var data = window.external.getPostResult('http://td3.nnzyy.cn/Home/GetVideoUrl', args, 'application/x-www-form-urlencoded');
+                if (data.indexOf('data\":{') != -1) {
+                    var jo = JSON.parse(data);
+                    title = jo.data.title || title;
+                    thumbnail = jo.data.cover;
+                    video_url = jo.data.url;
+                }
+            }
+            //...
+            if (!video_url && (fv[0] != '1' || em)) {
+                var data = gvd(window.external.url);
+                var jo = JSON.parse(data);
+                if (jo.body && jo.body.video_url) {
+                    title = jo.body.title;
+                    thumbnail = jo.body.cover_url;
+                    video_url = jo.body.video_url;
+                }
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ', cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

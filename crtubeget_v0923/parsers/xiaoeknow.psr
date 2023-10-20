@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2023.04.26">
+    <url><![CDATA[xiaoeknow\.com/(?:content_page|\w+/course)/[^?]+]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[ko_token]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://appieewu0pk2027.h5.xiaoeknow.com/content_page/eyJ0eXBlIjoxMiwicmVzb3VyY2VfdHlwZSI6NCwicmVzb3VyY2VfaWQiOiJsXzVmZTVhN2IxZTRiMDRkYjdjMDk3MWVkMiIsInByb2R1Y3RfaWQiOiIiLCJhcHBfaWQiOiJhcHBJRWVXVTBQazIwMjciLCJleHRyYV9kYXRhIjowfQ?entry=2&entry_type=2001
+            //https://appemgbw4fu5508.h5.xiaoeknow.com/v2/course/alive/l_5ffbf9e2e4b00ff4ed0fb70e?app_id=appEmGbW4fU5508&pro_id=l_5ffbf9e2e4b00ff4ed0fb70e&type=2&share_user_id=u_60002d5d52fc6_YTSlBEZ905&share_type=5&scene=%E9%82%80%E8%AF%B7%E9%93%BE%E6%8E%A5&is_redirect=1&sw=1
+            //https://appbldadcdz3234.h5.xiaoeknow.com/v1/course/video/v_5fc0a7f8e4b04db7c09156a3->https://appbldadcdz3234.pc.xiaoe-tech.com/detail/v_5fc0a7f8e4b04db7c09156a3/3?fromH5=true
+            //https://app6jmghs5c2513.h5.xiaoeknow.com/v2/course/alive/l_616d2975e4b0a052bf678243?app_id=app6jmghs5c2513&alive_mode=0&pro_id=&type=2
+            //https://app6jmghs5c2513.h5.xiaoeknow.com/v2/course/alive/l_616d2975e4b0a052bf678243?alive_mode=0&app_id=app6jmghs5c2513&pro_id=&product_id=&resource_id=l_616d2975e4b0a052bf678243&type=12
+            //https://appv36cpv0z8125.h5.xiaoeknow.com/v1/course/video/v_60b3a0c1e4b07e4d7fda4224?type=2&pro_id=p_5b1c89c45115d_OoOrA3of&from_multi_course=1 加密的，不支持
+            var url = window.external.url, title = '', thumbnail = '', duration = 0, video_url = '';
+            var cookie = window.external.getCookieEx(url, 'anony_token', 2500, true);
+            if (!cookie) {
+                cookie = window.external.getCookieEx(url, 'ko_token', 2500, true) || window.external.getCookie(url);
+                if (cookie)
+                    cookie = cookie.substr(cookie.lastIndexOf('ko_token')).match(/ko_token=[^;]+/)[0];
+            }
+            var aid = url.match(/\/\/([^.]+)/)[1];
+            //->xiaoetech
+            if (url.indexOf('course/video/') != -1) {
+                //https://app6jmghs5c2513.h5.xiaoeknow.com/v1/course/video/v_61b8867ee4b0e4722417597b?app_id=app6jmghs5c2513&available=1&available_product=1&entry=2&entry_type=2001&from_multi_course=1&payment_type=&product_id=p_61adb6e5e4b0ad2813ada0ac&resource_id=v_61b8867ee4b0e4722417597b&resource_type=3&scene=%E5%88%86%E4%BA%AB&share_type=5&share_user_id=u_614193b27e93f_yV8zdfAdwe&type=2
+                //https://appsjekwolo5576.h5.xiaoeknow.com/v1/course/video/v_5e912e5a88504_GMr9db1N?pro_id=p_5e9126ed22986_mDOrC7kL
+                //https://appkcr4nbsr1424.h5.xiaoeknow.com/v1/course/video/v_624d3522e4b0812e178841c6?is_redirect=1&type=2 pid为空
+                //https://appnimvjpno9332.h5.xiaoeknow.com/p/course/video/v_622ac636e4b02b8258537ea9?product_id=p_622abed8e4b0beaee432c0f9&share_user_id=u_62b073df3d84d_AkZlzNc1z0&share_type=5&scene=%E5%88%86%E4%BA%AB&entry=2&entry_type=2002 加密的，不支持
+                var pid = (url.indexOf('product_id=') != -1) ? url.match(/product_id=([^&?]+)/)[1] : '';
+                if (!pid && (url.indexOf('pro_id=') != -1))
+                    pid = url.match(/pro_id=([^&?]+)/)[1];
+                var rid = (url.indexOf('resource_id=') != -1) ? url.match(/resource_id=([^&]+)/)[1] : url.match(/video\/([^/?]+)/)[1];
+                var args = 'pay_info={\"product_id\":\"' + pid + '\",\"resource_id\":\"' + rid + '\",\"type\":\"2\"}';
+                var headers = 'Content-Type: application/x-www-form-urlencoded\r\nUser-Agent: ' + navigator.userAgent + '\r\nCookie: ' + cookie;
+                var data = window.external.getPostResultEx('https://' + aid + '.h5.xiaoeknow.com/video/base_info', args, headers);
+                if (data.indexOf('videoUrl') != -1) {
+                    var jo = JSON.parse(data);
+                    var v = jo.data.bizData.data;
+                    title = v.title;
+                    thumbnail = v.video_img;
+                    duration = v.video_real_length;
+                    video_url = v.video_bak ? decrypt(v.video_bak) : decrypt(v.videoUrl);
+                    video_url = video_url.replace(/&amp;/g, '&');
+                }
+                if (!video_url) {
+                    document.head.innerHTML = '';
+                    document.body.innerHTML = 'title=\"' + window.external.url + '\",cr_video_url=' + url.replace('h5.xiaoeknow', 'pc.xiaoe-tech').replace('v1/course/video', 'detail') + '/3?fromH5=true#ra$';
+                    return;
+                }
+            }
+            //https://appymk8ms6i9430.h5.xiaoeknow.com/p/course/audio/a_5bf39d8f9da03_pZjIA5Ej?product_id=p_5d525fdf82f55_j89GzR7t
+            if (url.indexOf('course/audio/') != -1) {
+                var args = 'bizData%5Bresource_id%5D=' + url.match(/audio\/([^?&]+)/)[1];
+                var headers = 'Content-Type: application/x-www-form-urlencoded\r\nCookie: ' + cookie;
+                var api_url = 'https://' + aid + '.h5.xiaoeknow.com/xe.course.business.audio.info.get/2.0.0';
+                var data = window.external.getPostResultEx(api_url, args, headers);
+                if (data.indexOf('audio_info\":{') != -1) {
+                    var jo = JSON.parse(data);
+                    var audio = jo.data.audio_info;
+                    title = audio.title;
+                    duration = audio.audio_length;
+                    video_url = audio.audio_url;
+                }
+            }
+
+            if (!video_url && cookie) {
+                var data = '';
+                var jo = undefined;
+                if (url.indexOf('content_page') != -1) {
+                    data = atob(url.match(/content_page\/([^?]+)/)[1]);
+                    jo = JSON.parse(data);
+                }
+                var app_id = jo ? jo.app_id : url.match(/\/\/([^.]+)/)[1];
+                var res_id = jo ? jo.resource_id : (url.indexOf('alive') != -1) ? url.match(/alive\/([^?]*)/)[1] : '';
+                var headers = 'Referer: ' + url + '\r\nCookie: ' + cookie;
+                var api_url = 'https://' + app_id + '.h5.xiaoeknow.com/_alive/v2/get_lookback_url?app_id=' + app_id + '&alive_id=' + res_id;
+                data = window.external.getHtmlCodeEx(api_url, headers);
+                if (data.indexOf('aliveVideoUrl') != -1) {
+                    var jo = JSON.parse(data);
+                    video_url = jo.data.aliveVideoUrl || jo.data.aliveVideoMp4Url;
+                }
+                //info...
+                api_url = 'https://' + app_id + '.h5.xiaoeknow.com/_alive/v2/base_info?app_id=' + app_id + '&resource_id=' + res_id + '&type=12';
+                data = window.external.getHtmlCodeEx(api_url, headers);
+                if (data.indexOf('alive_info') != -1) {
+                    var jo = JSON.parse(data);
+                    var ai = jo.data.alive_info;
+                    title = ai.title;
+                    thumbnail = ai.cover_img_url;
+                    //https://app514spslc1887.h5.xiaoeknow.com/v2/course/alive/l_62649aeee4b0cedf38a8d1f8?app_id=app514spslc1887&alive_mode=0&pro_id=&type=2
+                    if (!video_url && jo.data.alive_play)
+                        video_url = jo.data.alive_play.alive_video_url || jo.data.alive_play.pc_alive_video_url;
+                }
+            }
+
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+
+            function decrypt(t) {
+                function i(t, e, r) {
+                    return e in t ? Object.defineProperty(t, e, {
+                        value: r,
+                        enumerable: !0,
+                        configurable: !0,
+                        writable: !0
+                    }) : t[e] = r,
+                    t
+                }
+
+                t = t.replace('__ba', '').replace(/(@|#|\$|%)/g, (function(t, e) {
+                    var r;
+                    return (r = {},
+                    i(r, '@', '1'),
+                    i(r, '#', '2'),
+                    i(r, '$', '3'),
+                    i(r, '%', '4'),
+                    r)[e]
+                }
+                ));
+                return atob(t);
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

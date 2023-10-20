@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2021.03.15">
+    <url><![CDATA[https?://(?:www\.)?renren163\.com/mjplay/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.renren163.com/mjplay/11748-0-0.html
+            var title = (document.getElementsByTagName('h3').length != 0) ? document.getElementsByTagName('h3')[0].innerText : document.title;
+            var thumbnail = (document.body.innerHTML.indexOf('data-pic') != -1) ? document.body.innerHTML.match(/data-pic=\"([^\"]+)/)[1] : '';
+            var api_url = this.now;
+            var video_url = window.location.href;
+            var data = window.external.getHtmlCode(api_url);
+            if (data.indexOf('var main = ') != -1) {
+                var host = api_url.match(/(https?:\/\/[^\/]+)/)[1];
+                video_url = host + data.match(/var\s*main\s*=\s*\"([^\"]+)/)[1];
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

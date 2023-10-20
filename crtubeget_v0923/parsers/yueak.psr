@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" referer="true" date="2021.06.26">
+    <url><![CDATA[https?://(?:\w+\.)?yueak\.com/vod-play-id-(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[<title>(.*?-.*?)-.*?</title>]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.yueak.com/vod-play-id-59209-src-1-num-1.html
+            //https://www.yueak.com/vod-play-id-51976-src-1-num-453.html
+            document.body.innerHTML += '$cr_video_url=' + MacPlayer.PlayUrl + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

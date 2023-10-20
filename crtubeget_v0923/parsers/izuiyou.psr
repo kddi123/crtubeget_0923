@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2021.04.01">
+    <url><![CDATA[https?://(?:share\.)?izuiyou\.com/.*?pid=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail="([^"]+)"]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://share.izuiyou.com/hybrid/share/post?pid=208340815&zy_to=applink
+            if (document.getElementsByClassName('ImageBoxII__btnPlay').length != 0) {
+                document.getElementsByClassName('ImageBoxII__btnPlay')[0].click();
+                delay(1500);
+            }
+
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            var thumbnail = '', video_url = '';
+            var duration = (document.getElementsByClassName('VideoPlayer__totalTime').length != 0) ? document.getElementsByClassName('VideoPlayer__totalTime')[0].innerText : 0;
+            if (document.getElementsByTagName('video').length != 0) {
+                thumbnail = document.getElementsByTagName('video')[0].poster;
+                video_url = document.getElementsByTagName('video')[0].src;
+            }
+            if (!video_url && typeof(gvd) != 'undefined') {
+                var data = gvd(window.external.url);
+                var jo = JSON.parse(data);
+                if (jo.body && jo.body.video_url) {
+                    title = jo.body.title || title;
+                    thumbnail = jo.body.cover_url || thumbnail;
+                    video_url = jo.body.video_url;
+                }
+            }
+            if (!video_url)
+                video_url = window.location.href;
+
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=\"' + thumbnail + '\",duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

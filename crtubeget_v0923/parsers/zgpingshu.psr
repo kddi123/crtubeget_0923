@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2022.04.30">
+    <url><![CDATA[https?://(?:www\.)?zgpingshu\.com/play/.*/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.zgpingshu.com/play/582/133.html
+            var title = (document.getElementsByClassName('mark').length != 0) ? document.getElementsByClassName('mark')[1].innerText : document.title;
+            if (title.indexOf('下载') != -1)
+                title = title.substr(0, title.indexOf('下载') - 3);
+            if (title.indexOf(document.title) == -1)
+                title += document.title.substring(0, document.title.indexOf(' '));
+            var api_url = window.external.url.replace('play', 'playdata');
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            var jo = JSON.parse(data);
+            var video_url = jo.urlpath.replace('flv', 'mp3');
+            document.body.innerHTML = 'title=\"' + title + '\",cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

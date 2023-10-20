@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2022.05.24">
+    <url><![CDATA[kg\.qq\.com/.*?play\?s=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://node.kg.qq.com/play?s=E12r7iESMa1WyEhg&g_f=personal&appsource=
+            //https://node.kg.qq.com/play?s=TZ1MrLT3RJf-LTKH&shareuid=
+            var duration = (document.getElementsByClassName('play_control__time duration_time').length != 0) ? document.getElementsByClassName('play_control__time duration_time')[0].innerText : 0;
+            var vi = window.__DATA__.detail;
+            var video_url = vi.playurl_video || vi.playurl;
+            document.body.innerHTML = 'title=\"' + vi.song_name + '\",thumbnail=' + vi.cover + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2022.04.27">
+    <url><![CDATA[https?://(?:\w+\.)?vzan\.com/live/.*?v=(?<id>[^#/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://wx.vzan.com/live/tvchat-1115196040?shareuid=0&v=1555487459434#/
+            //https://wx.vzan.com/live/page/D72835FEE5B7F2424FC724E99345A3DC?topicid=2074567315&v=1649670317816
+            var href = window.location.href;
+            var pid = href.match(/page\/([^?]+)/)[1];
+            var api_url = 'https://live-play.vzan.com/api/topic/topic_config?tpId=' + pid + '&isPcBrowser=true';
+            var data = window.external.getHtmlCode(api_url, href);
+            var jo = JSON.parse(data);
+            var video = jo.dataObj.videoConfigVo;
+            var video_url = playUrlEncrypt(video.playUrl);
+            document.body.innerHTML = 'title=\"' + jo.dataObj.title + '\",thumbnail=' + video.cover + ',cr_video_url=' + video_url + '$';
+
+            function decodeId(key) {
+                var isNum = Number(key);
+                if (!isNaN(isNum)) {
+                    return key;
+                } else {
+                    if (key.indexOf('-') > 0) {
+                        return key;
+                    } else {
+                        var id = key.split('').map(function (num) {
+                            return isNaN(Number(num)) ? ',' : num;
+                        }).join('').split(',').map(function(el){
+                            return (Number(el) / 2);
+                        });
+                        id.splice(id.length - 1, 1);
+                        return id.join('');
+                    }
+                }
+            }
+
+            function playUrlEncrypt(url) {
+                var src = url.toString();
+                var isreplay = src.indexOf('replay') > 0;
+                var isclip = src.indexOf('clip') > 0;
+                var islive = src.indexOf('live.') > 0;
+                // 非直播地址不处理
+                if (!isreplay && !isclip && !islive) {
+                    return url;
+                }
+                return src.split('/').map(function (el, i) {
+                    var key = Number(el);
+                    if ((isreplay || islive) && (i == 3 || i == 4)) {
+                        return decodeId(el);
+                    } else if (isclip && (i == 4 || i == 5)) {
+                        return decodeId(el);
+                    } else if (isNaN(key)) {
+                        if (el == '') {
+                            return '/';
+                        } else {
+                            return el;
+                        }
+                    } else if (key == 0) {
+                        return '';
+                    } else {
+                        return el;
+                    }
+                }).join('/');
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

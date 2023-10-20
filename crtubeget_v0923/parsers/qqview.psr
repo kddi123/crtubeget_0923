@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2022.12.04">
+    <url><![CDATA[view\.inews\.qq\.com/\w+/(?<id>[^\?.]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://view.inews.qq.com/a/20200903V0E2J900?uid=&devid=4DADAD38-B21D-4FC6-8842-2531537B7F55&qimei=5768a9fa-86fe-42b0-9614-93e53ca1b882
+            //https://view.inews.qq.com/a/20210221V09X5G00?tbkt=D&uid=
+            //https://view.inews.qq.com/wxn/20221202V05R3P00
+            var title = window.initData ? (window.initData.content.title || window.initData.content.desc): document.title;
+            var thumbnail = window.initData ? window.initData.content.imgurl : '';
+            var vid = window.initData ? window.initData.content.vid : '';
+            //https://view.inews.qq.com/a/90PWKU3TF003MOX8000?tbkt=J&uid=
+            if (!vid && window.initData) {
+                for (var i = 0; i <= window.initData.content.content.length - 1; i++) {
+                    var content = window.initData.content.content[i];
+                    vid = vid || content.vid || content.Vid;
+                }
+            }
+            var video_url = vid ?'https://v.qq.com/x/page/' + vid + '.html#ra' : window.location.href;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

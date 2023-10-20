@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.02.27">
+    <url><![CDATA[(?:qq\.com/m/video\.html\?.*?id=(?<id>[^&]+)|url\.cn/(?<id>\w+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[<img\s+class="poster"\s+src="([^"]+)"]]></thumbnail>
+    <duration><![CDATA[<div\s+class="duration"[^>]+>([^<]+)</div>]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            var title = document.getElementsByClassName('video-title')[0].innerText;
+            var video_url = window.location.href;
+            var vid = document.getElementsByClassName('tx-video-content')[0].outerHTML.match(/_vid=\"([^\"]+)/)[1];
+            var api_url = 'https://vv.video.qq.com/getinfo?vid=' + vid + '&defn=fhd&platform=10801&otype=ojson&sdtfrom=v4138&appVer=7&newnettype=1&fhdswitch=1&show1080p=1&dtype=3&sphls=2';
+            var data = window.external.getHtmlCode(api_url);
+            var jo = JSON.parse(data);
+            var video_url = jo.vl.vi[0].ul.ui[0].url;
+            if (!video_url || !window.external.urlExists(video_url)) {
+                api_url = 'http://vv.video.qq.com/getinfo?vids=' + vid + '&platform=101001&charge=0&otype=json&defn=fhd';
+                data = window.external.getHtmlCode(api_url);
+                data = data.slice('QZOutputJson='.length, -1);
+                jo = JSON.parse(data);
+                video_url = jo.vl.vi[0].ul.ui[0].url
+                    + jo.vl.vi[0].fn
+                    + '?vkey='
+                    + jo.vl.vi[0].fvkey;
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

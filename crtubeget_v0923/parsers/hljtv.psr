@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2021.11.21">
+    <url><![CDATA[https?://(?:\w+\.)?hljtv\.com/.*?/(?<id>\d+)\.shtml?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.hljtv.com/dianbo/folder80/folder81/2017-03-05/29229.shtml
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            var thumbnail = document.getElementById('wx-share-img') ? document.getElementById('wx-share-img').value : '';
+            var video_url = document.getElementById('m3u8') ? document.getElementById('m3u8').value : window.location.href;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',,cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

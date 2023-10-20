@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" unescape="false" date="2022.12.20">
+    <url><![CDATA[https?://(?:live\.)?douyin\.com/fifaworldcup/\?rid=[^&]+&eid=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //列表之虚拟页：https://live.douyin.com/fifaworldcup/7078589838949236766
+            //https://live.douyin.com/fifaworldcup/?rid=7178152967592610621&eid=7177914465739232288
+            var url = window.external.url;
+            var room_id = url.match(/rid=([^&]+)/)[1];
+            var eid = url.match(/eid=([^&]+)/)[1];
+            var title = url, thumbnail = '', duration = 0, video_url = '';
+            var api_url = 'https://live.douyin.com/webcast/show/episode/replay_list/?aid=6383&device_platform=web&room_id=' + room_id;
+            var data = window.external.getHtmlCode(api_url, url);
+            var jo = JSON.parse(data);
+            for (var i = 0; i <= jo.data.all_replay.length - 1; i++) {
+                var replay = jo.data.all_replay[i];
+                for (var j = 0; j <= replay.info_list.length - 1; j++) {
+                    var aweme = replay.info_list[j];
+                    if (aweme.episode_id_str == eid) {
+                        title = aweme.title;
+                        thumbnail = aweme.cover.url_list[0];
+                        duration = aweme.video_info.duration;
+                        var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                        //非加密源
+                        var pi = aweme.video_info.unfold_play_info;
+                        for (var k = 0; k <= pi.play_urls.length - 1; k++) {
+                            var pu = pi.play_urls[k];
+                            video_url = pu.main;
+                            if (vq == pu.height)
+                                break;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            var html = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+            if (typeof(window.external.receive) != 'undefined')
+                window.external.receive(html);
+            else
+                document.body.innerHTML = html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

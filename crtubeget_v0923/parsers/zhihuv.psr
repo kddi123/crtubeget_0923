@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" date="2019.09.29">
+    <url><![CDATA[https?://(?:(?:www|video)\.)?zhihu\.com/video/(?<id>\d+)]]></url>
+    <title><![CDATA[<title>(.+?)</title>]]></title>
+    <thumbnail><![CDATA["cover_url":\s+"([^"]+)"]]></thumbnail>
+    <duration><![CDATA["duration":\s+([^,]+)]]></duration>
+    <mediaUrl><![CDATA["play_url":\s+"([^"]+)"]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            var vid = window.location.href.match(/\d+/)[0];
+            var url = 'https://lens.zhihu.com/api/v4/videos/' + vid;
+            var html = window.external.getHtmlCode(url);
+            document.body.innerHTML = html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

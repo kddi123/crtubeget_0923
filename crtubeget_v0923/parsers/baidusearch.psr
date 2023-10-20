@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2023.03.13">
+    <url><![CDATA[https?://(?:\w+\.)?baidu\.com/(?:r|vsearch)/.*?(?:nid|u)=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://mr.baidu.com/r/KmDvjKEkpy?f=cp&u=1aea16ec5767483e->
+            //https://m.baidu.com/vsearch/xsppage?pd=video_page&atn=vertical&dsp=iphone&resource_id=5021&from_sf=1&title=_%E5%B0%8F%E8%A7%86%E9%A2%91&top=%7B%22sfhs%22%3A1%2C%22_hold%22%3A2%7D&alr=1&xsp_key=nid&nids=12431905322920827823&nid=12431905322920827823&xsp_from=rec&fr0=C&ms=1&frsrcid=4660
+            //https://mr.baidu.com/r/WhfsjGuGv6?f=cp&u=4e75761bddb488e0->https://mbd.baidu.com/newspage/data/videolanding?nid=sv_3725510858750018052&sourceFrom=share
+            var title = (document.getElementsByTagName('h3').length != 0) ? document.getElementsByTagName('h3')[0].innerText : document.title;
+            var video_url = document.body.innerHTML.match(/videoList\".*?\"id\":\"([^\"]+)/) ? document.body.innerHTML.match(/videoList\".*?\"id\":\"([^\"]+)/)[1] : window.location.href
+            document.body.innerHTML = 'title=\"' + title + '\",cr_video_url=' + video_url + '#ra$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

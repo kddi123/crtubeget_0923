@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" date="2019.11.30">
+    <url><![CDATA[https?://(?:\w+\.)?miaopai\.com/(?:show|media)/(?<id>[^.]+)]]></url>
+    <title><![CDATA[<div\s+class="title_wrapper[^>]+>\s+<p[^>]+>([^<]+)</p>]]></title>
+    <thumbnail><![CDATA[background-image:\s+url\("([^"]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[<video[^>]+\bsrc="([^"]+)"]]></mediaUrl>
+    <jsCode><![CDATA[
+        if (document.getElementsByClassName('cover').length != 0)
+            document.getElementsByClassName('cover')[0].click();
+    ]]></jsCode>
+</parser>

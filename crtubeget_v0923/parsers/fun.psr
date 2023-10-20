@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" aria2c="true" delegate="true" date="2023.07.20">
+    <url><![CDATA[https?://(?:\w+.)?fun\.tv/(?:vplay|player)/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.fun.tv/vplay/g-1014011/
+            //http://www.fun.tv/vplay/g-1014011.v-10671655/
+            //http://www.fun.tv/vplay/g-313395.v-933407/
+            //flash导致页面不结束问题
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var url = window.external.url;
+            var html = window.external.getHtmlCode(url);
+            if (html.indexOf('cru-tit') != -1)
+                title = html.match(/cru-tit\"[^>]+title=\"([^\"]+)/)[1];
+            var vid = (url.indexOf('v-') != -1) ? url.match(/v\-([^\/]+)/)[1] : '';
+            var video = undefined;
+            var vplayInfo= JSON.parse(html.match(/vplayInfo\s*=(.*?);\s*window.shareInfo/)[1]);
+            var videos = vplayInfo.dvideos[0].videos;
+            top:
+            for (var i = 0; i <= videos.length - 1; i++) {
+                //剧集
+                if (videos[i].lists) {
+                    for (var j = 0; j <= videos[i].lists.length - 1; j++) {
+                        var video = videos[i].lists[j];
+                        if (video.current)
+                            break top;
+                    }
+                }
+                //电影
+                else {
+                    var video = videos[i];
+                    if (video.current)
+                        break;
+                }
+            }
+            //此间值常变，动态获取...
+            var js_ue = 'function ue(t,e){return{z1:(108*t+73*e)%256,z2:(223*t+113*e)%256}}';
+            if (html.indexOf('html5video_url = ') != -1) {
+                var js_url = html.match(/html5video_url\s*=\s*'([^']+)/)[1];
+                var js = window.external.getHtmlCode(js_url, url);
+                if (js.indexOf('var ue=function(t,e)') != -1)
+                    js_ue = 'function ue(t,e)' + js.match(/var\s+ue=function\(t,e\)([^;]+)/)[1];
+            }
+            eval(js_ue);
+
+            vid = video.id;
+            title = title || video.name;
+            thumbnail = video.still;
+            duration = video.duration;
+            var api_url = 'http://pm.funshion.com/v7/media/play/?id=' + vid + '&cl=web&uc=111';
+            //vip... http://www.fun.tv/vplay/g-313395.v-933407/
+            var cookie = window.external.getCookieEx(url, 'userid') || window.external.getCookieEx(url, 'sso_token');
+            var uid = (cookie.indexOf('userid') != -1) ? cookie.match(/userid=([^;]+)/)[1] : '';
+            var token = (cookie.indexOf('sso_token') != -1) ? cookie.match(/sso_token=([^;]+)/)[1] : '';
+            var fck = (cookie.indexOf('fck') != -1) ? cookie.match(/fck=([^;]+)/)[1] : '';
+            api_url += '&user_id=' + uid + '&token=' + token;
+            var headers = 'Cookie: ' + cookie;
+            var data = window.external.getHtmlCodeEx(api_url, headers);
+            if (data.indexOf('playlist\":[{') != -1) {
+                var jo = JSON.parse(data);
+                //1080...h264
+                var pi = jo.playlist[jo.playlist.length - 1].playinfo[0];
+                var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                //vip?
+                for (var i = 0; i <= jo.playlist.length - 1; i++) {
+                    var curr_pi = jo.playlist[i].playinfo[0];
+                    if (!cookie && (!curr_pi.isvip || curr_pi.isvip == '0'))
+                        pi = curr_pi;
+                    if (vq == 720 && jo.playlist[i].code == 'sdvd' || vq == 480 && jo.playlist[i].code == 'hd') {
+                        pi = curr_pi;
+                        break;
+                    }
+                }
+                pi.token = tk(he(pi.token));
+                var t = pi.infohash;
+                var hashid = he(t);
+                if (!/^[0-9a-f]*$/gi.test(hashid)) {
+                    t = pi.infohash_prev;
+                    hashid = he(t);
+                }
+                hashid = hashid.substr(0, 40);
+                api_url = 'http://jobsfe.funshion.com/query/v1/mp4/' + hashid + '.json?';
+                data = window.external.getHtmlCode(api_url, url);
+                if (data.indexOf('urls\":[') != -1) {
+                    video_url = JSON.parse(data).playlist[0].urls[0].replace(':80', '');
+                    video_url += '?token=' + pi.token + '&user_id=' + uid + '&user_token=' + token + '&vf=' + pi.vf + '&fudid=' + fck + '&app_code=mweb';
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+
+            //...
+            function tk(t) {
+                var e, n, i, r, o, a, s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+                for (i = t.length,
+                n = 0,
+                e = ''; n < i; ) {
+                    if (r = 255 & t.charCodeAt(n++),
+                    n == i) {
+                        e += s.charAt(r >> 2),
+                        e += s.charAt((3 & r) << 4),
+                        e += '==';
+                        break
+                    }
+                    if (o = t.charCodeAt(n++),
+                    n == i) {
+                        e += s.charAt(r >> 2),
+                        e += s.charAt((3 & r) << 4 | (240 & o) >> 4),
+                        e += s.charAt((15 & o) << 2),
+                        e += '=';
+                        break
+                    }
+                    a = t.charCodeAt(n++),
+                    e += s.charAt(r >> 2),
+                    e += s.charAt((3 & r) << 4 | (240 & o) >> 4),
+                    e += s.charAt((15 & o) << 2 | (192 & a) >> 6),
+                    e += s.charAt(63 & a)
+                }
+                return e
+            }
+
+            function he(t) {
+                return pe(le(t.substr(2, t.length - 2)))
+            }
+            function pe(t) {
+                for (var e = '', n = 0; n < t.length; ) {
+                    var i = t.charCodeAt(n++)
+                      , r = t.charCodeAt(n++);
+                    if (e += fe(ue(i, r).z1),
+                    e += fe(ue(i, r).z2),
+                    n == t.length - 1) {
+                        e += fe(t.charCodeAt(n));
+                        break
+                    }
+                }
+                return e
+            }
+            function fe(t) {
+                return String.fromCharCode(t)
+            }
+            function le(t) {
+                for (var e, n, i, r, o = new Array(-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,-1,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,-1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1), a = 0, s = t.length, c = ''; a < s; ) {
+                    do {
+                        e = o[255 & t.charCodeAt(a++)]
+                    } while (a < s && -1 == e);
+                    if (-1 == e)
+                        break;
+                    do {
+                        n = o[255 & t.charCodeAt(a++)]
+                    } while (a < s && -1 == n);
+                    if (-1 == n)
+                        break;
+                    c += String.fromCharCode(e << 2 | (48 & n) >> 4);
+                    do {
+                        if (61 == (i = 255 & t.charCodeAt(a++)))
+                            return c;
+                        i = o[i]
+                    } while (a < s && -1 == i);
+                    if (-1 == i)
+                        break;
+                    c += String.fromCharCode((15 & n) << 4 | (60 & i) >> 2);
+                    do {
+                        if (61 == (r = 255 & t.charCodeAt(a++)))
+                            return c;
+                        r = o[r]
+                    } while (a < s && -1 == r);
+                    if (-1 == r)
+                        break;
+                    c += String.fromCharCode((3 & i) << 6 | r)
+                }
+                return c
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

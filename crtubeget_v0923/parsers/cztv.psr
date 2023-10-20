@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2023.04.29">
+    <url><![CDATA[cztv\.com/vplay/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://ztv.cztv.com/vplay/111248.html#/
+            //http://tv.cztv.com/vplay/1263976.html
+            var video = window.__INFO__.video;
+            var title = video.title, thumbnail = video.videoPic, video_url = '';
+            var url = window.external.url;
+            var prefix = (url.indexOf('//ztv') != -1) ? 'zvod' : 'apicms';
+            var api_url = 'https://' + prefix + '.cztv.com/mms/out/video/playJson?id=' + video.vid + '&domain=www.letv.com&platid=111&splatid=1002';
+            var data = window.external.getHtmlCode(api_url, url);
+            if (data.indexOf('playurl\":{') != -1) {
+                var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                var jo = JSON.parse(data);
+                title = title || jo.playurl.title;
+                for (var i = 0; i <= jo.playurl.dispatch.length - 1; i++) {
+                    var dp = jo.playurl.dispatch[i];
+                    if (vq == 720 && dp.vtype == '1200' || vq == 480 && dp.vtype == '800' || i == jo.playurl.dispatch.length - 1) {
+                        for (var k in dp.url[0])
+                            video_url = dp.url[0][k];
+                        break;
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" delegate="true" date="2023.03.05">
+    <url><![CDATA[https?://video\.baomihua\.com/v/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        //https://video.baomihua.com/v/50704983
+        //https://video.baomihua.com/v/46466131?reportto=REC_46466131&from=video&md=ufrbmh
+        var flvid = window.external.url.match(/v\/([^?&]+)/)[1];
+        var api_url = 'https://play.baomihua.com/getvideourl.aspx?flvid=' + flvid + '&devicetype=pc_noflash&dataType=json&_=' + Date.now();
+        var data = window.external.getHtmlCode(api_url, window.external.url);
+        var jo = JSON.parse(data);
+        var title = decodeURIComponent(jo.title);
+        var video_url = 'https://' + jo.alipalyurl;
+        document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + jo.video_img + ',duration=' + jo.totaltime + ',cr_video_url=' + video_url + '$';
+    ]]></jsCode>
+</parser>

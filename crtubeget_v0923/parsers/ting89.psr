@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser crpj="true" referer="true" date="2021.03.18">
+    <url><![CDATA[https?://(?:www\.)?ting89\.com/playbook/\?(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[play_title">([^<]+)<]]></title>
+    <thumbnail><![CDATA['bdPic':'([^']+)']]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[datas=\("([^&]+)]]></mediaUrl>
+</parser>

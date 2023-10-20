@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" delegate="true" date="2023.09.23">
+    <url><![CDATA[https?://(?:\w+\.)?huanxi\.com/.*?play_(?<id>\d+)\.shtml?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.huanxi.com/play_53342.shtml?from=m
+            //https://www.huanxi.com/play_47745.shtml?from=m 剧集，URL不变，需主程序支持
+            //https://www.huanxi.com/sv/play_53384.shtml
+            var url = window.external.url;
+            var html = window.external.getHtmlCode(url);
+            var title = html.match(/title:[\"']([^\"']+)/)[1];
+            var thumbnail = html.match(/singImg:[\"']([^\"']+)/) ? html.match(/singImg:[\"']([^\"']+)/)[1] : '';
+            var video_url = '';
+            var vid = url.match(/play_([^.]+)/)[1];
+            var vtype = html.match(/videoType:\s*([^,]+)/)[1];
+            var from = (url.indexOf('from=') != -1) ? url.match(/from=[^&]+/)[0] + '&' : '';
+            var cookie = window.external.getCookieEx(url, 'uid');
+            var headers = 'Referer: ' + url + '\r\nCookie: ' + cookie;
+            //不可用deviceId，不然取的地址不全
+            var api_url = 'https://www.huanxi.com/apis/hxtv/play/authen/v1?' + from + 'tabbar_id=1001&xt=0&platform=1&version=6.11&vid=' + vid + '&vtype=' + vtype;
+            var data = window.external.getHtmlCodeEx(api_url, headers);
+            if (data.indexOf('cdn_stream\":[{') == -1) {
+                headers = 'Referer: ' + url;
+                data = window.external.getHtmlCodeEx(api_url, headers);
+            }
+            if (data.indexOf('cdn_stream\":[{') != -1) {
+                var jo = JSON.parse(data);
+                var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                for (var i = 0; i <= jo.result.cdn_stream.length - 1; i++) {
+                    var stream = jo.result.cdn_stream[i];
+                    video_url = stream.cdn_url;
+                    if (vq > 8 && stream.tips_desc.indexOf(vq) != -1)
+                        break;
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

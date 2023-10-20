@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.06.30">
+    <url><![CDATA[om\.qq\.com/page/(?<id>[^&/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://page.om.qq.com/page/OWiovZ7gPw8Oi0gjQk6epnag0
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            var vid = document.head.innerHTML.match(/video-id\"\s+content=\"([^\"]+)/)[1];
+            document.body.innerHTML = 'title=\"' + title + '\",cr_video_url=https://v.qq.com/x/page/' + vid + '.html#ra';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

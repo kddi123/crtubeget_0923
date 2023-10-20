@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" referer="true" date="2021.04.25">
+    <url><![CDATA[https?://(?:\w+\.)?hnntv\.cn/.*?/(?<id>\d+)\.shtml?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //http://tc.hnntv.cn//ly/xz/xz2007/28983335.shtml
+            //http://tc.hnntv.cn//ly/xz/xz2017/28723526.shtml
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var html = window.external.getHtmlCode(window.external.url);
+            if (html.indexOf('createPlayer') != -1) {
+                var data = html.match(/createPlayer\(([^\)]+)/)[1];
+                var vid = data.match(/vid:([^\"]+)/)[1];
+                var ds = data.match(/(\d+-\d+-\d+)/)[1].replace(/-/g, '/');
+                var api_url = 'https://media.chinamcloud.com/lyws/vod/ios/' + ds + '/' + vid + '.jsonp';
+                data = window.external.getHtmlCode(api_url);
+                if (data && data.indexOf('\"urls\"') != -1) {
+                    data = data.substring(data.indexOf('(') + 1, data.lastIndexOf(')'));
+                    var jo = JSON.parse(data);
+                    title = jo.title;
+                    thumbnail = jo.imagePath;
+                    duration = jo.duration;
+                    video_url = jo.host + jo.urls[0];
+                }
+            }
+
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

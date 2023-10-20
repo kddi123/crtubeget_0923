@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2022.03.01">
+    <url><![CDATA[https?://(?:www\.)?dedao\.cn/(?:course/article|live/detail)\?id=(?<id>[^&]+)]]></url>
+    <title><![CDATA[v_title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[GAT]]></ckSign>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://www.dedao.cn/course/article?id=xzYo2GPNq4W8VEbYb7JejyRBZbnw0d 音频
+            //https://www.dedao.cn/live/detail?id=aYYyg9ZmvRqrb30WJLlnDVjMQeKrtONb4l7onDGwa85EeG7zO4k2AB1xKXoNd6o1 //视频
+            var url = window.external.url;
+            var id = url.match(/id=([^&]+)/)[1];
+            var args = '{\"detail_id\":\"' + id + '\"}';
+            var cookie = window.external.getCookieEx(url, 'GAT', 2500) || window.external.getCookie(url);
+            var headers = 'Content-Type: application/json\r\nCookie: ' + cookie;
+            var api_url = 'https://www.dedao.cn/pc/bauhinia/pc/article/info';
+            var data = window.external.getPostResultEx(api_url, args, headers);
+            var jo = JSON.parse(data);
+            var audio = jo.c.article_info.audio;
+            var thumbnail = jo.c.article_info.logo;
+            document.body.innerHTML = 'v_title=\"' + audio.title + '\",thumbnail=' + thumbnail + ',duration=' + audio.duration + ',cr_video_url=' + audio.mp3_play_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

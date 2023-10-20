@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="7500" crpj="true" date="2021.05.13">
+    <url><![CDATA[https?://(?:www\.)?pixabay\.com/videos/(?<id>[^/]+)]]></url>
+    <title><![CDATA[<title>([^<]+)\s+-\s+]]></title>
+    <thumbnail><![CDATA["thumbnailUrl":\s+"([^"]+)"]]></thumbnail>
+    <duration><![CDATA["duration":\s+"([^"]+)"]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <headers><![CDATA[User-Agent: _]]></headers>
+    <jsCode><![CDATA[
+        try {
+            //https://pixabay.com/videos/flowers-finger-petals-cherry-flower-68367/
+            //https://pixabay.com/videos/windmill-turbine-energy-112957/
+            var html = document.body.innerHTML;
+            if (document.getElementsByTagName('iframe').length == 0) {
+                var cookie = window.external.getCookie(window.location.href) || document.cookie;
+                var headers = 'User-Agent: ' + navigator.userAgent + '\r\nCookie: ' + document.cookie;
+                html = window.external.getHtmlCodeEx(window.location.href, headers);
+            }
+            else
+                html = document.body.innerHTML;
+            video_url = (html.indexOf('<iframe src=') != -1) ? html.match(/<iframe\s+src=\"([^\"]+)/)[1] + '#ra' : html.match(/contentUrl\":\s+\"([^\"]+)/)[1];
+            document.body.innerHTML = 'cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

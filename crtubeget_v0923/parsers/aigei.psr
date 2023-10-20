@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" referer="true" date="2021.06.01">
+    <url><![CDATA[https?://(?:www\.)?aigei\.com/item/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title-name">([^<]+)]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[icon-time"></i>([^<]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.aigei.com/item/sheng_dan_yin_x_272.html
+            var video_url = window.location.href;
+            var id = document.getElementsByClassName('item-view-box')[0].innerHTML.match(/itemid=\"([^\"]+)/)[1];
+            var el = document.getElementById('itemInfoToken_audio_mp3_' + id);
+            var h = el.attributes['ftype'].value
+                , u = el.attributes['rurl'].value
+                , v = el.attributes['extime'].value
+                , r = el.attributes['token'].value
+                , n = undefined
+                , l = undefined
+                , d = undefined;
+            h = dfu(h, u, v, r, n, l, d);
+            h.isc = false;
+            h.ilg = false;
+            h.pkgItems = undefined;
+            h.confirm = false;
+            b = cqbj(h);
+            var api_url = 'https://www.aigei.com/f/d/' + el.attributes['ftype'].value;
+            var args = 'v=' + encodeURIComponent(b.v);
+            var data = window.external.getPostResult(api_url, args, 'application/x-www-form-urlencoded; charset=UTF-8');
+            if (data.indexOf('\"status\":\"success\"') != -1) {
+                var jo = JSON.parse(data);
+                video_url = atob(jo.message);
+            }
+            document.body.innerHTML = 'cr_video_url=' + video_url + '$' + document.getElementsByClassName('item-view-box')[0].innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

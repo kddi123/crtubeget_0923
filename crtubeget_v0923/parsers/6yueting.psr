@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" referer="true" date="2023.03.09">
+    <url><![CDATA[https?://(?:www\.)?6yueting\.com/play/(?<id>[^/]+/\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.6yueting.com/play/bd9e08dd/3
+            var title = document.title, video_url = '';
+            var url = window.external.url;
+            var thumbnail = (document.getElementsByClassName('img p-run playing').length != 0) ? document.getElementsByClassName('img p-run playing')[0].src : '';
+            var duration = (document.getElementsByClassName('player-duration-time').length != 0) ? document.getElementsByClassName('player-duration-time')[0].innerText : 0;
+            var code = url.match(/play\/([^\/]+)/)[1];
+            var no = url.match(/play\/[^\/]+\/(\d+)/)[1];
+            var t = Date.now().toString();
+            var api_url = 'http://www.6yueting.com/web/index/video_new?code=' + code + '&no=' + no + '&type=0&timestamp=' + t;
+            var referer = 'http://www.6yueting.com/audio-iframe.php?come=100';
+            if (document.getElementById('myIframe'))
+                referer = document.getElementById('myIframe').src;
+            var u = 'FRDSHFSKVKSKFKS';
+            var ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36';
+            var headers = 'User-Agent: ' + ua + '\r\nReferer: ' + url;
+            var html = window.external.getHtmlCodeEx(referer, headers);
+            if (html.indexOf('data-info=') != -1)
+                u = html.match(/data-info=\"([^\"]+)/)[1].substring(0, 5) + 'FSKVKSKFKS';
+            api_url += '&sign=' + window.external.md5(t + code + no + u)
+            headers = 'User-Agent: ' + ua + '\r\nReferer: ' + referer;
+            var data = window.external.getHtmlCodeEx(api_url, headers);
+            if (data) {
+                var jo = JSON.parse(data);
+                title = jo.data.title;
+                video_url = jo.data.videoUrl;
+            }
+            else
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

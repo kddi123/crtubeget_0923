@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" date="2019.10.10">
+    <url><![CDATA[https?://(?:www\.)?qsptv\.com/play/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[<h1>([^<]+)</h1>]]></title>
+    <thumbnail><![CDATA[thumbnail=([^\$]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            var m = document.body.innerHTML.match(/<a\s+href=\"(\/show-[^\"]+)\">/);
+            if (m) {
+                var url = window.location.host + m[1];
+                var html = window.external.getHtmlCode(url);
+                m = document.body.innerHTML.match(/background:\s+url\(\"([^\)]+)\"\)/);
+                if (m)
+                    document.body.innerHTML = 'thumbnail=' + m[1] + '$' + document.body.innerHTML;
+            }
+
+            document.body.innerHTML = 'cr_video_url=' + this.zanpiancms_player.url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

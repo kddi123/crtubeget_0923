@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" referer="true" aria2c="true" delegate="true" date="2023.08.13">
+    <url><![CDATA[(?:kuaishou(?:app)?|gifshow|yxixy|chenzhongtech)\.com/(?:u/[^/]+/(?<id>[^\?/]+)|(?:\w/(?<id>[^/]+)|\w+/photo/(?<id>[^/]+))|(?<id>\w{5,})$|(?:(?:short-)?video|photo)/(?<id>[^?]+)|fw/playback/(?<id>[^?]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <dateTime><![CDATA[date_time=([^,]+)]]></dateTime>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <imageUrl><![CDATA[cr_image_url=([^\$]+)]]></imageUrl>
+    <ckSign><![CDATA[did]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //http://m.gifshow.com/s/8p4yF7rf
+            //https://live.kuaishou.com/u/3xq6q95i9b5rzdu/3x3uaii9unqgmkk?did=web_7b7921360f68374d283a9ef100261e3b
+            //https://live.kuaishou.com/u/3x4da2wd75degvc/3x93pw5imf8c5ks
+            //https://video.kuaishou.com/video/3xqfe27brp3zjqa?authorId=3xqvcaurub8ph9k
+            //https://www.kuaishou.com/photo/3xdcjm5y43iih3m/3xy4xuu64g2axp2
+            //https://www.kuaishou.com/short-video/3x8pkqxvc69cpus?authorId=3x4h5av7masaw6i&streamSource=find&area=homexxbrilliant
+            //https://video.kuaishou.com/short-video/3xcixxpfkw8avzw?authorId=3xdsmkx5qh3iiw9&streamSource=find
+            //https://kpfbeijing.m.chenzhongtech.com/fw/playback/284402608?cc=share_copylink
+            //https://kpfbeijing.m.chenzhongtech.com/f/X4rUxGW3KbY41t9
+            //https://www.kuaishou.com/f/XaJXWLR9pUwR2aP
+            //以window.location.url求，某些用户电脑上，会跑到快手错误页，因此以Url处之
+            var url = window.external.url;
+            //短链接转化
+            if (url.indexOf('kuaishou.com') == -1 || url.match(/\/\/\w\./) || url.indexOf('video') == -1) {
+                for (var i = 0; i <= 3; i++) {
+                    var domain = url.match(/https?:\/\/[^/]+/)[0];
+                    url = window.external.getRedirectedUrl(url, 'https://www.kuaishou.com/');
+                    //->//video.kuaishou
+                    if (url.indexOf('//') == 0)
+                        url = 'https:' + url;
+                    //->/fw/photo/...
+                    if (url.indexOf('//') == -1)
+                        url = domain + url;
+                    if (url.indexOf('kuaishou.com') != -1)
+                        break;
+                }
+            }
+            //此法稳
+            if (url.indexOf('fw/playback') != -1) {
+                var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveObject('Microsoft.XMLHTTP');
+                xhr.open('GET', url, false);
+                xhr.send(null);
+                var html = xhr.responseText;
+                if (html.indexOf('<video') != -1) {
+                    html = html.match(/<video.*?\/video>/)[0];
+                    var title = html.match(/alt=\"([^\"]+)/)[1];
+                    var thumbnail = html.match(/poster=\"([^\"]+)/)[1];
+                    var video_url = html.match(/src=\"([^\"]+)/)[1];
+                    document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=0,date_time=0,cr_video_url=' + video_url + '$';
+                    return;
+                }
+            }
+            //https://v.kuaishou.com/xwJtpr http://m.gifshow.com/fw/photo/3xgxjjdna5nyzni跳不过去？
+            if (url.indexOf('fw/photo') != -1) {
+                url = 'https://www.kuaishou.com/short-video' + url.substring(url.indexOf('fw/photo') + 8);
+                if (url.indexOf('?') != -1)
+                    url = url.substr(0, url.indexOf('?'));
+            }
+            //补之前列表解析之坑
+            url = url.replace('&streamSource=profile', '');
+
+            var title = '', thumbnail = '', duration = 0, date_time = 0, video_url = '', image_url = '';
+            var cookie = window.external.getCookieEx(url, 'userId', 2500) || window.external.getCookieEx(url, 'did', 2500) || window.external.getCookie(url);
+            var headers = 'content-type: application/json\r\nCookie: ' + cookie + '\r\nReferer: ' + url;
+            //此类的...https://video.kuaishou.com/f/X-4gNl6vMx38W1OY_A->https://video.kuaishou.com/short-video/3xt8e6tk27uqumm
+            if (!video_url && url.indexOf('video/') != -1) {
+                var pid = url.match(/video\/([^\?]+)/)[1];
+                var variables = '{\"photoId\":\"' + pid + '\",\"page\":\"detail\",\"webPageArea\":\"profilexxnull\"}';
+                var query = 'query visionVideoDetail($photoId: String, $type: String, $page: String, $webPageArea: String) {\
+                    visionVideoDetail(photoId: $photoId, type: $type, page: $page, webPageArea: $webPageArea) {\
+                        photo{\
+                            id duration timestamp caption coverUrl photoUrl\
+                        }\
+                    }\
+                }';
+                var args ='{\"operationName\":\"visionVideoDetail\",\"variables\":' + variables + ',\"query\":\"' + query + '\"}';
+                var api_url = 'https://video.kuaishou.com/graphql';
+                var data = window.external.getPostResultEx(api_url, args, headers, 500);
+                if (data.indexOf('photoUrl') != -1) {
+                    var jo = JSON.parse(data);
+                    var photo = jo.data.visionVideoDetail.photo;
+                    title = photo.caption;
+                    thumbnail = photo.coverUrl;
+                    duration = photo.duration / 1000;
+                    date_time = photo.timestamp / 1000;
+                    video_url = photo.photoUrl;
+                }
+                //不能如此判断，有些已失效的，实际可下：https://www.kuaishou.com/short-video/3xa6gphbjqdw5hk
+                /*else if (data.indexOf('photo\":null') != -1) {
+                    title = '您要下载的视频不存在';
+                    document.body.innerHTML = 'title=\"' + title + '\"$error=请检查视频是否存在。$';
+                    return;
+                }*/
+            }
+            //live?...
+            if (!video_url) {
+                var pid = (url.indexOf('video/') != -1) ? url.match(/video\/([^\?]+)/)[1] : url.match(/\/(\w+)(?:\?|$)/)[1];
+                cookie = window.external.getCookieEx('https://m.chenzhongtech.com', 'did', 2500);
+                if (cookie) {
+                    var headers2 = 'Content-Type: application/json\r\nReferer: https://v.m.chenzhongtech.com/fw/photo/' + pid + '\r\nCookie: ' + cookie;
+                    var args = '{\"photoId\":\"' + pid + '\",\"isLongVideo\":false}';
+                    var api_url = 'https://v.m.chenzhongtech.com/rest/wd/photo/info';
+                    var data = window.external.getPostResultEx(api_url, args, headers2);
+                    if (data.indexOf('photo\":{') != -1) {
+                        var jo = JSON.parse(data);
+                        var photo = jo.photo;
+                        title = jo.shareInfo.shareTitle || photo.caption;
+                        if (photo.photoType == 'VIDEO') {
+                            thumbnail = photo.coverUrls[0].url;
+                            duration = photo.duration / 1000;
+                            date_time = photo.timestamp / 1000;
+                            video_url = photo.mainMvUrls[0].url;
+                        }
+                        //https://live.kuaishou.com/u/3x23ewwuj94dze4/3x9h84fwqhtqjv9
+                        else {
+                            title = '你要下载的不是视频链接';
+                            document.body.innerHTML = 'title=\"' + title + '\"$error=非视频链接不被产品支持$';
+                            return;
+                        }
+                    }
+                }
+            }
+            //https://live.kuaishou.com/u/a97525237/3x2mipc6du5uta6... 很快失效？
+            var video_url_bak = '';
+            if (!video_url && url.indexOf('live.kuaishou') != -1) {
+                var uid = url.match(/u\/([^\/]+)/)[1];
+                var pid = url.match(/u\/[^\/]+\/([^\/&?]+)/)[1];
+                var api_url = 'https://live.kuaishou.com/live_api/profile/feedbyid?photoId=' + pid + '&principalId=' + uid;
+                var data = window.external.getHtmlCodeEx(api_url, headers);
+                if (data.indexOf('playUrl') != -1) {
+                    var jo = JSON.parse(data);
+                    var photo = jo.data.currentWork;
+                    //https://live.kuaishou.com/profile/xinxinziu 列表中无法判断
+                    /*if (photo.workType != 'video') {
+                        title = '你要下载的不是视频链接';
+                        document.body.innerHTML = 'title=\"' + title + '\"$error=非视频链接不被产品支持$';
+                        return;
+                    }*/
+                    //https://live.kuaishou.com/u/3xs78i35grdjkgw/3xwda6ywh44k2wk 图集
+                    title = photo.author.name;
+                    thumbnail = photo.poster;
+                    date_time = photo.author.timestamp / 1000;
+                    video_url = photo.playUrl;
+                    if (photo.imgUrls && photo.imgUrls.length > 1) {
+                        var i = 0;
+                        if (!video_url) {
+                            video_url = photo.imgUrls[0];
+                            i++;
+                        }
+                        for (; i <= photo.imgUrls.length - 1; i++) {
+                            if (!image_url)
+                                image_url = photo.imgUrls[i];
+                            else
+                                image_url += '|' + photo.imgUrls[i];
+                        }
+                    }
+                    //https://live.kuaishou.com/u/3x85qtps94ykxqy/3x3ddwcevrsny8g -> https://alimov2.a.kwimgs.com/bs2/newWatermark/MTYxMDAzMDU1Nzc_zh_3.mp4
+                    if (video_url.indexOf('newWatermark') != -1 && (fv[0] > 1 || em)) {
+                        video_url_bak = video_url;
+                        video_url = '';
+                    }
+                }
+            }
+            //https://v.kuaishou.com/zyjN3j -> https://www.kuaishou.com/short-video/3xx6ts49g9rjfj4
+            if (!video_url) {
+                cookie = window.external.getCookieEx(url, 'userId', 2500) || window.external.getCookieEx(url, 'kuaishou.server.web_st', 2500);
+                cookie = cookie.replace('kpn=GAME_ZONE;', '');
+                var headers = 'User-Agent: ' + navigator.userAgent + '\r\nCookie: ' + cookie;
+                var html = window.external.getHtmlCodeEx(url, headers);
+                if (html.indexOf('photoUrl') != -1) {
+                    var js = html.match(/\{([^\}]+\"photoUrl.*?timestamp\":[^,]+)/)[1];
+                    var jo = JSON.parse('{' + js + '}');
+                    title = jo.caption;
+                    thumbnail = jo.coverUrl;
+                    duration = jo.duration / 1000;
+                    date_time = jo.timestamp / 1000;
+                    video_url = jo.photoUrl;
+                }
+            }
+            //...
+            if ((!video_url || !title) && (fv[0] != '1' || em)) {
+                var data = gvd(window.external.url);
+                if (data.indexOf('video_url') == -1 && window.external.url.indexOf('?') != -1)
+                    data = gvd(window.external.url.substr(0, window.external.url.indexOf('?')));
+                if (data.indexOf('video_url') == -1)
+                    data = gvd(url);
+                var jo = JSON.parse(data);
+                if (jo.body && (jo.body.video_url || jo.body.images)) {
+                    title = jo.body.title;
+                    thumbnail = jo.body.cover_url;
+                    if (!duration && jo.body.duration)
+                        duration = jo.body.duration / 1000;
+                    if (jo.body.video_url)
+                        video_url = jo.body.video_url;
+                    else if (jo.body.images.length > 1) {
+                        video_url = jo.body.images[0];
+                        for (var i = 1; i <= jo.body.images.length - 1; i++) {
+                            if (!image_url)
+                                image_url = jo.body.images[i];
+                            else
+                                image_url += '|' + jo.body.images[i];
+                        }
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = video_url_bak || window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',date_time= ' + date_time + ',cr_video_url=' + video_url + '$cr_image_url=' + image_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

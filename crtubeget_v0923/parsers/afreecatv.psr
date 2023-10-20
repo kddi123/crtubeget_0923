@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2023.02.12">
+    <url><![CDATA[(?is)https?://(?:vod\.)?afreecatv\.com/(?:PLAYER/STATION|player)/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[PdboxTicket]]></ckSign>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //http://vod.afreecatv.com/PLAYER/STATION/36919620
+            //https://vod.afreecatv.com/PLAYER/STATION/72297522 年龄限制
+            //https://vod.afreecatv.com/player/70481764
+            var url = window.external.url.toLowerCase();
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var cookie = window.external.getCookieEx(url, 'PdboxTicket', 2500) || window.external.getCookie(url);
+            var headers = 'Referer: ' + window.external.url + '\r\nCookie: ' + cookie;
+            var html = window.external.getHtmlCodeEx(window.external.url, headers);
+            title = (html.indexOf('og:title') != -1) ? html.match(/og:title\"\s*content=\"([^\"]+)/)[1] : html.match(/<title>([^<]+)/)[1];
+            var vid = url.match(/player\/(?:station\/)?([^?&\/]+)/)[1];
+            var args = 'nStationNo=' + vid + '&nBbsNo=' + vid + '&nTitleNo=' + vid;
+            var api_url = 'https://stbbs.afreecatv.com/api/video/get_video_info.php?' + args;
+            var data = window.external.getHtmlCodeEx(api_url, headers);
+            //get bid
+            if (data.indexOf('<bj_id>') != -1) {
+                //先取一次，https://vod.afreecatv.com/player/48141105用station_no方法就取不到
+                thumbnail = (data.indexOf('<titleImage>') != -1) ? data.match(/<titleImage>([^<]+)/)[1] : '';
+                duration = (data.indexOf('<duration>') != -1) ? data.match(/<duration>([^<]+)/)[1] : 0;
+                if (data.match(/<video\s*duration[^>]+>[^<]+/)) {
+                    video_url = data.match(/<video\s*duration[^>]+>([^<]+)/)[1];
+                    //魔改
+                    if (thumbnail.indexOf('save/') != -1 && video_url.indexOf('smil:/') != -1) {
+                        var dp = thumbnail.match(/save[^_]+/)[0].replace('thumb/', '');
+                        video_url = video_url.replace('af/', 'afflv14/').replace('smil:/', dp);
+                    }
+                }
+                var bid = data.match(/<bj_id>([^<]+)/)[1];
+                api_url = 'https://st.afreecatv.com/api/get_station_status.php?szBjId=' + bid;
+                data = window.external.getHtmlCode(api_url, url);
+                if (data.indexOf('station_no') != -1) {
+                    var sn = data.match(/station_no\":\"([^\"]+)/)[1];
+                    args = 'nStationNo=' + sn + '&nBbsNo=' + bid + '&nTitleNo=' + vid
+                    api_url = 'https://stbbs.afreecatv.com/api/video/get_video_info.php?' + args;
+                    data = window.external.getHtmlCodeEx(api_url, headers);
+                    if (data.indexOf('.m3u8') != -1) {
+                        //找最后一条
+                        var p = new RegExp('>([^<]+\.m3u8)<', 'gi');
+                        while ((m = p.exec(data)) != null)
+                            video_url = m[1];
+                    }
+                }
+            }
+            if (!video_url && html.indexOf('contentUrl') != -1) {
+                title = title || html.match(/name\":\s*\"([^\"]+)/)[1];
+                thumbnail = html.match(/thumbnailUrl\":\s*\"([^\"]+)/)[1];
+                duration = html.match(/duration\":\s*\"([^\"]+)/)[1];
+                video_url = html.match(/contentUrl\":\s*\"([^\"]+)/)[1];
+                //替换... https://vod-normal-kr-cdn-z01.afreecatv.com/v101/afflv14/_definst_/mp4:ttp:/flv14.afreecatv.com/save/afreeca/station/2023/0112/10/1673488248785654.mp4/playlist.m3u8
+                //https://vod-normal-kr-cdn-z01.afreecatv.com/v101/afflv14/_definst_/mp4:save/afreeca/station/2023/0112/10/1673488248785654.mp4/playlist.m3u8
+                if (video_url.indexOf('mp4:ttp') != -1) {
+                    var part = video_url.match(/\:(ttp.*?\.com\/)/)[1];
+                    video_url = video_url.replace(part, '');
+                }
+                if (video_url.indexOf('mp4:vod') != -1)
+                    video_url = video_url.replace(/mp4/g, 'smil');
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

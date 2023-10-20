@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" delegate="true" date="2023.07.10">
+    <url><![CDATA[https?://(?:\w+\.)?360kan\.com/player.*?id=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://tv.360kan.com/player?id=27a7d6c00051b766942d1633a82caebb&q=...
+            var url = window.external.url;
+            var id = url.match(/id=([^&]+)/)[1];
+            var api_url = 'https://tv.360kan.com/v1/video?id=' + id;
+            var data = window.external.getHtmlCode(api_url, url);
+            var jo = JSON.parse(data);
+            var video = jo.data.result;
+            var video_url = video.video_url + '#ra';
+            document.body.innerHTML = 'title=\"' + video.title + '\",thumbnail=' + video.cover_img + ',duration=' + video.duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

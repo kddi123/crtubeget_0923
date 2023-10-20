@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" delegate="true" date="2023.08.27">
+    <url><![CDATA[https?://(?:\w+\.)?1905\.com/.*?/(?<id>\d+)\.shtml?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[ptcz]]></ckSign>
+    <exjs><![CDATA[http://www.cr-soft.net/js/jx.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //https://www.1905.com/vod/play/1278357.shtml
+            //https://www.1905.com/vod/play/1289799.shtml
+            var title = document.title, thumbnail = '', duration = 0;
+            var url = window.external.url;
+            var html = window.external.getHtmlCode(url);
+            if (html.indexOf('h1') != -1)
+                title = html.match(/<h1[^>]+>([^<]*)/)[1];
+            //vip
+            if (!title)
+                title = html.match(/<title>(.*?)—(?:电|高)/)[1];
+            if (html.indexOf('og:image') != -1)
+                thumbnail = html.match(/""og:image""\s+content=""([^""]+)/)[1];
+            if (html.indexOf('play_duration') != -1)
+                duration = html.match(/play_duration:""([^""]+)/)[1];
+            else if (html.indexOf('[\'duration\']') != -1)
+                duration = html.match(/duration'\]\s*=\s*'([^']+)/)[1];
+            var video_url = '';
+            //https://www.1905.com/vod/play/1347746.shtml 非vip类
+            if (url.indexOf('www.') != -1 && typeof(window.external.sha1) != 'undefined') {
+                var vid = html.match(/vid\s*:\s*""([^""]+)/)[1];
+                var t = Math.floor(new Date().getTime() / 1000);
+                var p = {
+                    nonce: t,
+                    expiretime: t + 600,
+                    cid: vid,
+                    uuid: getUid(),
+                    playerid: getPid(),
+                    page: url,
+                    type: 'hls'
+                };
+                var api_url = 'https://profile.m1905.com/mvod/getVideoinfo.php?' + param(p) + '&signature=' + s(p, 'dde3d61a0411511d') + '&callback=';
+                var data = window.external.getHtmlCode(api_url, url);
+                if (data.indexOf('data"":{') != -1) {
+                    data = data.substring(1, data.length - 1);
+                    jo = JSON.parse(data);
+                    video_url = jo.data.sign.uhd ? jo.data.quality.uhd.host + jo.data.sign.uhd.sign + jo.data.path.uhd.path : jo.data.quality.hd.host + jo.data.sign.hd.sign + jo.data.path.hd.path
+                }
+            }
+            //https://vip.1905.com/play/1000013868.shtml
+            else if (url.indexOf('vip.') != -1) {
+                var cookie = window.external.getCookieEx(url, 'WOlTvIlgRpmauth');
+                if (cookie) {
+                    var vid = url.match(/play\/([^.]+)/)[1];
+                    var api_url = 'https://vip.1905.com/playerhtml5/formal?vipid=' + vid + '&uuid=' + getUid() + '&playerid=' + getPid() + '&callback=';
+                    var headers = 'Referer: ' + url + '\r\nCookie: ' + cookie;
+                    var data = window.external.getHtmlCodeEx(api_url, headers);
+                    if (data.indexOf('path"":{') != -1) {
+                        var jo = JSON.parse(data);
+                        title = title || jo.title;
+                        thumbnail = 'https:' + jo.data.thumb;
+                        duration = jo.data.duration;
+                        video_url = jo.data.path.v1080pm3u8 || jo.data.path.ipad800kbm3u8;
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = getol(window.external.url);
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+
+            //...
+            function s(obj, key) {
+                var keyObj = Object.keys(obj).sort();
+                var str = '';
+                for(var ki in keyObj) {
+                    if(ki !== 'signature') {
+                        var tmp = keyObj[ki] + '=' + encodeURIComponent(obj[keyObj[ki]]);
+                        str += str ? '&' + tmp : tmp;
+                    }
+                }
+                return window.external.sha1(str + '.' + key);
+            }
+            function rs() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+            function getUid() {
+                return rs();
+            }
+            function getPid() {
+                return rs().replace(/-/g,'').slice(5, 20);
+            }
+            function param(data) {
+                let url = ''
+                for (var k in data) {
+                    let value = data[k] !== undefined ? data[k] : ''
+                    url += '&' + k + '=' + encodeURIComponent(value)
+                }
+                return url ? url.substring(1) : '';
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

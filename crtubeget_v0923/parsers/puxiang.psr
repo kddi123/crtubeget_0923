@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" date="2022.05.06">
+    <url><![CDATA[https?://(?:www\.)?puxiang\.com/galleries/(?<id>[^?]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //直解参数签名麻烦，曲解之
+            //https://www.puxiang.com/galleries/11614186b576ed2d443ee01bd4c7ddfe
+            //https://www.puxiang.com/galleries/86c9e2ddf75d04404241bd92026fbdcb?favorite=true
+            if (document.getElementsByClassName('prism-big-play-btn').length != 0) {
+                document.getElementsByClassName('prism-big-play-btn')[0].click();
+                delay(2500);
+
+                var title = (document.getElementsByTagName('h2').length != 0) ? document.getElementsByTagName('h2')[0].innerText : document.title;
+                var thumbnail = (document.body.innerHTML.indexOf('cover: \'') != -1) ? document.body.innerHTML.match(/cover:\s*'([^']+)/)[1] : '';
+                var duration = (document.getElementsByClassName('duration').length != 0) ? document.getElementsByClassName('duration')[0].innerText : 0;
+                var video_url = document.getElementsByTagName('video')[0].src;
+                document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

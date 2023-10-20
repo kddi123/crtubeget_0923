@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2023.02.17">
+    <url><![CDATA[https?://(?:www\.)?iq\.com/play/(?:[\w%-]*-)?(?<id>\w+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <exjs><![CDATA[http://www.cr-soft.net/js/jx.js|http://www.cr-soft.net/js/cmd5x.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //2022.04.18: 走yt-dlp通道，改url匹配，须phantomjs组件
+            //https://www.iq.com/play/1cmz9xi636o?frmrp=explore_library_4&frmb=filter_result&frmrs=17
+            //http://www.iq.com/play/13x1f2d8pys
+            //https://www.iq.com/play/%E5%AF%B6%E5%8F%AF%E5%A4%A2-%E6%97%85%E9%80%94-%E7%AC%AC79%E9%9B%86-1zys0pxet4c?lang=zh_tw#
+            //https://www.iq.com/play/%E9%AA%91%E7%9D%80%E9%B1%BC%E7%9A%84%E7%8C%AB-%E7%AC%AC1%E9%9B%86-1kaxulz0w1o?lang=zh_cn
+            var url = window.external.url;
+            var cookie = window.external.getCookieEx(window.external.url, 'P00003', 2500);
+            var headers = 'Referer: https://www.iq.com\r\nCookie: ' + cookie;
+            var html = window.external.getHtmlCodeEx(url, headers);
+            var title = (html.indexOf('pageMetaTitle\"') != -1) ? html.match(/pageMetaTitle\">([^<]+)/)[1] : html.match(/<title>([^<]+)/)[1];
+            var thumbnail = '', duration = 0, video_url = '';
+            if (html.indexOf('curVideoInfo') != -1) {
+                var jo = JSON.parse(html.match(/curVideoInfo\":(.*?),\"videoInfo/)[1]);
+                title = jo.name || title;
+                thumbnail = jo.facebookShareUrl || jo.thumbnailUrl1;
+                duration = jo.len;
+                video_url = extractVideo(jo.tvId, jo.vid);
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$' + document.body.innerHTML;
+
+            //...
+            function extractVideo(tvid, vid) {
+                if (typeof(fv) == 'undefined')
+                    fv = window.external.fv;
+                if (!fv || fv[0] == '0')
+                    return '';
+                //...ok，如你所愿！
+                if (!tvid || typeof(window.external.getCookieEx) == 'undefined')
+                    return '';
+
+                var cookie = window.external.getCookieEx(window.external.url, 'P00003', 2500);
+                //避免中文出错
+                cookie = cookie.replace(/QC021=[^;]+;/, '');
+                if (typeof(cmd5x) == 'function') {
+                    var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                    var src = (html.indexOf('\"ptid\"') != -1) ? html.match(/ptid\":\"([^\"]+)/)[1] : '01010031010022000000';
+                    var uid = cookie.match(/P00003=[^;]+/) ? cookie.match(/P00003=([^;]+)/)[1] : '';
+                    var kuid = cookie.match(/QC005=[^;]+/) ? cookie.match(/QC005=([^;]+)/)[1] : getKuid();
+                    var dfp = cookie.match(/__dfp=[^;]+/) ? cookie.match(/__dfp=([^;]+)/)[1] : '';
+                    var pck = cookie.match(/P00007=[^;]+/) ? cookie.match(/P00007=([^;]+)/)[1] : '';
+                    //2k->1080
+                    var bid = (vq == 4 || vq == 8) ? 800 : 620;
+                    //为版权风险及下载稳定性考虑，去除其4k支持
+                    //bid = 620;
+                    if (vq == 720)
+                        bid = 500;
+                    else if (vq == 480)
+                        bid = 300;
+                    else if (vq == 360)
+                        bid = 200;
+                    //h264...无4k。1080者，求h264源
+                    var kft = bid > 620 ? '&k_ft2=8191' : '&k_ft1=706436220846084&k_ft4=5';
+                    var headers = 'Referer: ' + window.external.url + '\r\nCookie: ' + cookie;
+                    var args = '/dash?tvid=' + tvid + '&bid=' + bid + '&vid=' + vid + '&src=' + src + '&uid=' + uid + '&k_uid=' + kuid + '&pt=0&lid=&cf=&ct=&dfp=' + dfp + '&pck=' + pck + '&qd_v=5&tm=' + Date.now() + kft;
+                    var api_url = 'https://cache-video.iq.com' + args + '&vf=' + cmd5x(args);
+                    var data = window.external.getHtmlCodeEx(api_url, headers);
+                    if (data.indexOf('#EXTM3U') != -1) {
+                        data = data.replace('var tvInfoJs=', '');
+                        var jo = JSON.parse(data);
+                        var video_url = '';
+                        for (var i = 0; i <= jo.data.program.video.length - 1; i++) {
+                            var video = jo.data.program.video[i];
+                            if (video.m3u8)
+                                video_url = window.external.saveData(video.m3u8);
+                            if (video._selected && video_url)
+                                return video_url;
+                        }
+                    }
+                }
+            }
+
+            function getKuid() {
+                a = 32;
+                for (var b = '', c = 1; c <= a; c++) {
+                    var d = Math.floor(16 * Math.random()).toString(16);
+                    b += d
+                }
+                return b
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

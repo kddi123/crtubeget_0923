@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" aria2c="true" date="2023.08.14">
+    <url><![CDATA[https?://(?:\w+\.)?yangshipin\.cn/.*?video.*?id=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[ignore_cks]]></ckSign>
+    <exjs><![CDATA[http://www.cr-soft.net/js/ckey.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //https://m.yangshipin.cn/video?type=0&vid=m000044nwim&ptag=4_1.4.2.20898_copy
+            //https://m.yangshipin.cn/video?type=2&pid=600066512&ptag=4_1.0.5.15187_copy->https://w.yangshipin.cn/video?type=0&ptag=4_1.0.5.15187_copy&vid=j000057dgjx
+            //https://w.yangshipin.cn/video?type=1&vid=2000210103&pid=600001859->https://w.yangshipin.cn/video?type=1&vid=2000210103&pid=600001859
+            //https://www.yangshipin.cn/#/video/home?vid=a000015fwj9&cid=wl62vede1bkjiwc
+            if (typeof(ckey_func) == 'function') {
+                var title = '', thumbnail = '';
+                if (document.body.innerHTML.indexOf('payloads') != -1) {
+                    var svjs = document.body.innerHTML.match(/payloads\":(.*?)\}<\/script>/)[1];
+                    var sv = JSON.parse(svjs).sharevideo;
+                    title = sv.title;
+                    thumbnail = sv.cover_pic.substr(0, sv.cover_pic.lastIndexOf('.jpg') + 4);
+                }
+                var vid = window.location.href.match(/vid=([^&]+)/)[1];
+                var a = {exports: {}, id: 30, loaded: false}, b = {};
+                ckey_func(a, b);
+                var f = a.exports;
+                var _rnd = parseInt(Date.now() / 1000);
+                var appVer = '3.4.40';
+                var guid = '7a7353ff4c9c6e2090fb488f16b683bb';
+                var platform = '4330701';
+                var vkey = f(vid, _rnd, appVer, guid, platform);
+                var api_url = 'https://playvv.yangshipin.cn/playvinfo?callback=&otype=json&platform=' + platform + '&appVer=' + appVer + '&vid=' + vid + '&defn=fhd&show1080p=1&encryptVer=8.1&cKey=' + vkey + '&_' + Date.now() + '=';
+                var data = window.external.getHtmlCode(api_url, window.location.href);
+                data = data.substring(1, data.length - 1);
+                var jo = JSON.parse(data);
+                var duration = jo.preview || 0;
+                if (jo.vl) {
+                    title = title || jo.vl.vi[0].ti;
+                    video_url = jo.vl.vi[0].ul.ui[0].url;
+                    video_url += jo.vl.vi[0].fn + '?vkey=' + jo.vl.vi[0].fvkey;
+                }
+                else
+                    video_url = window.location.href;
+
+                document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

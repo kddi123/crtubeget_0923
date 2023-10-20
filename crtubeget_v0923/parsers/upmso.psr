@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2023.01.25">
+    <url><![CDATA[https?://(?:\w+\.)?upmso\.com/.*?/detail.html\?vod_id=(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://cl.upmso.com/index/detail.html?vod_id=4081
+            //https://cl.upmso.com/index/detail.html?vod_id=4075&file_id=115-63c4475944e754a3a0964ba4a22f0915e8308ac3
+            var title = (document.getElementsByTagName('h1').length > 0) ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            if (document.getElementsByClassName('current').length != 0)
+                title += ' ' +  document.getElementsByClassName('current')[0].innerText;
+            var thumbnail = document.body.innerHTML.match(/class=\"aligncenter\"[^>]+src=\"([^\"]+)/)[1];
+            var src = document.getElementsByTagName('iframe')[0].src;
+            var html = window.external.getHtmlCode(src, window.external.url);
+            var file_id = html.match(/Url\s+=\s+\"([^\"]+)/)[1];
+            var sign = html.match(/Sign\s+=\s+\"([^\"]+)/)[1];
+            var api_url = 'https://cl.upmso.com/api.php?url=' + file_id + '&sign=' + sign;
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            var video_url = JSON.parse(data).url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

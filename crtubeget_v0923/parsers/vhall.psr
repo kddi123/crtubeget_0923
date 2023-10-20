@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2023.03.09">
+    <url><![CDATA[https?://(?:\w+\.)?vhall\.com/.*/watch/(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail="([^"]+)"]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://e.vhall.com/v3/lives/watch/373575813
+            var title = '', thumbnail = '', video_url = '';
+            var wid = window.external.url.match(/watch\/(\d+)/)[1];
+            var args = 'webinar_id=' + wid + '&clientType=standard&visitor_id=';
+            var api_url = 'https://saas-api.vhall.com/v3/webinars/watch/init';
+            var data = window.external.getPostResult(api_url, args, 'application/x-www-form-urlencoded');
+            var jo = JSON.parse(data);
+            title = jo.data.webinar.subject;
+            thumbnail = jo.data.webinar.img_url;
+            //video url
+            args = '------wk\r\nContent-Disposition: form-data; name=\"client\"\r\n\r\npc_browser\r\n\
+------wk\r\nContent-Disposition: form-data; name=\"app_id\"\r\n\r\n' + jo.data.interact.paas_app_id + '\r\n------wk\r\n\
+Content-Disposition: form-data; name=\"third_party_user_id\"\r\n\r\n' + jo.data.join_info.third_party_user_id + '\r\n------wk\r\n\
+Content-Disposition: form-data; name=\"access_token\"\r\n\r\n' + jo.data.interact.paas_access_token + '\r\n------wk\r\n\
+Content-Disposition: form-data; name=\"package_check\"\r\n\r\npeter\r\n------wk\r\n\
+Content-Disposition: form-data; name=\"record_id\"\r\n\r\n' + jo.data.record.paas_record_id + '\r\n------wk--';
+            api_url = 'https://api.vhallyun.com/sdk/v2/demand/get-record-watch-info';
+            data = window.external.getPostResult(api_url, args, 'multipart/form-data; boundary=----wk');
+            if (data.indexOf('default_server\":{') != -1) {
+                jo = JSON.parse(data);
+                video_url = jo.data.default_server.hls_domainnames[0].hls_domainname + '?token=' + jo.data.default_server.token;
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=\"' + thumbnail + '\",cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

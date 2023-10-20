@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" referer="true" date="2021.11.30">
+    <url><![CDATA[https?://(?:www\.)?dxzy163\.com/player/index.*?&to=(\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.dxzy163.com/player/index6981.html?id=6981&page=0&to=4
+            //http://www.dxzy163.com/player/index5440.html?id=5440&page=0&to=1 b
+            //http://www.dxzy163.com/player/index13023.html?id=13023&page=0&to=1 tx
+            var title = (document.getElementsByClassName('title').length != 0) ? document.body.innerHTML.match(/正在播放：([^<-]+)/)[1] : document.title;
+            var detail_url = window.external.url.substr(0, window.external.url.indexOf('?')).replace('player', 'view');
+            var html = window.external.getHtmlCode(detail_url);
+            var thumbnail = (html.indexOf('pic:') != -1) ? 'http://www.dxzy163.com/' + html.match(/pic:'([^']+)/)[1] : '';
+            var video_url = window.external.url;
+            var player = document.getElementById('player');
+            if (player) {
+                if (player.contentDocument && player.contentDocument.getElementsByTagName('iframe').length != 0)
+                    video_url = player.contentDocument.getElementsByTagName('iframe')[0].src + '#ra';
+                else if (player.contentWindow.url && player.contentWindow.url.indexOf('.m3u8') != -1) {
+                    var hls_url = player.contentWindow.url;
+                    data = window.external.getHtmlCode(hls_url);
+                    video_url = data.substr(data.lastIndexOf('/asp'));
+                    video_url = hls_url.substr(0, hls_url.indexOf('/asp')) + video_url;
+                }
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" cookies="false" headers="false" date="2023.08.15">
+    <url><![CDATA[https?://(?:\w+\.)?(?:91porn|workgreat11)\.\w+/.*?viewkey=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[ignore_cks]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //http://91porn.com/view_video.php?viewkey=c05ed21b6115c904cbb5
+            //http://91porn.com/view_video.php?viewkey=f9ebae65a9a5ef8ab9dd&page=&viewtype=&category=
+            //https://f0601.workgreat11.live/view_video.php?viewkey=723a2f7f4984a1010ab4&page=1&viewtype=basic&category=mr
+            //http://91porn.com/view_video.php?viewkey=00f4059f31a48b29fd6b&page=&viewtype=&category=
+            var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveObject('Microsoft.XMLHTTP');
+            var cookie = window.external.getCookieEx(window.external.url, 'cf_clearance', 2500) || document.cookie;
+            xhr.open('GET', window.external.url, false);
+            xhr.setRequestHeader('Host', '91porn.com');
+            xhr.setRequestHeader('User-Agent', navigator.userAgent);
+            xhr.setRequestHeader('Accept-Language', 'zh-CN,zh;q=0.9');
+            xhr.setRequestHeader('Cookie', cookie);
+            xhr.send(null);
+            var html = xhr.responseText || document.body.innerHTML;
+            var title = html.match(/>([^<]+)<\/h4>/) ? html.match(/>([^<]+)<\/h4>/)[1] : '';
+            if (!title) {
+                var headers = 'User-Agent: ' + navigator.userAgent + '\r\nReferer: http://91porn.com/index.php\r\nAccept-Language: zh-CN,zh;q=0.9\r\nCookie: ' + cookie;
+                var data = window.external.getHtmlCodeEx(window.external.url, headers);
+                //有的视频，<h4...><img...>xxx</h4>
+                if (data.indexOf('h4') != -1)
+                    title = data.match(/>([^<]+)<\/h4>/)[1];
+            }
+            if (!title)
+                title = document.title;
+            var thumbnail = document.getElementById('player_one') ? document.getElementById('player_one').outerHTML.match(/poster=\"([^\"]+)/)[1] : '';
+            var duration = document.getElementById('useraction') ? document.getElementById('useraction').innerHTML.match(/video-info-span\">([^<]+)/)[1] : '';
+            var video_url = '';
+            if (document.getElementsByTagName('video').length != 0) {
+                var data = document.getElementsByTagName('video')[0].innerHTML;
+                data = data.substr(data.indexOf('</script>') + 9);
+                video_url = data.match(/source\s+src=\"([^\"]+)/)[1];
+            }
+            if (!video_url && document.getElementsByTagName('video').length != 0)
+                video_url = document.getElementsByTagName('video')[0].src;
+            if ((!video_url || video_url.indexOf('blob:') != -1) && html.indexOf('source src') != -1)
+                video_url = html.match(/<source\s+src=\"([^\"]+)/)[1];
+            if (!video_url && html.indexOf('strencode2') != -1) {
+                var data = unescape(html.match(/strencode2\(\"([^\"]+)/)[1]);
+                if (data.indexOf('source src') != -1)
+                    video_url = data.match(/<source\s+src='([^']+)/)[1];
+            }
+            if (!video_url)
+                video_url = window.location.href;
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

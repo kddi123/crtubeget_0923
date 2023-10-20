@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" delegate="true" date="2023.10.02">
+    <url><![CDATA[https?://(?:www\.)?le\.com/ptv/vplay/(?<id>\d+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[ssouid]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //cookie影响死活不返回，加set标记
+            //http://www.le.com/ptv/vplay/2050778.html?ch2=baidu_ffdsj_21#vid=2050778
+            //https://www.le.com/ptv/vplay/1472713.html
+            //http://www.le.com/ptv/vplay/1889746.html#vid=1889746 此vip源，下不全
+            var url = window.external.url;
+            var html = window.external.getHtmlCode(url);
+            var start = '__INFO__ = ';
+            var data = html.substring(html.indexOf(start) + start.length, html.indexOf('};') + 1);
+            var info = eval('(' + data + ')');
+            var title = info.video.title;
+            var thumbnail = info.video.videoPic;
+            var duration = info.video.duration;
+            var video_url = window.external.url;
+            //vip... info.isPay
+            var vid = info.vid;
+            var tkey = gmk(Date.now() / 1e3);
+            //dvtype=1080p，没1080了，只10多分钟
+            var args = 'id=' + vid + '&tkey=' + tkey + '&platid=1&splatid=103&tss=ios&dvtype=720p&domain=www.le.com&source=1001&region=cn';
+            var api_url = 'https://player-pc.le.com/mms/out/video/playJson.json?' + args;
+            var cookie = window.external.getCookieEx(url, 'ssouid', 2500) || window.external.getCookie(url);
+            var headers = 'User-Agent: ' + navigator.userAgent + '\r\nReferer: ' + url + '\r\nCookie: ' + cookie;
+            var data = window.external.getHtmlCodeEx(api_url, headers);
+            if (data && data.indexOf('playurl') != -1) {
+                var jo = JSON.parse(data);
+                var pu = jo.msgs.playurl;
+                title = pu.title;
+                thumbnail = pu.pic;
+                duration = pu.duration;
+                var token = jo.msgs.yuanxian ? jo.msgs.yuanxian.token : '';
+                var ssouid = jo.msgs.yuanxian ? jo.msgs.yuanxian.ssouid : '';
+                args = '&token=' + token + '&uid=' + ssouid + '&format=1&expect=3&termid=2&vid=' + vid + '&tzm=';
+                var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                var dp = undefined;
+                if (vq == 720)
+                    dp = pu.dispatch['720p'] || pu.dispatch['1300'];
+                else if (vq == 480)
+                    dp = pu.dispatch['480p'] || pu.dispatch['1000'];
+                else if (vq == 360)
+                    dp = pu.dispatch['360p'] || pu.dispatch['350'];
+                //1300、1000只10多分钟
+                dp = dp || pu.dispatch['1080p'] || pu.dispatch['720p'] || pu.dispatch['1300'] || pu.dispatch['1000'];
+                api_url = pu.domain[0] + dp[0] + args;
+                data = window.external.getHtmlCodeEx(api_url, 'Referer: http://www.le.com/');
+                //避免无效字符错误
+                if (data && data.indexOf('location') != -1)
+                    video_url = data.match(/location\":\s*\"([^\"]+)/)[1].replace(/\\/g, '');
+            }
+            //置html[0]不行
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+
+            //...
+            function gmk(e) {
+                var t = 185025305, r = 8, n = e;
+                n = rr(n, r);
+                var o = n ^ t;
+                return o;
+            }
+
+            function rr(e, t) {
+                for (var r, n = 0; t > n; n++)
+                    r = 1 & e,
+                    e >>= 1,
+                    r <<= 31,
+                    e += r;
+                return e
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

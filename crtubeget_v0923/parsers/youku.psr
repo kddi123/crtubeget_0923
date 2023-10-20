@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" speed="8M" unescape="false" date="2023.05.21">
+    <url><![CDATA[https?://(?:[^.]+\.)?youku\.com/(?:[^/]+/id_|player\.php/sid/)(?<id>[^.?]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <subtitle><![CDATA[subtitle=([^,]+)]]></subtitle>
+    <mediaUrl><![CDATA[cr_video_url=([^\,]+)]]></mediaUrl>
+    <backupUrl><![CDATA[cr_backup_url=([^\$]+)]]></backupUrl>
+    <ckSign><![CDATA[P_sck]]></ckSign>
+    <exjs><![CDATA[http://www.cr-soft.net/js/jx.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //ckey故，不用delegate
+            //cna标记在IE中有残留，因此取P_gck...2022.03.11发现P_gck没了
+            //http://player.youku.com/embed/XNDAwNTYzNDcyNA==
+            //https://v-wb.youku.com/v_show/id_XNDYxMzQ4NDQ0OA==.html?qq-pf-to=pcqq.group
+            //https://v.youku.com/v_show/id_XNTg0NzE1MjI1Mg==.html?spm=a2hbt.13141534.1_3.3&s=e1b3773a361611e3b8b7 4k
+            //https://v.youku.com/v_show/id_XNTEyNjA5OTc4NA==.html
+            //语言...普通话
+            //https://v.youku.com/v_show/id_XNTY0ODE0MzU2.html?spm=a2hbt.13141534.1_3.d_1_1&lang=%E6%99%AE%E9%80%9A%E8%AF%9D&s=c9baeb20c2e411df97c0&scm=20140719.apircmd.46264.video_XNTY0ODE0MzU2
+            //http://v.youku.com/v_show/id_XNTY0ODE0MzU2
+            //粤语
+            //https://v.youku.com/v_show/id_XNTY0ODE0MzU2.html?spm=a2hbt.13141534.1_3.d_1_2&lang=%E7%B2%A4%E8%AF%AD&s=c9baeb20c2e411df97c0&scm=20140719.apircmd.46264.video_XNTY0ODE0MzU2
+            //http://v.youku.com/v_show/id_XNTY0ODE0OTgw
+            //https://v.youku.com/v_show/id_XNTgxNzIzNzYwOA==.html?spm=a2hcb.profile.app.5~5!2~5~5!3~5!2~5~5!2~A pwd: sjcmsjcm
+            //https://v.youku.com/v_show/id_XNTMzNzg2MDE2.html?spm=a1z3jc.11711052.0.0&isextonly=1 pwd: taokejian
+            var title = '', thumbnail = '', duration = 0, subtitle = '', video_url = '';
+            var url = window.external.url;
+            //为接口可用，去除?后面的；因接口直接window.external.url，不做下面处理
+            //if (url.indexOf('?') != -1 && url.indexOf('lang=') == -1)
+            //    url = url.substring(0, url.indexOf('?'));
+            var err = 'error=请右键->来源页面，看看是否需要验证。$';
+            try {
+                var cookie = window.external.getCookieEx(url, 'cna', 2500) || window.external.getCookieEx(url, '_m_h5_tk', 2500) || window.external.getCookie(url);
+                var vid = url.match(/id_([^.]+)/)[1];
+                var cna = (cookie.indexOf('cna') != -1) ? cookie.match(/cna=([^;]+)/)[1] : '';
+                var ckey = '140#hu1oHmBpzzWUYQo23zizKtN8s77JGCAoL4LOLx7VvzFlKC/ZCiqE4JuFqnDrryIpcV1Lv6hqzznVaD/ZcisxzFbqVY/qlQzx2DD3VthqzFc91283l61zaIziVXE/3z//EHmijDapVrMn79/QCGKQA44d/Q72lQpGncnlAH7CFZW0NXFDReWR3fzawhZTaFrGqGMl8h2Pa+Rv4ceqOXw/dT9wRrWfI1AZYKf9F7UWlC7JRJdAhoGSreI0gfflbypGfUt0D4vByEiXjecAo24GRxfdzQ16bcVMpdwr9KMkNf2NGsWMSRrBl8CR1/gGL6F6KdDRvDniZ2VTdqYLEHKBHF2wmzZCaFPdU1XtZjmJZDvjTU34nqbvGdiUffBdulPtEiASwhbS4+tQrUwK4UVbKfwxUWlwx1he7OrIpL2AydmiW2nV2+ZrRPRTDJTA9USGQNDEUKemASq9fs9NQv76msach1QY6ODcDdvm/Q9CdbNr0qJHlyf1lEjbvQDIx6syFlaloPscHSjP/Hq06qrMBju3gsDDaCktiOf1JyT5Yvl+LuOtdMB00VC1nzN6nCDx03na/Z1Ydv0H7twgotMniMDfiDVNENHDXiFryAimpCMGTtgZUfMCeLqD2SmOFzLaXrjuV/6rlSDThYA+7j4gx3i/1qtzynEBOsH5DaMaIdZKz7qbVQP+9OKnwMbxbIskjlRduhz3lu5RFrH5Fj3vHauvaoV7TcQ8An4VurBb4gjj8JwDhnhc1CxXHsOBzzWGKw7BZW7JIlr=';
+                var api_url = 'https://ups.youku.com/ups/get.json?vid=' + vid + '&ccode=0502&client_ip=192.168.1.1&utid=' + cna + '&client_ts=' + Date.now() + '&ckey=' + encodeURIComponent(ckey);
+                if (window.external.password)
+                    api_url += '&password=' + window.external.password;
+                var headers = 'Referer: ' + url + '\r\nCookie: ' + cookie;
+                var data = window.external.getHtmlCodeEx(api_url, headers);
+                if (data.indexOf('该视频已经加密') != -1)
+                    err = 'error=该视频已经加密，请输入密码$';
+                else if (data.indexOf('您输入的密码错误') != -1)
+                    err = 'error=您输入的密码错误，请重新输入$';
+                var jo = JSON.parse(data);
+                if (jo.data.video) {
+                    title = jo.data.video.title;
+                    if (jo.data.show)
+                        title = jo.data.show.stage + '. ' + title;
+                    thumbnail = jo.data.video.logo;
+                    duration = jo.data.video.seconds;
+                }
+                var video_id = jo.data.video ? jo.data.video.id : vid;
+                //https://v.youku.com/v_show/id_XNDg1OTAyMjY2OA==.html?spm=a2hcb.profile.app.5~5!2~5~5!3~5!2~5~5!285~A 无show
+                var showid = jo.data.show ? jo.data.show.encodeid : '';
+                //multi lang...
+                var lc = '';
+                if (data.indexOf('audiolang') != -1) {
+                    //找对应语言
+                    if (url.indexOf('lang=') != -1) {
+                        var lang = decodeURIComponent(url.match(/lang=([^&]+)/)[1]);
+                        var al = jo.data.dvd.audiolang;
+                        for (var i = 0; i <= al.length - 1; i++) {
+                            if (al[i].lang == lang) {
+                                lc = al[i].langcode;
+                                vid = al[i].vid;
+                                break;
+                            }
+                        }
+                    }
+                }
+                var vq = window.external.vq || '1080p';
+                if (jo.data.stream)
+                    video_url = gvu(jo.data.stream, vq, lc);
+                //m3u8?
+                if (!video_url) {
+                    //https://v.youku.com/v_show/id_XNTE4NzQ5MTI2NA==.html?spm=a2h0c.8166622.PhoneSokuUgc_1.dtitle... 4k
+                    //https://zhuanlan.zhihu.com/p/451188610
+                    //https://v.youku.com/v_show/id_XMjk4NjU3MjM5Mg==.html?spm=a2hbt.13141534.1_3.9&s=e625d0e7bb6f11e6b16e 这种，网页上方法解出1080，下载到3.9%就不行了，不整了
+                    var token = (cookie.indexOf('_m_h5_tk') != -1) ? cookie.match(/_m_h5_tk=([^_;]+)/)[1] : '';
+                    var t = Date.now();
+                    var emb = btoa(video_id + 'www.youku.com/');
+                    var password = !window.external.password ? '' : ',\\\\\"password\\\\\":\\\\\"' + window.external.password + '\\\\\"';
+                    var args = '{\"steal_params\":\"{\\\\\"ccode\\\\\":\\\\\"0502\\\\\",\\\\\"client_ip\\\\\":\\\\\"192.168.1.1\\\\\"' + password + ',\\\\\"utid\\\\\":\\\\\"' + cna + '\\\\\",\\\\\"client_ts\\\\\":' + t.toString().substr(0, 10) + ',\\\\\"version\\\\\":\\\\\"2.1.69\\\\\",\\\\\"ckey\\\\\":\\\\\"' + getck() + '\\\\\"}\",\"biz_params\":\"{\\\\\"vid\\\\\":\\\\\"' + vid + '\\\\\",\\\\\"play_ability\\\\\":16782592,\\\\\"current_showid\\\\\":\\\\\"' + showid + '\\\\\",\\\\\"preferClarity\\\\\":99,\\\\\"extag\\\\\":\\\\\"EXT-X-PRIVINF\\\\\",\\\\\"master_m3u8\\\\\":1,\\\\\"media_type\\\\\":\\\\\"standard,subtitle\\\\\",\\\\\"app_ver\\\\\":\\\\\"2.1.69\\\\\",\\\\\"h265\\\\\":1}\",\"ad_params\":\"{\\\\\"vs\\\\\":\\\\\"1.0\\\\\",\\\\\"pver\\\\\":\\\\\"2.1.69\\\\\",\\\\\"sver\\\\\":\\\\\"2.0\\\\\",\\\\\"site\\\\\":1,\\\\\"aw\\\\\":\\\\\"w\\\\\",\\\\\"fu\\\\\":0,\\\\\"d\\\\\":\\\\\"0\\\\\",\\\\\"bt\\\\\":\\\\\"pc\\\\\",\\\\\"os\\\\\":\\\\\"win\\\\\",\\\\\"osv\\\\\":\\\\\"10\\\\\",\\\\\"dq\\\\\":\\\\\"auto\\\\\",\\\\\"atm\\\\\":\\\\\"\\\\\",\\\\\"partnerid\\\\\":\\\\\"null\\\\\",\\\\\"wintype\\\\\":\\\\\"interior\\\\\",\\\\\"isvert\\\\\":0,\\\\\"vip\\\\\":1,\\\\\"emb\\\\\":\\\\\"' + emb + '\\\\\",\\\\\"p\\\\\":1,\\\\\"rst\\\\\":\\\\\"mp4\\\\\",\\\\\"needbf\\\\\":2,\\\\\"avs\\\\\":\\\\\"1.0\\\\\"}\"}';
+                    var sign = window.external.md5(token + '&' + t + '&24679788&' + args);
+                    api_url = 'https://acs.youku.com/h5/mtop.youku.play.ups.appinfo.get/1.1/?appKey=24679788&t=' + t + '&sign=' + sign + '&type=jsonp&data=' + encodeURIComponent(args);
+                    data = window.external.getHtmlCodeEx(api_url, headers);
+                    if (data.indexOf('\"seconds\"') != -1 && !duration)
+                        duration = parseFloat(data.match(/\"seconds\":([^,]+)/)[1]);
+                    if (data.indexOf('\"stream\"') != -1) {
+                        data = data.match(/\((.*)\)/)[1];
+                        jo = JSON.parse(data);
+                        var video = jo.data.data.video;
+                        title = title || jo.data.data.show.stage + '. ' + video.title;
+                        thumbnail = thumbnail || video.logo;
+                        duration = duration || video.seconds;
+                        video_url = gvu(jo.data.data.stream, vq, lc);
+                        if (jo.data.data.subtitle && jo.data.data.subtitle.length != 0) {
+                            for (var i = 0; i <= jo.data.data.subtitle.length - 1; i++) {
+                                subtitle = jo.data.data.subtitle[i].url;
+                                if (jo.data.data.subtitle[i].vid == vid)
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (ex) {
+            }
+            //>= 15 min... 有客户不要野源
+            if (!video_url && duration && duration >= 15 * 60 && (window.external.ol == undefined || window.external.ol))
+                video_url = getol(window.external.url);
+            if (!video_url)
+                video_url = window.external.url;
+            var backup_url = window.external.url;
+            if (title.indexOf('验证码拦截') != -1)
+                title = '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',subtitle=' + subtitle + ',cr_video_url=' + video_url + ',cr_backup_url=' + backup_url + '$' + err + '$';
+
+            //...
+            function getck() {
+                var result = '';
+                var entries = window.performance.getEntriesByType('resource');
+                for (var i = 0; i <= entries.length - 1; i++) {
+                    var e = entries[i];
+                    if (e.name.indexOf('mtop.youku.play.ups.appinfo.get') != -1 && e.name.indexOf('ckey') != -1) {
+                        var data = decodeURIComponent(e.name.match(/data=([^&]+)/)[1]);
+                        var jo = JSON.parse(data);
+                        jo = JSON.parse(jo.steal_params);
+                        result = jo.ckey;
+                        if (window.localStorage)
+                            window.localStorage.setItem('YK_PLAYER_CKEY', result);
+                        break;
+                    }
+                }
+                if (!result && window.localStorage)
+                    result = window.localStorage.getItem('YK_PLAYER_CKEY');
+                if (!result)
+                    result = '140#y1SroQPNzzF0Yzo22iPbC3Sd08Fcsdk6VDrZtVvzPcOwbh4evUW0oa2JPt7N4tE72B1jypmMilwASkvYUDx8KIQH66hqzznv78Jr+WzzzqD3ba7tlzzx2DD3VthqzFPILcLSASqoeDriIXlqlaOz2PD+VeqtzFdF2urDWt64aSvZrI7ZbhGPvUkVplXmqbfsJDxV35pJ+/DE4xttqBCnvJKRke40clqzK7GI4UybSCPGgf1QVwwQeFgYvTPdsjTxlRK/qOXG11aIFylzq/MD9NGMI2YTxj44x9hIhpaODz/cRenQFHM4pSUNO9B/itLyVAl5H52Hib8nZnt39ksaNe7YPnF5q93KrSqXKsaj7p5dow4y3JbsI96ZoA768KZPGUpHo4C7INgFMBLCW4RqqAkb3SzWXc8US+X5NvyvhDt7bF5XcUa3NHUB86rTYM4MtyoojJtBOS9r6gZhp7tC6nGjit1Q9kopPZLWw1pV33qp7E22wt/9zsmuo560KmxeTm3LkvvzwGfHocnfp31P0CyHoA4jDtzcA542Auw1MmUDTT0/UFT7PHu8A/HvTxj1E8JwMsylzqo85BGMFyh94cy1hzED1fWJTHTOzdjAqLlz6p1MDWHR9k+AS10zVC8lUsUQ1AYd4iMyHOHtXGURtMHQA/9nkQAi0WoRO3Qr8m//3rzawhZQcnCiL7dRyOd2xOjlUtW/Gkg9SamnrEBZ5yW4ZPxqerytR+VVO5Xj2n1iLu+tyyJ7YPeducAmoy5V3QqKHSLTg9Xn0IXLcryjA3LSvU2zCmN1Mw+llXuc4R0SjldM5luEDvsrFo7yDOM89JedG5RriLEH0HGQSsysioWbkUK/rtvCOixngwv06yhFXXO27B1TUP5scsmdIinNWP9Ew6WU4HeAQnd2Qzlnn5e3QQm8XrcJUuytO7KP7T5C7Rzr0cUa2LNLOq9wSXbSztpGJxncYBxIImYrVyJYo/RKtrdlINsO1PQWyuVnms+J1a4IKhM/nU2loqA4jPI22IvPvygm7W7z8M3IrqMk5FFJt2u89+tL8pm1ZEkqtupfNewdSD0pUBRCuwTi2hYh2cYBjqsBjcwTrDdJuwkJwHL99vcP+nH+4QcSNWxGKE/gVO8BiaZ5k3OTz8fSdLwuUcaWxGUFNlQqvZgzPE40EzEj8cMsGQjMocmbpleemGVnjjy9zIKI59jyMJi2Tmjs96KsN5fKxTftS/gumq3SUG7D1eCI5eX+lFHL+JEiHOElGrmQCkqBXTOAig10ptXGeo/Gg3HbNbpRnAT62Tnb7Iwdki3b1B493N/RwoF/eoHdtfTdyl7SqhPZPVf8PT3VLXq2ubZ6fzRRQVNtrztiedynzHqHl8Ow6Wl+Zz9s4FmO4sCfNGu=';
+                return result;
+            }
+
+            function sbr(a, b) {
+                return b.height - a.height;
+            }
+
+            function gvu(streams, vq, lc) {
+                var jv = [], i = 0;
+                for (var v = 0; v <= streams.length - 1; v++) {
+                    var stream = streams[v];
+                    //去除h265分支
+                    if (stream.stream_type && stream.stream_type.indexOf('mp5') != -1)
+                        continue;
+                    //语言
+                    if (stream.audio_lang && lc && stream.audio_lang != lc)
+                        continue;
+                    jv[i] = stream;
+                    i++;
+                }
+                jv.sort(sbr);
+                //0，最大分辨率者
+                var video_url = jv[0].m3u8_url;
+                if (vq == '2k')
+                    vq = 1440;
+                else if (vq == '4k')
+                    vq = 2160;
+                else if (vq == '8k')
+                    vq = 4320;
+                else
+                    vq = parseInt(vq);
+                for (var v in jv) {
+                    //720->718, 1080->1074|804
+                    if (Math.abs(jv[v].height - vq) <= 90 || vq == 1080 && jv[v].width == 1920) {
+                        video_url = jv[v].m3u8_url;
+                        break;
+                    }
+                }
+                //是否有效？
+                if (video_url) {
+                    var data = window.external.getHtmlCode(video_url);
+                    if (data.indexOf('://') == -1)
+                        video_url = '';
+                }
+                return video_url;
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

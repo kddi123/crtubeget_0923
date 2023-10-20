@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" delegate="true" date="2023.10.06">
+    <url><![CDATA[https?://(?:haokan|baiduworld|sv|mr?|mbd|baijiahao)\.(?:baidu|hao123)\.com/\w.*?(?:n?id=(?<id>[^&]+)|nid%22%3A%22(?<id>[^%]+)|id%3D(?<id>\d+)|u=(?<id>[^/]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail="([^"]+)"]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[ignore_cks]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://sv.baidu.com/v?vid=10763543484108659445
+            //http://baijiahao.baidu.com/s?id=1670185034546982240
+            //被baidusearch.psr截胡？
+            //https://mr.baidu.com/r/FaIY6IOm9a?f=cp&u=73bc942bbb0d6edf -> ... vid%3D5047605820932144628
+            //https://mr.baidu.com/r/153yoYNHpuw?f=cp&u=5a869e5962b1a1ac
+            //https://mbd.baidu.com/newspage/data/videolanding?nid=sv_14557252714641222717&sourceFrom=homepage -> https://haokan.baidu.com/v?vid=14557252714641222717
+            //https://haokan.baidu.com/v?pd=bjh&vid=10686506776632018123&fr=bjhauthor&type=video
+            //https://m.baidu.com/video/page?pd=video_page&nid=11407332646654599920&sign=12546065950513610459
+            //https://sv.baidu.com/videoui/page/videoland?pd=bjh&type=video&context=%7B%22nid%22%3A%226519409713843253140%22%7D
+            //https://haokan.baidu.com/v?vid=10002876163307672441 付费
+            //其thumbnail中有,，因此加以引号...缩略图下载，不能加ck
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var url = window.external.url;
+            //度小视
+            if (url.indexOf('mr.baidu.com') != -1 || url.indexOf('id%3D') != -1) {
+                url = decodeURIComponent(window.external.getRedirectedUrl(url));
+                if (url.indexOf('vid=') != -1) {
+                    var vid = url.match(/vid=([^&]+)/)[1];
+                    document.body.innerHTML = 'cr_video_url=https://haokan.baidu.com/v?vid=' + vid + '#ra$';
+                    return;
+                }
+            }
+            if (url.indexOf('nid%22%3A%22') != -1) {
+                var vid = url.match(/nid%22%3A%22([^%]+)/)[1];
+                document.body.innerHTML = 'cr_video_url=https://haokan.baidu.com/v?vid=' + vid + '#ra$';
+                return;
+            }
+            if (url.indexOf('id=sv_') != -1) {
+                var vid = url.match(/id=sv_([^&]+)/)[1];
+                document.body.innerHTML = 'cr_video_url=https://haokan.baidu.com/v?vid=' + vid + '#ra$';
+                return;
+            }
+
+            //需要购买的...https://haokan.hao123.com/v?vid=6066239734609339078，支持
+            var cookie = window.external.getCookieEx(url, 'BDUSS', 2500);
+            //避免程序设置出错，只取需要段
+            if (cookie && cookie.indexOf('BDUSS=') != -1)
+                cookie = cookie.match(/BDUSS=[^;]+/)[0];
+            if (!cookie)
+                cookie = window.external.getCookieEx(url, 'BAIDUID', 2500);
+            var headers = 'Referer: ' + url + '\r\nCookie: ' + cookie;
+            var data = '';
+            //first...
+            if (url.indexOf('vid=') != -1) {
+                var vid = url.match(/vid=([^&]+)/)[1];
+                var api_url = 'https://haokan.baidu.com/v?_format=json&vid=' + vid;
+                data = window.external.getHtmlCodeEx(api_url, headers);
+            }
+            if (!data || data.indexOf('curVideoMeta') == -1) {
+                var html = window.external.getHtmlCodeEx(url, headers);
+                //有时带cookie不行？
+                if (!html)
+                    html =  window.external.getHtmlCode(url);
+                if (html)
+                    title = html.match(/<title>([^<]+)/)[1];
+                if (html.indexOf('__PRELOADED_STATE__') != -1)
+                    data = html.match(/__PRELOADED_STATE__\s*=\s*(.*?)\};\s+/)[1] + '}';
+            }
+            if (data && data.indexOf('curVideoMeta') != -1) {
+                var jo = JSON.parse(data);
+                var cvm = (data.indexOf('apiData') != -1) ? jo.data.apiData.curVideoMeta : jo.curVideoMeta;
+                //2023.08.10加密
+                if (!cvm && jo.encrypt == 1 && jo.encrptedVideoMeta) {
+                    var t = dec(atob(jo.encrptedVideoMeta), 'guanghui456');
+                    cvm = JSON.parse(t);
+                }
+                if (cvm) {
+                    title = cvm.title;
+                    thumbnail = cvm.poster;
+                    //https://haokan.baidu.com/v?vid=4913991802277026787
+                    //https://gimg0.baidu.com/gimg/src=http%3A%2F%2Faigcrender.cdn.bcebos.com%2Faigcrender%2Fvrender%2F2023-02-24%2F7523035%2Fa61995197723b9db6ed957c176c4184d.jpg...
+                    if (thumbnail && thumbnail.match(/src=http.*?\.jpg/))
+                        thumbnail = decodeURIComponent(thumbnail.match(/src=(http.*?\.jpg)/)[1]);
+                    duration = cvm.duration;
+                    //不用cvm.dash_url，mpd用n_m3u8dl合并麻烦
+                    var urls = cvm.clarityUrl;
+                    video_url = urls[urls.length - 1].url;
+                    //分辨率
+                    var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                    for (var v in urls) {
+                        if (urls[v].vodVideoHW.indexOf(vq) == 0) {
+                            video_url = urls[v].url;
+                            break;
+                        }
+                    }
+                }
+            }
+            //https://mr.baidu.com/r/f7SAJBCrW8?f=cp&u=fa3dee25e47b69c3
+            if (!video_url && url.indexOf('nid=') != -1) {
+                title = document.title;
+                var vid = url.match(/nid=([^&]+)/)[1];
+                video_url = 'https://haokan.baidu.com/v?vid=' + vid + '#ra';
+            }
+            //last...
+            if (!video_url && url.match(/haokan|baiduworld/) && (fv[0] != '1' || em)) {
+                //验证情况，取其跳转地址
+                //https://wappass.baidu.com/static/captcha/tuxing.html?
+                if (url.indexOf('wappass.baidu.com') != -1)
+                    url = window.external.getRedirectedUrl(url, '', '_');
+                var data = gvd(url);
+                //2021.09.04测试，有下述字串之地址，一样有水印且分辨率小
+                var jo = JSON.parse(data);
+                title = jo.body.title;
+                thumbnail = jo.body.cover_url;
+                video_url = jo.body.video_url;
+                video_url = video_url.replace('#_s=videoparse.cn', '');
+            }
+            if (!thumbnail && document.getElementsByClassName('art-poster').length != 0 && document.getElementsByClassName('art-poster')[0].outerHTML.indexOf('https:') != -1)
+                thumbnail = document.getElementsByClassName('art-poster')[0].outerHTML.match(/(http[^\"]+)/)[1];
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=\"' + thumbnail + '\",duration=' + duration + ',cr_video_url=' + video_url + '$' + html;
+
+            //...
+            function dec(e, t) {
+                for (var n = '', i = 0; i < e.length; i++) {
+                    var o = e.charCodeAt(i), s = t.charCodeAt(i % t.length);
+                    n += String.fromCharCode(o ^ s)
+                }
+                return n
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

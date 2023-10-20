@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" referer="true" unescape="false" date="2022.08.22">
+    <url><![CDATA[https?://(?:(?:www\.)?facebook\.com/.*?/(?:videos|posts)/(?<id>[^/]+)|\w+\.watch/(?<id>[^/]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[ignore_cks]]></ckSign>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://fb.watch/f1g5EgADme/
+            //https://www.facebook.com/100022722427826/videos/368963075177597/ -> https://www.facebook.com/groups/quantrieudinh/posts/1146451199417537/
+            var title = '', video_url = window.external.url;
+            var userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36';
+            var cookie = window.external.getCookieEx('https://www.facebook.com/', 'c_user', 2500) || window.external.getCookieEx('https://www.facebook.com/', 'rs', 2500);
+            var headers = 'User-Agent: ' + userAgent + '\r\nAccept: text/html\r\nSec-Fetch-Site: none\r\nCookie: ' + cookie;
+            var html = window.external.getHtmlCodeEx(window.external.url, headers);
+            if (html.indexOf('playable_url') != -1) {
+                title = (html.indexOf('og:title') != -1) ? html.match(/og:title\"\s*content=\"([^\"]+)/)[1] : html.match(/<title>([^<]+)/)[1];
+                thumbnail = (html.indexOf('og:image') != -1) ? html.match(/og:image\"\s*content=\"([^\"]+)/)[1] : '';
+                video_url = html.match(/playable_url\":\"([^\"]+)/)[1];
+                //有可能是null
+                if (html.indexOf('playable_url_quality_hd\":\"') != -1)
+                    video_url = html.match(/playable_url_quality_hd\":\"([^\"]+)/)[1];
+                var jo = JSON.parse('{\"video_url\":\"' + video_url + '\"}');
+                video_url = jo.video_url;
+            }
+
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

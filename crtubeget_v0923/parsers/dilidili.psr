@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2021.11.08">
+    <url><![CDATA[https?://(?:\w+\.)?dilidili.*?\.com/.*?/(?<id>\d+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[acf_auth]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //http://dilidili1.com/mov/67652/1.html
+            //http://dilidili1.com/acg/43485/9.html
+            //http://dilidili1.com/tv/68588/2.html 求m3u8
+            var title = document.title.substr(0, document.title.lastIndexOf(' '));
+            var p_url = window.location.href.match(/.*?\/\d+\//);
+            var html = window.external.getHtmlCode(p_url);
+            var thumbnail = (html.indexOf('original') != -1) ? html.match(/data-original=\"([^\"]+)/)[1] : '';
+            var vid = window.location.href.match(/\/(\d+)\.html?/)[1];
+            var video_url = playarr[vid].split(',')[0];
+            if (video_url.indexOf('.mp4') == -1 && video_url.indexOf('.m3u8') == -1 && playarr_1)
+                video_url = playarr_1[vid].split(',')[0];
+            if (video_url.indexOf('.mp4') == -1 && video_url.indexOf('.m3u8') == -1 && playarr_2)
+                video_url = playarr_2[vid].split(',')[0];
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

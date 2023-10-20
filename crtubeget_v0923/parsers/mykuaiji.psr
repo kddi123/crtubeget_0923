@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2021.04.01">
+    <url><![CDATA[https?://(?:www\.)?mykuaiji\.com/\w+/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail="([^"]+)"]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.mykuaiji.com/edu/3070.html
+            if (document.getElementsByClassName('edu-video-mask').length != 0) {
+                document.getElementsByClassName('edu-video-mask')[0].click();
+                delay(1500);
+            }
+
+            var title = (document.getElementsByTagName('h3').length != 0) ? document.getElementsByTagName('h3')[0].innerText : document.title;
+            var thumbnail = (document.getElementsByClassName('edu-thumb').length != 0) ? document.getElementsByClassName('edu-thumb')[0].src : '';
+            var video_url = document.getElementById('videoFrame') ? document.getElementById('videoFrame').src + '#ra' : window.location.href;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=\"' + thumbnail + '\",duration=0,cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

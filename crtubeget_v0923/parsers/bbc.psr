@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" date="2022.07.12">
+    <url><![CDATA[https?://(?:www\.)?bbc\.\w+\.\w+/[^/]+/(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA["duration":"([^"]+)"]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.bbc.co.uk/newsround/58995277
+            //https://www.bbc.co.uk/newsround/51376710
+            var title = (document.getElementsByTagName('h1').length > 1) ? document.getElementsByTagName('h1')[1].innerText : document.title;
+            var vpid = (document.body.innerHTML.indexOf('data-vpid') != -1) ? document.body.innerHTML.match(/data-vpid=\"([^\"]+)/)[1] : document.body.innerHTML.match(/\"v?pid\":\"([^\"]+)/)[1];
+            var api_url = 'https://open.live.bbc.co.uk/mediaselector/6/select/version/2.0/mediaset/pc/vpid/' + vpid + '/format/json/jsfunc/';
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            var video_url = window.external.url;
+            if (data.indexOf('.m3u8') != -1) {
+                var jo = JSON.parse(data);
+                for (var i = 0; i <= jo.media[jo.media.length - 1].connection.length - 1; i++) {
+                    var item = jo.media[jo.media.length - 1].connection[i];
+                    if (item.href.indexOf('.m3u8') != -1)
+                        video_url = item.href;
+                }
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

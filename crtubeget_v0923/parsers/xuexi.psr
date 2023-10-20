@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" date="2023.08.22">
+    <url><![CDATA[https?://(?:\w+\.)?xuexi\.cn/.*?item_id=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.xuexi.cn/lgpage/detail/index.html?id=1497521683973407963&item_id=1497521683973407963
+            //https://www.xuexi.cn/lgpage/detail/index.html?id=13937186260539611696&item_id=13937186260539611696&audio_id=301646581217457051
+            //https://article.xuexi.cn/articles/index.html?art_id=14196475356395444760&cdn=https%3A%2F%2Fregion-shandong-resource&item_id=14196475356395444760&...
+            var url = window.external.url;
+            var id = url.match(/item_id=([^&]+)/)[1];
+            var title = (document.getElementsByClassName('album-text nowrap').length != 0) ? document.getElementsByClassName('album-text nowrap')[0].innerText : '';
+            if (!title && document.getElementsByClassName('videoSet-article-title').length != 0)
+                title = document.getElementsByClassName('videoSet-article-title')[0].innerText;
+            var thumbnail = (document.getElementsByClassName('album-img ').length != 0) ? document.getElementsByClassName('album-img ')[0].firstChild.src : '';
+            var duration = 0, video_url = '';
+            var api_url = 'https://boot-source.xuexi.cn/data/app/' + id + '.js?callback=&_st=' + Date.now();
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            data = data.substring(9, data.length - 1);
+            var jo = JSON.parse(data);
+            //video
+            if (data.indexOf('video_storage_info') != -1) {
+                var video = jo.videos[0];
+                title = video.video_meta_settings.title;
+                for (var i = 0; i <= video.thumbnails.length - 1; i++) {
+                    if (video.thumbnails[i].specification == 'pc-poster-big') {
+                        thumbnail = video.thumbnails[i].data[0].url;
+                        break;
+                    }
+                }
+                duration = video.video_meta_settings.play_length;
+                video_url = video.video_storage_info[video.video_storage_info.length - 1].normal;
+            }
+            //audio
+            else if (data.indexOf('audio_storage_info') != -1 && url.indexOf('audio_id') != -1) {
+                var aid = url.match(/audio_id=([^&]+)/)[1];
+                for (var i = 0; i <= jo.sub_items.length - 1; i++) {
+                    var item = jo.sub_items[i];
+                    if (item.identity.item_id == aid) {
+                        var audio = item.audios[0];
+                        title = item.title || title;
+                        thumbnail = audio.thumbnails[audio.thumbnails.length - 1].data[0].url;
+                        duration = audio.audio_storage_info[0].play_length;
+                        video_url = audio.audio_storage_info[0].url;
+                        break;
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

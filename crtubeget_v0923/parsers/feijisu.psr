@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" date="2021.03.17">
+    <url><![CDATA[https?://(?:www\.)?(?:feijisu\d*|yikudm)\.com/[^/]+/\d+/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            var title = document.title;
+            if (title.indexOf('无修无删') != -1)
+                title = title.substr(0, title.indexOf('无修无删'));
+            if (title.indexOf('在线观看') != -1)
+                title = title.substr(0, title.indexOf('在线观看'));
+            if (document.getElementsByTagName('h2').length != 0) {
+                var text = document.getElementsByTagName('h2')[0].innerText;
+                if (text.indexOf('»') != -1)
+                    title = text.substr(text.lastIndexOf('»') + 1);
+            }
+            var thumbnail = '';
+            var detail = window.external.getHtmlCode(window.location.href.match(/(.*?\/)\d+\.html?/)[1]);
+            if (detail.indexOf('data-original=') != -1)
+                thumbnail = detail.match(/data-original=\"([^\"]+)/)[1];
+            if (detail.indexOf('data-img=') != -1)
+                thumbnail = detail.match(/data-img=\"([^\"]+)/)[1];
+            var video_url = '';
+            if (document.getElementsByTagName('iframe').length != 0) {
+                var src = document.getElementsByTagName('iframe')[0].src;
+                if (src.indexOf('vid=') != -1) {
+                    video_url = src.match(/vid=([^&]*)/)[1];
+                    if (video_url && video_url.indexOf('.mp4') == -1 && video_url.indexOf('.m3u8') == -1)
+                        video_url += '#ra';
+                }
+                if (!video_url && src.indexOf('yb_url') != -1)
+                    video_url = src.match(/yb_url=([^$]+)/)[1];
+                if (video_url && video_url.match(/com\d+/))
+                    video_url = video_url.replace(/com\d+/g, 'com');
+            }
+            if (!video_url)
+                var video_url = window.location.href;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

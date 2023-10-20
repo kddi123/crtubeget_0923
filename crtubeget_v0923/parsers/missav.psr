@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" unescape="false" date="2022.07.05">
+    <url><![CDATA[https?://(?:\www\.)?missav\.com/\w+/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://missav.com/ja/midv-144
+            var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveObject('Microsoft.XMLHTTP');
+            xhr.open('GET', window.external.url, false);
+            xhr.send(null);
+            html = xhr.responseText;
+            var js = html.match(/eval\((.*?}\))\)/)[1];
+            eval(eval('(' + js + ')'));
+            var video_url = source;
+            var title = html.match(/<title>([^<]+)/)[1];
+            document.body.innerHTML = 'title=\"' + title + '\",cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

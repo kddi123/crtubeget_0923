@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2019.07.29">
+    <url><![CDATA[https?://(?:www\.)?vivo\.sx/(?<id>\w+)]]></url>
+    <title><![CDATA[<h1[^>]+>([^<]+)]]></title>
+    <thumbnail><![CDATA[<meta\s+content="([^"]+)"\s+property="og:image">]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[<video[^>]+src="([^"]+?)"]]></mediaUrl>
+    <jsCode><![CDATA[if (document.getElementsByClassName('plyr__control plyr__control--overlaid').length != 0) document.getElementsByClassName('plyr__control plyr__control--overlaid')[0].click();]]></jsCode>
+</parser>

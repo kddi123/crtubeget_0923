@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2022.01.12">
+    <url><![CDATA[https?://\w+\.eduyun\.cn/.*/(?<id>.*?)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://tongbu.eduyun.cn/tbkt/tbkthtml/wk/weike_yd/2020CJ/2020CJ09YWTB042.html
+            //https://tongbu.eduyun.cn/tbkt/tbkthtml/wk/weike_yd/2020QJ/2020QJ08YWTB018.html
+            //https://tongbu.eduyun.cn/tbkt/tbkthtml/wk/weike_yd/2020QJ/2020QJ04SXRJ016.html h1
+            //https://tongbu.eduyun.cn/tbkt/tbkthtml/wk/weike/2020QJ/2020QJ01YWTB008.html h3
+            var title = (document.getElementsByTagName('h3').length != 0) ? document.getElementsByTagName('h3')[0].innerText : (document.getElementsByTagName('h1').length > 1) ? document.getElementsByTagName('h1')[1].innerText : document.title;
+            var html = document.body.innerHTML.substring(document.body.innerHTML.indexOf('setup(') + 6);
+            var thumbnail = html.match(/image:\s*\"([^\"]+)/)[1];
+            var video_url = html.match(/file:\s*\"([^\"]+)/)[1];
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

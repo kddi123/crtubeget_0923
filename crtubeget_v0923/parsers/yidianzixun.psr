@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2023.03.22">
+    <url><![CDATA[https?://(?:www\.)?yidianzixun\.com/\w+/(?<id>[^.*]+)]]></url>
+    <title><![CDATA[<h2[^>]*>([^<]+)</h2>]]></title>
+    <thumbnail><![CDATA[poster="([^"]+)"]]></thumbnail>
+    <duration><![CDATA[duration":([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.yidianzixun.com/article/V_0Q1UiaW9
+            var video_url = (document.getElementsByTagName('video').length != 0) ? document.getElementsByTagName('video')[0].src : window.location.href;
+            document.body.innerHTML = 'cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

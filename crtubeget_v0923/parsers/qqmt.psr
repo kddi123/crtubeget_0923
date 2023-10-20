@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="7500" referer="true" date="2021.10.23">
+    <url><![CDATA[https?://meeting\.tencent\.com/user-center/shared-record-info\?id=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^$]+)]]></mediaUrl>
+    <ckSign><![CDATA[we_meet_token]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://meeting.tencent.com/user-center/shared-record-info?id=39f42c41-9ab8-42d8-ac31-b446b9bc0bfb&tk=010RkLSWj9kDaXXekVX9XS4n4G2yATV4C8WXDOiMHsrHP2X00V6IUvsw0%2FbcTekw4xbagJBr8EufGRwKahifjVlw%3D%3D&no-auth=1
+            //https://meeting.tencent.com/user-center/shared-record-info?id=5876498c-e136-4cb7-84ca-55c7484ef180&from=3&pwd=Tsbcxj06 -> pwd:Tsbcxj06
+            var title = document.title, duration = 0, video_url = '';
+            if (document.getElementsByClassName('meeting-subject').length != 0)
+                title = document.getElementsByClassName('meeting-subject')[0].innerText;
+            if (document.getElementsByClassName('vjs-duration-display').length != 0)
+                duration = document.getElementsByClassName('vjs-duration-display')[0].innerText;
+            if (document.getElementsByTagName('video').length != 0)
+                video_url = document.getElementsByTagName('video')[0].src;
+            if (!video_url) {
+                var cookie = window.external.getCookieEx(window.external.url, 'we_meet_token', 2500) || window.external.getCookie(window.external.url) || document.cookie;
+                var id = window.external.url.match(/id=([^&]+)/)[1];
+                var pwd = (window.external.url.indexOf('pwd=') != -1) ? window.external.url.match(/pwd=([^&]+)/)[1] : '';
+                var args = '{\"id\":\"' + id + '\",\"pwd\":\"' + pwd + '\"}';
+                var headers = 'Content-Type: application/json\r\nReferer: ' + window.external.url + '\r\nCookie: ' + cookie;
+                data = window.external.getPostResultEx('https://meeting.tencent.com/wemeet-cloudrecording-webapi/v1/shares', args, headers);
+                //https://meeting.tencent.com/user-center/shared-record-info?id=696803ae-2b8e-4798-a82e-514d82dc6836&from=3&is-single=true
+                if (data.indexOf('recordings') == -1)
+                    data = window.external.getPostResultEx('https://meeting.tencent.com/wemeet-cloudrecording-webapi/v1/recording/shares', args, headers);
+                if (data.indexOf('recordings') != -1) {
+                    var jo = JSON.parse(data);
+                    //取最后一个
+                    var last = jo.recordings.length - 1;
+                    title = jo.creator_name + jo.recordings[last].name;
+                    duration = jo.recordings[last].duration / 1000;
+                    id = jo.recordings[last].sharing_id;
+                    var api_url = 'https://meeting.tencent.com/wemeet-cloudrecording-webapi/v1/sign?id=' + id + '&source=shares&pwd=' + pwd;
+                    headers = 'Referer: ' + window.external.url + '\r\nCookie: ' + cookie;
+                    data = window.external.getHtmlCodeEx(api_url, headers);
+                    if (data.indexOf('signurl') != -1) {
+                        jo = JSON.parse(data);
+                        video_url = jo.signurl;
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

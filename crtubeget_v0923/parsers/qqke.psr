@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" referer="true" date="2022.04.25">
+    <url><![CDATA[https?://ke\.qq\.com/.*?(?:taid=(?<id>\d+)|\d+/(?<id>\d+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://ke.qq.com/course/316383?taid=9497847729017823
+            //https://ke.qq.com/course/316383/9497847729017823
+            //https://ke.qq.com/webcourse/3066735/103187172#taid=11830642038721391&vid=5285890815404877787
+            //https://ke.qq.com/course/464428?term_id=100509231&taid=3902076573128236
+            //https://ke.qq.com/webcourse/index.html#cid=4556898&term_id=104723881&taid=46757615&lite=1&vid=387702297496464112
+            //master_url...
+            var url = window.external.url;
+            var taid = (url.indexOf('taid=') != -1) ? url.match(/taid=([^&]+)/)[1] : '';
+            if (!taid && url.match(/\d+\/\d+/))
+                taid = url.match(/\d+\/(\d+)/)[1]
+            var cid = url.match(/course\/(\d+)/) ? url.match(/course\/(\d+)/)[1] : '';
+            if (!cid && url.indexOf('cid=') != -1)
+                cid = url.match(/cid=([^&]+)/)[1];
+            var term_id = (url.indexOf('term_id=') != -1) ? url.match(/term_id=([^&]+)/)[1] : '';
+            //https://ke.qq.com/webcourse/4556898/104723881#taid=53259084&lite=1&vid=387702299654437266
+            if (!term_id && url.indexOf(taid) != -1 && url.match(/\d+\/\d+/))
+                term_id = url.match(/\d+\/(\d+)/)[1]
+            var file_id = (url.indexOf('vid') != -1) ? url.match(/vid=([^&]+)/)[1] : '';
+            var title = '', thumbnail = '', video_url = '';
+            var api_url = 'https://ke.qq.com/cgi-bin/course/basic_info?cid=' + cid + '&bkn=&t=' + Math.random().toFixed(4);
+            var data = window.external.getHtmlCode(api_url, url);
+            //no cookies...
+            if (!data)
+                data = window.external.getHtmlCodeEx(api_url);
+            var jo = JSON.parse(data);
+            title = jo.result.course_detail.name;
+            thumbnail = jo.result.course_detail.cover_url;
+            if (!term_id || !file_id) {
+                var sub_info = jo.result.course_detail.terms[0].chapter_info[0].sub_info;
+                for (var i = 0; i <= sub_info.length - 1; i++) {
+                    for (var j = 0; j <= sub_info[i].task_info.length - 1; j++) {
+                        var task = sub_info[i].task_info[j];
+                        if (task.taid == taid) {
+                            term_id = task.term_id;
+                            file_id = task.resid_list;
+                            break;
+                        }
+                    }
+                    if (file_id)
+                        break;
+                }
+            }
+            //确切title
+            if (term_id && taid) {
+                api_url = 'https://ke.qq.com/cgi-proxy/agency/exp/get_replay_list_to_c?tid=' + term_id;
+                data = window.external.getHtmlCode(api_url, url);
+                if (data.indexOf('replay_info_list\":[{') != -1) {
+                    jo = JSON.parse(data);
+                    for (var i = 0; i <= jo.result.replay_info_list.length - 1; i++) {
+                        var item = jo.result.replay_info_list[i];
+                        if (item.task_id == taid) {
+                            title = item.task_name;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            var master_url = '';
+            if (term_id && file_id) {
+                api_url = 'https://ke.qq.com/cgi-bin/qcloud/get_token?term_id=' + term_id + '&fileId=' + file_id + '&bkn=&t=' + Math.random().toFixed(4);
+                //不能带headers...
+                data = window.external.getHtmlCodeEx(api_url);
+                jo = JSON.parse(data);
+                var jr = jo.result;
+                api_url = 'https://playvideo.qcloud.com/getplayinfo/v2/1258712167/' + file_id + '?exper=' + jr.exper + '&sign=' + jr.sign + '&t='+ jr.t + '&us=' + jr.us;
+                data = window.external.getHtmlCode(api_url);
+                if (!data)
+                    data = window.external.getHtmlCodeEx(api_url);
+                jo = JSON.parse(data);
+                if (jo.videoInfo && jo.videoInfo.masterPlayList) {
+                    master_url = jo.videoInfo.masterPlayList.url;
+                    //以之前为主以避免错误
+                    if (!title)
+                        title = jo.videoInfo.basicInfo.name;
+                    thumbnail = jo.coverInfo.coverUrl;
+                }
+            }
+            //https://ke.qq.com/webcourse/4103421/104257843#taid=43638401&lite=1&vid=387702293801073811
+            if (!master_url && cid && file_id) {
+                api_url = 'https://ke.qq.com/cgi-proxy/rec_video/describe_rec_video?course_id=' + cid + '&file_id=' + file_id + '&term_id=' + term_id + '&header=%7B%22srv_appid%22%3A201%7D';
+                data = window.external.getHtmlCodeEx(api_url, 'Referer: ' + url);
+                if (data.indexOf('\"master_play_list\":\"http') != -1)
+                    master_url = data.match(/master_play_list\":\"([^\"]*)/)[1];
+                //https://ke.qq.com/webcourse/index.html#cid=4556898&term_id=104723881&taid=52612813&lite=1&vid=387702299453127572
+                else if (data.indexOf('\"url\"') != -1)
+                    video_url = data.match(/url\":\"([^\"]*)/)[1];
+            }
+            //...
+            if (master_url) {
+                var r = master_url.split('/');
+                var e = {id: cid, termId: term_id};
+                var token = gt(e);
+                r[r.length - 1] = 'voddrm.token.' + token + '.' + r[r.length - 1];
+                master_url = r.join('/');
+                var host = master_url.substr(0, master_url.indexOf('drm')) + 'drm/';
+                data = window.external.getHtmlCode(master_url).trim();
+                var m3u8_url = data.substr(data.lastIndexOf('\n')).trim();
+                video_url = host + m3u8_url;
+                var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                if (vq == 480)
+                    video_url = video_url.replace('f30742', 'f30740');
+                else if (vq == 720)
+                    video_url = video_url.replace('f30742', 'f30741');
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$error=课程信息获取失败，请检测此课程回放是否已过期。';
+
+            //token...
+            function gt(e) {
+                if (typeof Object.assign != 'function') {
+                    Object.assign = function(target) {
+                        target = Object(target);
+                        for (var index = 1; index < arguments.length; index++) {
+                            var source = arguments[index];
+                            if (source != null) {
+                                for (var key in source) {
+                                    if (Object.prototype.hasOwnProperty.call(source, key))
+                                        target[key] = source[key];
+                                }
+                            }
+                        }
+                        return target;
+                    }
+                }
+
+                var t = e.termId, n = e.cid, r = e.authType, o = void 0 === r ? 0 : r, i = uin() || 0, s = c('p_skey'), l = c('p_lskey'), f = c('uid_a2'), d = !('2' !== c('uid_type') || !f.length), 
+                p = {
+                    uin: i,
+                    vod_type: o,
+                    cid: n,
+                    term_id: t
+                };
+                d ? Object.assign(p, {
+                    ext: f
+                }) : Object.assign(p, {
+                    plskey: l,
+                    pskey: s
+                });
+                var h = function(e) {
+                    var t = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : '&', n = '';
+                    return Object.keys(e).forEach(function(r) {
+                        if (void 0 !== e[r]) {
+                            var o = e[r];
+                            n += '' + t + r + '=' + o
+                        }
+                    }),
+                    n ? n.slice(1) : ''
+                }(p, ';');
+                return (m = h,
+                    btoa(encodeURIComponent(m).replace(/%([0-9A-F]{2})/g, function(e, t) {
+                        var n = parseInt(t, 16);
+                        return String.fromCharCode(n)
+                    }))
+                );
+                var m
+            }
+
+            function c(e) {
+                var cookie = window.external.getCookieEx(window.external.url, 'o_cookie', 2500) || window.external.getCookie(window.external.url);
+                var t = cookie.match(new RegExp('(^| )' + e + '=([^;]*)(;|$)'));
+                return t ? decodeURIComponent(t[2]) : ''
+            }
+
+            function uin() {
+                var e;
+                return 2 == c('uid_type') ? c('uid_uin') || null : e = (e = (e = c('p_luin') || c('p_uin') || c('uin') || c('pt2gguin') || c('adid')) ? parseInt(e.substring(1, e.length), 10) : null) || parseInt(c('uin_cookie'), 10) || null;
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

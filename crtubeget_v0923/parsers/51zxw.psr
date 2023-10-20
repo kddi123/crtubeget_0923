@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" referer="true" date="2021.09.15">
+    <url><![CDATA[https?://(?:www\.)?51zxw\.net/show\.aspx\?cid=\d+&v?id=(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[<video[^>]+>\s*<source[^>]+src="([^"]+)"]]></mediaUrl>
+    <ckSign><![CDATA[newsMember]]></ckSign>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://www.51zxw.net/Show.aspx?cid=729&id=78077->https://m.51zxw.net/MobileWeb/CourseDetails?cid=729&vid=78077
+            //https://m.51zxw.net/MobileWeb/CourseDetails?cid=903&vid=101693
+            //https://www.51zxw.net/Show.aspx?cid=722&id=77611
+            var url = window.external.url;
+            var m = url.match(/cid=(\d+)&v?id=(\d+)/);
+            var cid = m[1], vid = m[2];
+            var api_url = 'https://m.51zxw.net/MobileWeb/CourseDetails?cid=' + cid + '&vid=' + vid;
+            var cookie = window.external.getCookieEx(url, 'newsMember', 2500) || window.external.getCookie(url) || document.cookie;
+            var headers = 'Cookie: ' + cookie + '\r\nUser-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25';
+            var html = window.external.getHtmlCodeEx(api_url, headers);
+            var title = html.match(/<span\s+style[^>]+>([^<]+)/)[1];
+            var thumbnail = 'https://www.51zxw.net/m/img/kcbm/' + cid + '.jpg';
+
+            //...
+            if (html.indexOf('source src=\"http') == -1)
+                html = window.external.getHtmlCodeEx(url, headers);
+            if (html.indexOf('website:') != -1) {
+                api_url = 'https://www.51zxw.net' + html.match(/website:([^']+)/)[1];
+                var data = window.external.getHtmlCode(api_url, url);
+                var jo = JSON.parse(data);
+                api_url = jo.video[0][0];
+                var e = window.external.getHtmlCode(api_url, url);
+                e = e.substr(64).substr(-60).substr(0, 30) + e.substr(64).substring(0, e.substr(64).length - 60) + e.substr(64).substr(-30);
+                data = decode(e);
+                if (data.indexOf('#EXTM3U') != -1) {
+                    data = data.substr(0, data.indexOf('ENDLIST') + 7);
+                    data = data.replace('shipmingko', 'https://www.51zxw.net/shipmingko');
+                    var key_url = data.match(/URI=\"([^\"]+)/)[1];
+                    var vd = window.external.getHtmlCode(key_url, url);
+                    jo = JSON.parse(vd);
+                    var k = decode(jo.value.substr(24)).substr(0, 16);
+                    k = k.substr(1, 1) + k.substr(0, 1) + k.substr(-7) + k.substr(2, 3) + k.substr(5, 4);
+                    data = data.replace(/URI=\"[^\"]+/, 'URI=\"http://cr-soft.net/echo.php?v=' + k);
+                    video_url = window.external.saveData(data);
+                    html = '<video id=\"player\"><source src=\"' + video_url + '\" />' + html;
+                }
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',' + html;
+
+            //...
+            function decode(e) {
+                var _keyStr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+                var t = '';
+                var n, r, i;
+                var s, o, u, a;
+                var f = 0;
+                e = e.replace(/[^A-Za-z0-9+/=]/g, '');
+                while (f < e.length) {
+                    s = _keyStr.indexOf(e.charAt(f++));
+                    o = _keyStr.indexOf(e.charAt(f++));
+                    u = _keyStr.indexOf(e.charAt(f++));
+                    a = _keyStr.indexOf(e.charAt(f++));
+                    n = s << 2 | o >> 4;
+                    r = (o & 15) << 4 | u >> 2;
+                    i = (u & 3) << 6 | a;
+                    t = t + String.fromCharCode(n);
+                    if (u != 64) {
+                        t = t + String.fromCharCode(r)
+                    }
+                    if (a != 64) {
+                        t = t + String.fromCharCode(i)
+                    }
+                }
+                t = _utf8_decode(t);
+                return t
+            }
+
+            function _utf8_decode(e) {
+                var t = '';
+                var n = 0;
+                var r = c1 = c2 = 0;
+                while (n < e.length) {
+                    r = e.charCodeAt(n);
+                    if (r < 128) {
+                        t += String.fromCharCode(r);
+                        n++
+                    } else if (r > 191 && r < 224) {
+                        c2 = e.charCodeAt(n + 1);
+                        t += String.fromCharCode((r & 31) << 6 | c2 & 63);
+                        n += 2
+                    } else {
+                        c2 = e.charCodeAt(n + 1);
+                        c3 = e.charCodeAt(n + 2);
+                        t += String.fromCharCode((r & 15) << 12 | (c2 & 63) << 6 | c3 & 63);
+                        n += 3
+                    }
+                }
+                return t
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

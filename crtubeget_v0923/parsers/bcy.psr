@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" date="2020.06.03">
+    <url><![CDATA[https?://(?:www\.)?bcy\.net/item/detail/(?<id>[^?]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            if (document.getElementsByClassName('xgplayer-play-center').length != 0) {
+                document.getElementsByClassName('xgplayer-play-center')[0].click();
+
+                var pd = window.__ssr_data.detail.post_data;
+                var title = pd.title;
+                var thumbnail = pd.cover;
+                var duration = pd.video_info.duration;
+                var video_url = document.getElementsByTagName('video')[0].src;
+                document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2020.04.10">
+    <url><![CDATA[https?://(?:www\.)?baobao88\.com/bbstory/.*?/(?<id>\d+)\.html?]]></url>
+    <title><![CDATA[<h1>([^<]+)</h1>]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[duration">([^<]+)</div>]]></duration>
+    <mediaUrl><![CDATA[<audio[^>]+\bsrc="([^"]+?)"]]></mediaUrl>
+</parser>

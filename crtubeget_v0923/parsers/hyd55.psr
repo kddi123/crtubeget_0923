@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" referer="true" date="2020.07.01">
+    <url><![CDATA[https?://(?:www\.)?hyd55\.com/player/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.hyd55.com/player/46304-4-0.html
+            var playUrl = document.getElementsByTagName('iframe')[0].contentWindow.playurl;
+            var domain = playUrl.match(/https?:\/\/[^/]+/)[0];
+            var html = window.external.getHtmlCode(playUrl);
+            var title = window.xTitle || html.match(/<title>([^<]+)<\/title>/)[1];
+            var video_url = domain + html.match(/main\s+=\s+\"([^\"]+)/)[1];
+            var thumbnail = domain + html.match(/pic\s+=\s+\"([^\"]+)/)[1];
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

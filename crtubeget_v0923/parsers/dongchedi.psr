@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" referer="true" date="2021.07.19">
+    <url><![CDATA[https?://(?:www\.)?dongchedi\.com/video/(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.dongchedi.com/video/6823975785427108360
+            var title = window.__NEXT_DATA__ ? window.__NEXT_DATA__.props.pageProps.info.title : document.title;
+            var video_url = window.location.href.replace('www.dongchedi.com/video', 'www.ixigua.com');
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + title + '\",cr_video_url=' + video_url + '#ra$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" date="2022.03.26">
+    <url><![CDATA[https?://v\.pptv\.com/show/(?<id>\w+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://v.pptv.com/show/VE8Jhu5UxAJl40s.html
+            //https://v.pptv.com/show/UfBl4kqwIF7BP6c.html -> http://sports.pptv.com/vod/32695121/8120978?from=pptv -> http://sports.pptv.com/vod/pg_h5video/32695121/8120978?from=pptv
+            //https://v.pptv.com/show/25749655.html... from playlist
+            //https://v.pptv.com/show/01IDgOhOvvxf3UU.html
+            var href = window.external.getRedirectedUrl(window.external.url);
+            if (href.indexOf('/show/') == -1) {
+                document.head.innerHTML = '';
+                document.body.innerHTML = 'cr_video_url=' + href + '#ra$' + document.body.innerHTML;
+                return;
+            }
+
+            var title = '', thumbnail = '';
+            if (href.indexOf('#') != -1)
+                href = href.substr(0, href.indexOf('#'));
+            var id = '';
+            var html = window.external.getHtmlCode(href);
+            if (html.indexOf('__INITIAL_STATE__') != -1) {
+                var js = html.match(/__INITIAL_STATE__=\s+(.*?\}\});/)[1];
+                var jo = JSON.parse(js);
+                id = jo.cid;
+                if (jo.detailContent.baseInfo)
+                    thumbnail = jo.detailContent.baseInfo.coverPic;
+            }
+            if (!id) {
+                if (html.indexOf('webcfg') != -1)
+                    id = html.match(/webcfg\s*=\s*\{\"id\":([^,]+)/)[1];
+                else if (html.indexOf('\"cid\"') != -1)
+                    id = html.match(/\"cid\":([^,]+)/)[1];
+                else if (href.match(/show\/(\d+)/))
+                    id = href.match(/show\/(\d+)/)[1];
+            }
+            var api_url = 'http://web-play.pptv.com/webplay3-0-' + id + '.xml?version=6&type=mhpptv&o=0&pageUrl=' + href + '&appver=4.0.7&appplt=web&appid=pptv.web.h5&nddp=1&scver=1&cb=gp';
+            var data = window.external.getHtmlCode(api_url, href);
+            data = data.slice('gp='.length, -4);
+            var jo = JSON.parse(data);
+            for (var i = 0; i <= jo.childNodes.length - 1; i++) {
+                if (jo.childNodes[i].tagName == 'channel') {
+                    title = jo.childNodes[i].nm;
+                    if (!thumbnail)
+                        thumbnail = 'http://v-img.pplive.cn/cp120/' + jo.childNodes[i].pic;
+                    break;
+                }
+            }
+            var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+            var ft = 4;
+            if (vq == 360)
+                ft = 0;
+            else if (vq == 480)
+                ft = 1;
+            else if (vq == 720)
+                ft = 2;
+            else if (vq == 1080)
+                ft = 3;
+            var childs = jo.childNodes;
+            for (var i = 0; i <= childs.length - 1; i++) {
+                if (childs[i].tagName == 'dt') {
+                    jo = childs[i];
+                    if (childs[i].ft == ft)
+                        break;
+                }
+            }
+            var fn = jo.rid.replace('mp4', 'm3u8');
+            var host = '', key = '';
+            for (var i = jo.childNodes.length; i--; i >= 0) {
+                var cn = jo.childNodes[i];
+                if (cn.tagName == 'key')
+                    key = cn.childNodes[0];
+                //bh路不通
+                else if (cn.tagName == 'sh')
+                    host = cn.childNodes[0];
+            }
+            var video_url = 'http://' + host + '/' + fn + '?fpp.ver=1.0.0&k=' + key + '&type=mhpptv'
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

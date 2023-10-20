@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2021.12.05">
+    <url><![CDATA[https?://(?:\w+\.)?lizhi\.\w+/.*?\d+/(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://www.lizhi.fm/182645850/2856271366221186054
+            //https://m.lizhi.fm/vod/5296928/2908217045749638662
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var api_url = 'https://3g.gljlw.com/diy/lizhi.php?url=' + encodeURIComponent(window.external.url);
+            var html = window.external.getHtmlCode(api_url, 'https://3g.gljlw.com/diy/lizhi.php');
+            var m = html.match(/<audio.*?src=\"([^\"]+)/);
+            if (m) {
+                title = html.match(/歌曲名:([^<]+)/)[1];
+                thumbnail = html.match(/封面:.*?<img[^>]+src=\"([^\"]+)\"/)[1];
+                video_url = m[1];
+            }
+            else {
+                var aid = window.external.url.match(/\d+\/(\d+)/)[1];
+                api_url = 'https://m.lizhi.fm/vodapi/voice/info/' + aid;
+                var data = window.external.getHtmlCode(api_url, window.external);
+                var jo = JSON.parse(data);
+                var voice = jo.data.userVoice;
+                title = voice.voiceInfo.name;
+                thumbnail = voice.voiceInfo.imageUrl;
+                duration = voice.voiceInfo.duration;
+                video_url = voice.voicePlayProperty.trackUrl;
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

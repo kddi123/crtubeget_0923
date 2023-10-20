@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2021.02.18">
+    <url><![CDATA[https?://(?:\w+\.)?xiangha\.com/shortVideoInfo/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://m.xiangha.com/shortVideoInfo/3917500.html?from=
+            var title = info.name.replace('<br>', '');
+            var video_url = info.video.videoUrl.defaultUrl;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + info.image.url + ',duration=' + info.video.time + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

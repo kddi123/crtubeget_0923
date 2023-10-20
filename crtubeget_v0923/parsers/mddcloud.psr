@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" delegate="true" date="2023.07.18">
+    <url><![CDATA[https?://(?:www\.)?mddcloud\.com\.cn/video/(?<id>[^.]+)\.html?.*?num=\d+]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[ignore_cks]]></ckSign>
+    <exjs><![CDATA[http://www.cr-soft.net/js/aes.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //https://www.mddcloud.com.cn/video/ff80808176ad70cc0176e150a5dc1b73.html?tabUuid=ff8080818161438101816565ccb10331&num=3
+            //https://www.mddcloud.com.cn/video/ff80808179b0f146017a140069272b7b.html?tabUuid=ff80808177dcdf3a0177f27c99440e12&num=1
+            //https://mddcloud.com.cn/video/fdea98f1096d11edae9d6c92bf46f25e.html?tabUuid=ff8080817767113f017767474a65002b&num=1 masterPlaylistUrl
+            //2023.01.16: 已失效，网站禁止调试
+            for (var i = 0; i <= 2; i++) {
+                if (CryptoJS)
+                    break;
+                delay(4500);
+            }
+            var title = '', thumbnail = '';
+            var url = window.external.url;
+            var vuid = url.match(/video\/([^.]+)/)[1];
+            var num = (url.indexOf('num=') != -1) ? url.match(/num=(\d+)/)[1] : 1;
+            var cookie = window.external.getCookieEx(url, 'wtkofmdd', 2500) || document.cookie;
+            //...multi wtkofmdd
+            if (cookie.indexOf('wtkofmdd') != -1)
+                cookie = cookie.substring(cookie.lastIndexOf('wtkofmdd'));
+            var wt = (cookie.indexOf('wtkofmdd') != -1) ? cookie.match(/wtkofmdd=([^;]+)/)[1] : '';
+            //vod info
+            var t = Date.now();
+            var sk = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2dpbk5hbWUiOiJleUpoYkdjaU9pSklVekkxTmlJc0luUjVjQ0k2SWtwWFZDSjkuZXlKc2IyZHBiazVoYldVaU9pSmhJaXdpWlhod0lqb3hOakkzTURrME1qZzJMQ0oxYzJWeVNXUWlPaUpoSW4wLkczSkpyb2t6Y0c0ejlZOU1KM0NmaFRGcjFKa3NvMjFaeHc3VzRCRVJvZWsiLCJleHAiOjE2MjcxMTA3MTgsInVzZXJJZCI6ImEifQ.68cMg14UgJ-A_eFxuVo8YA8H-PeDzM8d4jngPcpr2K8';
+            var l = window.external.md5((wt || t) + sk).substring(0, 16);
+            var d = '{\"isSactionList\":1,\"vodUuid\":\"' + vuid + '\"}';
+            var ed = encrypt(d, l);
+            var c = 'encryptData=' + ed + '&';
+            var pk = '8a4af424bd714be5b2baacbe3cf5bbbe0131effeb92e99356ef1662884558f28';
+            var n = wt ? 'webToken:'.concat(wt, '|time:').concat(t, '|privateKey:').concat(pk, '|data:').concat(c) : 'time:'.concat(t, '|privateKey:').concat(pk, '|data:').concat(c);
+            var sn = window.external.md5(n);
+            var args = '{\"time\":' + t + ',\"sign\":\"' + sn + '\",\"data\":{\"encryptData\":\"' + ed + '\"},\"webToken\":\"' + wt + '\",\"reqEncrypt\":1,\"respEncrypt\":1}';
+            //cookie too long...
+            var headers = 'Content-Type: application/json;charset=UTF-8\r\nReferer: ' + url + '\r\nCookie: ' + cookie;
+            var api_url = 'https://www.mddcloud.com.cn/oweApi/vod/simpleVodInfo';
+            var data = window.external.getPostResultEx(api_url, args, headers);
+            var jo = JSON.parse(data);
+            if (jo.data.vodSactionList)
+                jo = jo.data;
+            else {
+                data = decrypt(jo.data.encryptData, l);
+                jo = JSON.parse(data);
+            }
+            thumbnail = jo.downImage;
+            var uuid = '';
+            var lang = (jo.name.indexOf('(粤)') != -1) ? '(粤)' : '';
+            for (var i = 0; i <= jo.vodSactionList.length - 1; i++) {
+                var item = jo.vodSactionList[i];
+                if (item.num == num) {
+                    title = item.name;
+                    if (lang && title.indexOf(lang) == -1)
+                        title = title + ' ' + lang;
+                    uuid = item.uuid;
+                    break;
+                }
+            }
+            //section
+            t = Date.now();
+            l = window.external.md5((wt || t) + sk).substring(0, 16);
+            d = '{\"sactionUuid\":\"' + uuid + '\"}';
+            ed = encrypt(d, l);
+            c = 'encryptData=' + ed + '&';
+            n = wt ? 'webToken:'.concat(wt, '|time:').concat(t, '|privateKey:').concat(pk, '|data:').concat(c) : 'time:'.concat(t, '|privateKey:').concat(pk, '|data:').concat(c);
+            sn = window.external.md5(n);
+            args = '{\"time\":' + t + ',\"sign\":\"' + sn + '\",\"data\":{\"encryptData\":\"' + ed + '\"},\"webToken\":\"' + wt + '\",\"reqEncrypt\":1,\"respEncrypt\":1}';
+            api_url = 'https://www.mddcloud.com.cn/oweApi/vod/sactionInfo';
+            headers += '\r\nUser-Agent: ' + navigator.userAgent + '\r\nOrigin: https://www.mddcloud.com.cn';
+            data = window.external.getPostResultEx(api_url, args, headers);
+            jo = JSON.parse(data);
+            data = decrypt(jo.data.encryptData, l);
+            jo = JSON.parse(data);
+            var video_url = jo.fhdHls || jo.hdHls || jo.sdHls || jo.multiFhdMp4 || jo.masterPlaylistUrl || jo.oriUrl;
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+
+            //...
+            function encrypt(data, t) {
+                var l = CryptoJS;
+                var e = l.enc.Utf8.parse(data);
+                return t = l.enc.Utf8.parse(t),
+                l.AES.encrypt(e, t, {
+                    mode: l.mode.ECB,
+                    padding: l.pad.Pkcs7
+                }).toString()
+            }
+
+            function decrypt(t, e) {
+                var l = CryptoJS;
+                return e = l.enc.Utf8.parse(e),
+                l.AES.decrypt(t, e, {
+                    mode: l.mode.ECB,
+                    padding: l.pad.Pkcs7
+                }).toString(l.enc.Utf8).toString();
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

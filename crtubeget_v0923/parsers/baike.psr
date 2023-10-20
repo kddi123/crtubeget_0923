@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.12.27">
+    <url><![CDATA[https?://baike\.baidu\.com/(?:item|video).*?(?:/|=)(?<id>[\d+]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://baike.baidu.com/item/%E7%99%BE%E5%90%88/7886?fr=aladdin
+            //https://baike.baidu.com/item/%E7%A7%91%E5%AD%A6/5400107?fr=aladdin&qq-pf-to=pcqq.c2c
+            //https://baike.baidu.com/video?lemmaId=1478&secondId=25831602
+            var url = window.external.getRedirectedUrl(window.external.url);
+            var lid = url.match(/\/(\d+)/)[1];
+            var api_url = 'https://baike.baidu.com/api/second/video/list?lemmaId=' + lid;
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            var jo = JSON.parse(data);
+            var item = jo.data.list[0].content;
+            //secondId?
+            if (url.indexOf('secondId=') != -1) {
+                var sid = url.match(/secondId=([^&]+)/)[1];
+                for (var i in jo.data.list) {
+                    if (jo.data.list[i].secondId == sid) {
+                        item = jo.data.list[i].content;
+                        break;
+                    }
+                }
+            }
+            var video_url = item.playUrl.hls || item.playUrl.mp4;
+            document.body.innerHTML = 'title=\"' + item.title + '\",thumbnail=' + item.cover.url + ',duration=' + item.duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

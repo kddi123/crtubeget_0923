@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.06.21">
+    <url><![CDATA[https?://(?:www\.)?artgrid\.io/clip/[^/]+/(?<id>[^/&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://artgrid.io/clip/88600/colorful-sky-and-stars-moving-over-rock-formations-timelapse
+            var title = (document.head.innerHTML.indexOf('name=\"description\"') != -1) ? document.head.innerHTML.match(/name=\"description\"\s+content=\"([^|\"]+)/)[1] : document.title;
+            var thumbnail = (document.head.innerHTML.indexOf('\"og:image\"') != -1) ? document.head.innerHTML.match(/content=\"([^\"]+)\"\s+property=\"og:image\"/)[1] : '';
+            var video_url = window.location.href;
+            var cid = window.location.href.match(/clip\/([^\/]+)/)[1];
+            var api_url = 'https://artgrid.io/api/clip/details?clipId=' + cid;
+            var data = window.external.getHtmlCode(api_url);
+            if (data.indexOf('clipPath') != -1) {
+                var jo = JSON.parse(data);
+                title = jo.clipName;
+                thumbnail = jo.imageUrl;
+                var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                if (vq < 8)
+                    vq = 2160;
+                data = window.external.getHtmlCode(jo.clipPath);
+                var pre = jo.clipPath.substr(0, jo.clipPath.indexOf(cid));
+                if (data.indexOf(vq + 'p') != -1)
+                    video_url = pre + cid + '_' + vq + 'p.m3u8';
+                else
+                    video_url = pre + cid + data.substr(data.lastIndexOf('_'));
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

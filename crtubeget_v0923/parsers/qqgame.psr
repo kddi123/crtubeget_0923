@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" date="2023.06.21">
+    <url><![CDATA[sports\.qq\.com/.*?game\.html?\?mid=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://sports.qq.com/kbsweb/game.htm?mid=100002:20211728
+            //https://kbs.sports.qq.com/kbsweb/game.htm?mid=6:2282418
+            var mid = window.external.url.match(/mid=([^&]+)/)[1];
+            var api_url = 'https://matchweb.sports.qq.com/kbs/matchVideoAll?mid=' + mid + '&callback=';
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            var jo = JSON.parse(data);
+            var video = jo.data.totalList[0]
+            var video_url = 'https://v.qq.com/x/page/' + video.vid + '.html';
+            document.body.innerHTML = 'title=\"' + video.title + '\",duration=' + video.duration + ',cr_video_url=' + video_url + '#ra$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2022.05.19">
+    <url><![CDATA[(?:y\.)?qq\.com/(?:\w/r?yqq/song(?:Detail)?/(?<id>[^.]+)(?:$|\.html)|base.*?_=(?<id>[^&]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://y.qq.com/n/ryqq/songDetail/002LfyCI1o1p3T
+            //https://y.qq.com/n/yqq/song/002LfyCI1o1p3T.html
+            //https://c.y.qq.com/base/fcgi-bin/u?__=ZjRdQnG -> https://y.qq.com/n/ryqq/songDetail/211626917?songtype=0
+            var title = (document.getElementsByClassName('data__name_txt').length != 0) ? document.getElementsByClassName('data__name_txt')[0].innerText : document.title;
+            var thumbnail = (document.getElementsByClassName('data__photo').length != 0) ? document.getElementsByClassName('data__photo')[0].src : '';
+            var duration = 0, video_url = '';
+            var cookie = window.external.getCookieEx(window.location.href, 'pgv_pvid', 2500) || document.cookie;
+            if (window.__INITIAL_DATA__ && window.__INITIAL_DATA__.songList && cookie.indexOf('pgv_pvid') != -1) {
+                var guid = cookie.match(/pgv_pvid=([^;]+)/)[1];
+                var uin = (cookie.indexOf(' uin') != -1) ? cookie.match(/\suin=([^;]+)/)[1] : (cookie.indexOf('uin_cookie') != -1) ? cookie.match(/uin_cookie=([^;]+)/)[1] : '';
+                var sd = window.__INITIAL_DATA__.songList[0];
+                thumbnail = sd.coverUrl;
+                duration = sd.interval;
+                var args = '{\"req_0\":{\"module\":\"vkey.GetVkeyServer\",\"method\":\"CgiGetVkey\",\"param\":{\"guid\":\"' + guid + '\",\"songmid\":[\"' + sd.mid + '\"],\"songtype\":[' + sd.type + '],\"uin\":\"' + uin +'\",\"loginflag\":1,\"platform\":\"20\"}}}';
+                api_url = 'https://u.y.qq.com/cgi-bin/musicu.fcg?format=json&platform=yqq.json&needNewCode=0&data=' + args;
+                var data = window.external.getHtmlCode(api_url);
+                jo = JSON.parse(data);
+                if (jo.req_0.data && jo.req_0.data.midurlinfo[0].purl)
+                    video_url = jo.req_0.data.sip[0] + jo.req_0.data.midurlinfo[0].purl;
+            }
+            if (!video_url) {
+                var args = 'filter=url&type=_&input=' + encodeURIComponent(window.location.href);
+                var data = window.external.getPostResultEx('https://music.liuzhijin.cn/', args, 'X-Requested-With: XMLHttpRequest\r\nContent-Type: application/x-www-form-urlencoded');
+                if (data.indexOf('data\":[{') == -1) {
+                    args = 'input=' + encodeURIComponent(title) + '&filter=name&type=qq&page=1';
+                    data = window.external.getPostResultEx('https://music.liuzhijin.cn/', args, 'X-Requested-With: XMLHttpRequest\r\nContent-Type: application/x-www-form-urlencoded');
+                }
+                if (data.indexOf('data\":[{') != -1) {
+                    var jo = JSON.parse(data);
+                    thumbnail = jo.data[0].pic;
+                    video_url = jo.data[0].url;
+                }
+            }
+            if (!video_url)
+                video_url = window.location.href;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

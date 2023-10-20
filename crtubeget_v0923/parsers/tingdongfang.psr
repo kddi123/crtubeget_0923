@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser crpj="true" referer="true" date="2022.04.06">
+    <url><![CDATA[https?://(?:www\.)?tingdongfang\.com/book(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[class="txt">([^<]+)<]]></title>
+    <thumbnail><![CDATA[img\s*src=([^>]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.tingdongfang.com/book29311a1l1p1.html
+            //http://www.tingdongfang.com/book29311a11l0p1.html
+            var video_url = '';
+            for (var i = 0; i <= document.getElementsByTagName('iframe').length - 1; i++) {
+                var src = document.getElementsByTagName('iframe')[i].src;
+                if (src.indexOf('next=') != -1) {
+                    var data = window.external.getHtmlCode(src);
+                    if (data.indexOf('file: ') != -1)
+                        video_url = data.match(/file:\s*\"([^\"]+)/)[1];
+                    break;
+                }
+            }
+            if (!video_url)
+                video_url = window.location.href
+            document.body.innerHTML = 'cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

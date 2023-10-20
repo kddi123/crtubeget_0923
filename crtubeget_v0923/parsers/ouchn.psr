@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2022.06.17">
+    <url><![CDATA[https?://(?:\w+\.)?ouchn\.cn/course/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <ckSign><![CDATA[userInfo]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //列表之虚拟页
+            //http://le.ouchn.cn/course/c68f8bb42a1273576c29a25e7a9ed47c_c.html
+            var vid = window.external.url.match(/course\/([^.]+)/)[1];
+            var api_url = 'http://le.ouchn.cn/api/VOD/' + vid + '/Token?Weixin=false';
+            var data = window.external.getHtmlCode(api_url, 'http://le.ouchn.cn/');
+            var jo = JSON.parse(data);
+            var token = jo.Data.Playsafe;
+            vid = vid.split('_')[0];
+            var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+            q = (vq == 480) ? 2 : (vq == 360) ? 1 : 3;
+            api_url = 'https://hls.videocc.net/' + vid.substr(0, 10) + '/' + vid[vid.length - 1] + '/' + vid + '_' + q + '.m3u8';
+            if (q == 3 && !window.external.urlExists(api_url)) {
+                q = 2;
+                api_url = 'https://hls.videocc.net/' + vid.substr(0, 10) + '/' + vid[vid.length - 1] + '/' + vid + '_' + q + '.m3u8';
+                //http://le.ouchn.cn/#/courseDetails/CAAA010000041364
+                if (!window.external.urlExists(api_url)) {
+                    q = 1;
+                    api_url = 'https://hls.videocc.net/' + vid.substr(0, 10) + '/' + vid[vid.length - 1] + '/' + vid + '_' + q + '.m3u8';
+                }
+            }
+            var cookie = window.external.getCookieEx(url, 'userInfo', 2500) || window.external.getCookieEx(url, 'loginStatus', 2500);
+            var headers = 'Referer: http://le.ouchn.cn\r\nCookie: ' + cookie;
+            data = window.external.getHtmlCodeEx(api_url, headers);
+            var key_url = data.match(/URI=\"([^\"]+)/)[1] +  '?token=' + token;
+            data = data.replace(/URI=\"[^\"]+/, 'URI=\"' + key_url);
+            video_url = window.external.saveData(data);
+            document.body.innerHTML = 'title=\"' + window.external.url + '\",cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

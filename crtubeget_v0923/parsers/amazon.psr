@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" delegate="true" date="2023.05.25">
+    <url><![CDATA[https?://(?:www\.)?amazon\.com/(?:live/(?:video\/|.*?broadcast=)(?<id>[^?&/]+)|(?<id>[^/]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.amazon.com/CeraVe-Foaming-Facial-Cleanser-Washing/dp/B01N1LL62W
+            //https://www.amazon.com/live/video/0ab4a16b6a8e4ea482df6d18ece090e0
+            //https://www.amazon.com/live/?broadcast=fb63675b-8bd8-486f-94b4-1f7d3f32a356
+            //https://www.amazon.com/vdp/091e1926328b4792b4c23ad3592760d0?ref=ive_share_mshop_vw-iga->https://www.amazon.com/live/video/091e1926328b4792b4c23ad3592760d0?ref_=ive_share_mshop_vw-iga
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36';
+            var url = window.external.getRedirectedUrl(window.external.url);
+            if (url.indexOf('http') == -1)
+                url = 'https://www.amazon.com' + url;
+            var cookie = window.external.getCookieEx(url, 'session-token');
+            var html = window.external.getHtmlCodeEx(url, 'User-Agent: ' + ua + '\r\nCookie: ' + cookie);
+            title = html.match(/<title>([^<]+)/)[1];
+            if (url.indexOf('video/') != -1 && html.indexOf('aapi-csrf-token') != -1) {
+                var act = html.match(/aapi-csrf-token\":\s*\"([^\"]+)/)[1];
+                var vid = url.match(/video\/([^?&]+)/)[1];
+                var headers = 'Accept: application/vnd.com.amazon.api+json; type=\"aapi.vsevideodataaggregatorcontracts.vse.get-video-metadata.response/v1\"\r\n\
+x-api-csrf-token: ' + act + '\r\n\
+Cookie: ' + cookie + '\r\n\
+Accept-Language: en-US\r\n\
+sec-ch-ua-platform: \"Windows\"\r\n\
+Origin: https://www.amazon.com\r\n\
+Referer: https://www.amazon.com/';
+                var api_url = 'https://data.amazon.com/custom/vsevideodataaggregatorcontracts/amazon-api-vse/ATVPDKIKX0DER/get-video-metadata/' + vid;
+                var data = window.external.getHtmlCodeEx(api_url, headers);
+                if (data.indexOf('resource\":{') == -1) {
+                    for (var i = 0; i <= 7; i++) {
+                        data = window.external.getHtmlCodeEx(api_url, headers, 1500);
+                        if (data.indexOf('resource\":{') != -1)
+                            break;
+                    }
+                }
+                if (data.indexOf('resource\":{') != -1) {
+                    var jo = JSON.parse(data);
+                    var vd = jo.entity.videoDetails[0];
+                    title = vd.title;
+                    thumbnail = vd.imageResource.url;
+                    duration = vd.formattedDuration;
+                    video_url = vd.url;
+                }
+            }
+            else if (url.indexOf('broadcast=') != -1 && html.indexOf('apiKey') != -1) {
+                var ak = html.match(/apiKey\\\\\":\\\\\"([^\\]+)/)[1];
+                var vid = url.match(/broadcast=([^?&]+)/)[1];
+                var headers = 'x-api-key: ' + ak + '\r\nReferer: https://www.amazon.com/';
+                var args = '{\"operationName\":\"getAllBroadcastData\",\"variables\":{\"broadcastId\":\"' + vid + '\"},\"query\":\"query getAllBroadcastData($broadcastId: String!) { getAllBroadcastData(broadcastId: $broadcastId) { broadcast { ...BroadcastFragment } vodEvents { ...VodEventFragment } carousel { ...CarouselFragment } }}fragment BroadcastFragment on Broadcast { liveViewers isChatEnabled status chatStatus startTime moderated hlsUrl title promotions { associatedAsins description discountPercent groupClaimCode id }}fragment VodEventFragment on VodEvent { eventType}fragment CarouselFragment on Carousel { hash }\"}';
+                var api_url = 'https://p3epspumangb5dvijf52er7wdi.appsync-api.us-east-1.amazonaws.com/graphql';
+                var data = window.external.getPostResultEx(api_url, args, headers);
+                if (data.indexOf('getAllBroadcastData\":{') != -1) {
+                    var jo = JSON.parse(data);
+                    var vd = jo.data.getAllBroadcastData.broadcast;
+                    title = vd.title;
+                    video_url = vd.hlsUrl;
+                }
+            }
+            else if (html.match(/\"([^\"]+\.mp4)/)) {
+                if (html.match(/iUrl\s*=\s*\"([^\"]+)/))
+                    thumbnail = html.match(/iUrl\s*=\s*\"([^\"]+)/)[1];
+                video_url = html.match(/\"([^\"]+\.mp4)/)[1];
+                if (video_url.indexOf('.mp4') != video_url.lastIndexOf('.mp4'))
+                    video_url = video_url.substr(0, video_url.indexOf('.mp4')) + '.hls1080.m3u8';  //.hls.m3u8
+            }
+            if (!video_url)
+                video_url = window.external.url;
+
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

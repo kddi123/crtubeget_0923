@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" delegate="true" date="2023.06.15">
+    <url><![CDATA[cctvnews\.cctv\.com/.*?item_id=(?<id>\w+[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <exjs><![CDATA[https://cdn.bootcss.com/crypto-js/3.1.9/crypto-js.min.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //https://content-static.cctvnews.cctv.com/snow-book/index.html?item_id=5181041767978521976&reco_id=10238baf0f29ac17067d000r&toc_style_id=feeds_default
+            var item_id = window.external.url.match(/item_id=([^&]+)/)[1];
+            var api_url = 'https://emas-api.cctvnews.cctv.com/h5/emas.feed.article.server.getArticle/1.0.0?articleId=' + item_id;
+            var t = Math.round((new Date).getTime() / 1e3);
+            var f = 'articleId=' + item_id, k = 'emasgatewayh5';
+            var d = '&&&20000009&' + md5(f) + '&' + t + '&' + 'emas.feed.article.server.getArticle' + '&' + '1.0.0' + '&&&&&';
+            //hmacSha256不行
+            var s = CryptoJS.HmacSHA256(d, k);
+            var headers = 'x-emas-gw-appkey: 20000009\r\nx-emas-gw-t: ' + t + '\r\nx-emas-gw-sign: ' + s + '\r\nx-emas-gw-pv: 6.1\r\nReferer: https://content-static.cctvnews.cctv.com';
+            var data = window.external.getHtmlCodeEx(api_url, headers);
+            if (data.indexOf('\"response\"') != -1) {
+                data = decodeURIComponent(escape(window.atob(JSON.parse(data).response)));
+                var jo = JSON.parse(data);
+                var title = jo.data.title;
+                var video = jo.data.videos[0];
+                var thumbnail = video.cover.url;
+                var duration = video.length / 1000;
+                var video_url = video.qualities[0].url;
+                var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                for (var i = 0; i <= video.qualities.length -1; i++) {
+                    var quality = video.qualities[i];
+                    if (quality.height == vq) {
+                        video_url = quality.url;
+                        break;
+                    }
+                }
+                document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

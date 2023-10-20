@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" date="2021.05.15">
+    <url><![CDATA[https?://(?:www\.)?bilibili\.com/.*?/html5player\.html?.*?bvid=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration":([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.bilibili.com/blackboard/html5player.html?aid=803040017&bvid=BV19y4y1p7iG&cid=338166368&zyshow.net&as_wide=1
+            var bvid = window.location.href.match(/bvid=([^&]+)/)[1];
+            var video_url = 'https://www.bilibili.com/video/' + bvid;
+            var html = window.external.getHtmlCode(video_url);
+            var title = (html.indexOf('<h1') != -1) ? html.match(/<h1[^>]+title=\"([^\"]+)/)[1] : document.title;
+            var thumbnail = (html.indexOf('og:image') != -1) ? html.match(/<meta[^>]+property=\"og:image\"\s+content=\"([^\"]+)/)[1] : '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

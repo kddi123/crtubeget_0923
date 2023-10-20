@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2023.08.03">
+    <url><![CDATA[uc\.cn/(?:\w+\.html?.*?id=(?<id>[^&]+)|video/.*?video_id=(?<id>[^&]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://v.mp.uc.cn/video.html?uc_param_str=frdnsnpfvecpntnwprdssskt&from=media#!wm_cid=267399668026835968!!wm_aid=26fa9499c6dd453ebbfc4880b71aaa75!!wm_id=eafce118a8d04a7fb49edb26e67a16f4
+            //http://a.mp.uc.cn/article.html?uc_param_str=frdnsnpfvecpntnwprdssskt&wm_aid=f263ff19273f4a1cb8a0655774c8da9b
+            //https://mparticle.uc.cn/video.html?uc_param_str=frdnsnpfvecpntnwprdssskt&wm_aid=f8bed5b6bd704662935a6015e19e10fc&wm_id=b5d8fddb645c4364b37260123ec01dbc&pagetype=share&btifl=10016
+            //http://share.v.uc.cn/video/share?video_id=501327565166759936&module_id=0&biz_id=1014&scene_id=muggle&size=4&xss_item_id=15878928586261557083&tab=video
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            if (window.jsonData)
+                title = window.jsonData.title;
+            var thumbnail = '', duration = 0, video_url = '';
+            var href = window.location.href;
+            if (window.jsonData) {
+                var jo = window.jsonData;
+                thumbnail = (jo.images.length != 0) ? jo.images[0].url : thumbnail;
+                duration = jo.duration;
+                var api_url = 'http://share.v.uc.cn/video/parser?ums_id=' + jo.ums_id + '&ts_sign=' + jo.ts_sign + '&biz_id=1014&url_sign=' + jo.url_sign + '&resolution=super&create_time=' + Date.now() + '&audit_status=1';
+                var data = window.external.getHtmlCode(api_url, href);
+                video_url = data.match(/url\":\"([^\"]+)/)[1];
+            }
+            //https://mparticle.uc.cn/video.html?uc_param_str=frdnsnpfvecpntnwprdssskt&__rdr=1&video_id=560586788469480448&module_id=0&size=4&biz_id=1014&scene_id=muggle&xss_item_id=802505333162645931
+            else if (href.indexOf('&xss_item_id=') != -1) {
+                var id = href.match(/&xss_item_id=([^&]+)/)[1];
+                var api_url = 'https://m.uczzd.cn/iflow/api/v1/article/' + id + '?page_form=&_=' + Date.now() + '&app=uc-iflow&cid=';
+                var data = window.external.getHtmlCode(api_url, href);
+                var jo = JSON.parse(data);
+                title = jo.data.title;
+                thumbnail = jo.data.thumbnails[0].url;
+                duration = jo.data.videos[0].length / 1000;
+                var ums_id = jo.data.videos[0].ums_id;
+                var headers = window.external.getHeaders(href);
+                var token = headers.match(/vpstoken=([^;]+)/)[1];
+                api_url = 'https://mparticle.uc.cn/api/v2/vps?token=' + token + '&ums_id=' + ums_id;
+                data = window.external.getHtmlCode(api_url, href);
+                jo = JSON.parse(data);
+                video_url = jo.data.url;
+            }
+            else {
+                var id = (href.indexOf('wm_cid') != -1) ? href.match(/wm_cid=([^&!]+)/)[1] : href.match(/wm_aid=([^&!]+)/)[1];
+                var base_url = (href.indexOf('wm_cid') != -1) ? 'https://ff.dayu.com/contents/' : 'https://ff.dayu.com/contents/origin/';
+                var api_url = base_url + id + '?biz_id=' + globalConfig.biz_id;
+                var data = window.external.getHtmlCode(api_url, href);
+                var jo = JSON.parse(data);
+                var video = jo.data.body.videos[0];
+                title = jo.data.title || title;
+                thumbnail = jo.data.cover_url;
+                var ums_id = video.ums_id;
+                var wm_id = jo.data.author_id;
+                var wm_cid = jo.data.content_id;
+                //不能取chrome之cookie找vpstoken，没有播放，其vpstoken为一不对值
+                var headers = window.external.getHeaders(href);
+                var token = headers.match(/vpstoken=([^;]+)/)[1];
+                var host = href.match(/https?:\/\/[^/]+/)[0];
+                api_url = host + '/api/vps?token=' + token + '&ums_id=' + ums_id + '&wm_cid=' + wm_cid + '&wm_id=' + wm_id + '&resolution=super';
+                data = window.external.getHtmlCode(api_url, href);
+                jo = JSON.parse(data);
+                duration = jo.data.duration;
+                video_url = jo.data.url;
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

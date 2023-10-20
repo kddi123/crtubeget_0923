@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2022.05.14">
+    <url><![CDATA[https?://(?:cool\.)?bilibili\.com/detail/video\?id=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://cool.bilibili.com/detail/video?id=1247944
+            var id = window.external.url.match(/id=([^&]+)/)[1];
+            var api_url = 'https://cool.bilibili.com/x/co-create/user/material/detail?material_type=19&material_id=' + id + '&t=' + Date.now();
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            var jo = JSON.parse(data);
+            var video_url = jo.data.download_url || jo.data.videopre_url;
+            document.body.innerHTML = 'title=\"' + jo.data.title + '\",thumbnail=' + jo.data.cover + ',duration=' + jo.data.duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

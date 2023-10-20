@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" referer="true" date="2020.07.01">
+    <url><![CDATA[https?://(?:www\.)?imomoe\.\w+/player/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.imomoe.ai/player/222-0-0.html
+            var title = bds_config.bdText || document.title;
+            title = title.replace(' 高清在线观看', '');
+            if (title.indexOf('_视频高清在线观看') != -1)
+                title = title.substr(0, title.indexOf('_视频高清在线观看'));
+            var thumbnail = bds_config.bdPic;
+            var video_url = window.location.href;
+            for (var i = 0; i <= document.getElementsByTagName('iframe').length - 1; i++) {
+                var iframe = document.getElementsByTagName('iframe')[i];
+                if (iframe.src && iframe.src.indexOf('userlink=') != -1) {
+                    var video_url = window.external.getRedirectedUrl(iframe.src);
+                    if (video_url.indexOf('url=') != -1)
+                        video_url = video_url.substr(video_url.indexOf('url=') + 4) + '#ra';
+                }
+            }
+
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

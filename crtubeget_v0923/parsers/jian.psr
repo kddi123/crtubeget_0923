@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" date="2020.04.24">
+    <url><![CDATA[jian\.gov\.cn/news-show-(?<id>\w+)\.html?]]></url>
+    <title><![CDATA[text-title">([^<]+)</div>]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://edu.jian.gov.cn/news-show-8751.html
+            var video_url = window.location.href;
+            if (document.getElementsByTagName('iframe').length != 0) {
+                var html = document.getElementsByTagName('iframe')[0].contentDocument.body.innerHTML;
+                if (html.indexOf('.mp4') != -1)
+                    var video_url = document.domain + html.match(/f:'([^']+)'/)[1];
+            }
+            document.body.innerHTML = 'cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

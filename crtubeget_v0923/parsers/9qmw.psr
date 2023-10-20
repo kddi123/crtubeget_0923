@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.06.21">
+    <url><![CDATA[https?://(?:\w+\.)?9qmw\.com/video.*?itemid=(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[csy_auth]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //http://www.9qmw.com/video/show.php?itemid=2983
+            var title = document.head.innerHTML.indexOf('description') != -1 ? document.head.innerHTML.match(/description\"\s+content=\"([^\"]+)/)[1] : document.title;
+            var thumbnail = '';
+            var video_url = window.external.url;
+            var itemid = window.external.url.match(/itemid=(\d+)/)[1];
+            var api_url = window.DTPath + 'api/task.js.php?moduleid=8&html=files&itemid=' + itemid + '&line=1&refresh=' + Math.random();
+            var data = window.external.getHtmlCode(api_url);
+            if (data.indexOf('\"status\": \"ok\"') != -1) {
+                var jo = JSON.parse(data);
+                video_url = window.DTPath + jo.txt.replace('fcms','');
+                thumbnail = jo.thumb;
+            }
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" date="2023.07.03">
+    <url><![CDATA[https?://(?:\w+\.)?996dm\.com/play/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <exjs><![CDATA[http://www.cr-soft.net/js/aes.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //https://www.996dm.com/play/1055-1-3.html
+            //https://www.996dm.com/play/7935-1-1.html
+            var detail_url = 'https://' + window.location.host + '/video/' + window.external.url.match(/play\/([^-]+)/)[1] + '.html';
+            var html = window.external.getHtmlCode(detail_url);
+            var thumbnail = (html.indexOf('<img class=\"lazyload') != -1) ? html.match(/<img\s+class=\"lazyload[^>]+data-original=\"([^\"]+)/)[1] : '';
+            var title = vod_name + ' ' + vod_part, video_url = '';
+            var api_url = 'https://danmu.yhdmjx.com/m3u8.php?url=' + player_aaaa.url;
+            html = window.external.getHtmlCode(api_url, window.external.url);
+            var token = html.match(/bt_token\s*=\s*\"([^\"]+)/)[1];
+            var data = html.match(/getVideoInfo\(\"([^\"]+)/)[1];
+            video_url = decrypt(data, token);
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+
+            //...
+            function decrypt(data, token) {
+                var l = CryptoJS;
+                var e = data;
+                return t = l.enc.Utf8.parse('57A891D97E332A9D'),
+                v = l.enc.Utf8.parse(token),
+                l.AES.decrypt(e, t, {
+                    iv: v,
+                    mode: l.mode.CBC,
+                    padding: l.pad.Pkcs7
+                }).toString(l.enc.Utf8);
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

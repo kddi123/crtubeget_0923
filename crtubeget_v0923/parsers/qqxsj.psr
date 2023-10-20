@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2023.05.03">
+    <url><![CDATA[xsj\.qq\.com/(?:(?<id>\w{8})|.*?feed_key=(?<id>[^&]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://xsj.qq.com/video?feed_key=CgASLz9mPUJfaDFlYmE1MTY0ODMzMDBlMDBjUGdTZHpvUmRQa1ZkTTBYNWMmdD0wJnU9GAA&childmode=0
+            //https://s.xsj.qq.com/71ORieWP
+            var title = document.title, thumbnail = '', duration = 0, video_url = '';
+            var fid = atob(window.location.href.match(/feed_key=([^&]+)/)[1]).match(/f=([^&]+)/)[1];
+            for (var i = 0; i <= window.__INITIAL_STATE__.feeds.length - 1; i++) {
+                var feed = window.__INITIAL_STATE__.feeds[i];
+                if (feed.id == fid) {
+                    title = feed.content;
+                    thumbnail = feed.cover.picUrl;
+                    duration = feed.video.duration / 1000;
+                    video_url = feed.video.vecVideoUrl[0].playUrl;
+                    break;
+                }
+            }
+            if (!video_url)
+                video_url = window.location.href;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

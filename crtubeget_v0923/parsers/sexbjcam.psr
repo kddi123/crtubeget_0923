@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.05.07">
+    <url><![CDATA[https?://(?:www\.)?sexbjcam\.com/\d+/\d+/\d+/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        //https://sexbjcam.com/2021/05/06/korean-bj-kbj21050633_lovelyxx_20210421/
+        try {
+            if (document.getElementsByClassName('video-player').length != 0) {
+                var html = document.getElementsByClassName('video-player')[0].innerHTML;
+                var title = html.match(/\"([^\"]+)\"\s+itemprop=\"name\"/)[1]
+                var thumbnail = html.match(/\"([^\"]+)\"\s+itemprop=\"thumbnailUrl\"/)[1];
+                var duration = html.match(/\"([^\"]+)\"\s+itemprop=\"duration\"/)[1];
+                duration = duration.match(/\d+H.*?S/)[0].replace('H', ':').replace('M', ':').replace('S', '');
+                var eu = html.match(/\"([^\"]+)\"\s+itemprop=\"embedURL\"/)[1];
+                html = window.external.getHtmlCodeByCrpj(eu);
+                var video_url = 'https:' + html.match(/videolink[^>]+>([^<]+)/)[1];
+                video_url = htmlDecode(video_url);
+                document.head.innerHTML = '';
+                document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

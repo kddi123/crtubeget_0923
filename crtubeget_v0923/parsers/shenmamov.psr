@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" date="2019.07.29">
+    <url><![CDATA[https?://(?:www\.)?shenmamov\.com/play/(?<id>[0-9\-]+)\.html?]]></url>
+    <title><![CDATA[<h1\s+class="title"><a\s+href[^>]+>([^<]+)]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[var\s+now=unescape\("([^"]+)"]]></mediaUrl>
+</parser>

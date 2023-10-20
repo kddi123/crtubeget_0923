@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" delegate="true" date="2023.07.03">
+    <url><![CDATA[https?://(?:www\.)?4gtv\.tv/show/[^/]+/(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <exjs><![CDATA[http://www.cr-soft.net/js/aes.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //https://www.4gtv.tv/show/201601190017/149
+            var url = window.external.url;
+            var sid = url.match(/show\/([^\/]+)/)[1];
+            var eid = url.match(/show\/[^\/]+\/([^\/&#]+)/)[1];
+            var api_url = 'https://api2.4gtv.tv/Vod/GetVodDetail/' + sid + '/' + eid;
+            var data = window.external.getHtmlCode(api_url, url);
+            var jo = JSON.parse(data);
+            var title = jo.Data.Title + ' ' + jo.Data.SubTitle;
+            var thumbnail = jo.Data.Thumbnail;
+            var duration = jo.Data.Duration;
+            var args = 'value=' + encodeURIComponent(encrypt('{\"fsVOD_NO\":\"' + sid + '\",\"fnSEQ\":\"' + eid + '\",\"fsMEDIA_TYPE\":\"show\",\"fsDEVICE_TYPE\":\"pc\"}'));
+            data = window.external.getPostResult('https://api2.4gtv.tv/Vod/GetVodUrl3', args, 'application/x-www-form-urlencoded; charset=UTF-8');
+            jo = JSON.parse(data);
+            jo = JSON.parse(decrypt(jo.Data));
+            var video_url = jo.flstURLs[0];
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+
+            //...
+            function encrypt(data) {
+                var l = CryptoJS;
+                var e = data;
+                return t = l.enc.Utf8.parse('ilyB29ZdruuQjC45JhBBR7o2Z8WJ26Vg'),
+                    v = l.enc.Utf8.parse('JUMxvVMmszqUTeKn'),
+                    l.AES.encrypt(e, t, {
+                        iv: v,
+                        mode: l.mode.CBC,
+                        padding: l.pad.Pkcs7
+                    }).toString();
+            }
+
+            function decrypt(data) {
+                var l = CryptoJS;
+                var e = data;
+                return t = l.enc.Utf8.parse('ilyB29ZdruuQjC45JhBBR7o2Z8WJ26Vg'),
+                    v = l.enc.Utf8.parse('JUMxvVMmszqUTeKn'),
+                    l.AES.decrypt(e, t, {
+                        iv: v,
+                        mode: l.mode.CBC,
+                        padding: l.pad.Pkcs7
+                    }).toString(l.enc.Utf8);
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

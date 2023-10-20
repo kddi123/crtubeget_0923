@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2022.10.28">
+    <url><![CDATA[https?://(?:\w+\.)?ting55\.com/book/(?<id>\d+-\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://ting55.com/book/14914-3
+            //https://m.ting55.com/book/13274-3
+            var url = window.external.url;
+            var html = window.external.getHtmlCode(url, url);
+            var title = html.match(/<title>(.*?)在线收听/)[1];
+            var xt = html.match(/<meta.*?\"(\w{32})\"/)[1];
+            var headers = 'User-Agent: ' + navigator.userAgent + '\r\Content-Type: application/x-www-form-urlencoded; charset=UTF-8\r\nxt: ' + xt + '\r\nReferer: ' + url;
+            if (url.indexOf('//m') == -1)
+                headers += '\r\nl: 1\r\nsec-ch-ua-mobile: ?0';
+            var m = url.match(/book\/(\d+)-(\d+)/);
+            var bid = m[1], p = m[2];
+            html = window.external.getHtmlCode('https://ting55.com/book/' + bid);
+            var thumbnail = (html.indexOf('bimg') != -1) ? html.match(/<img.*?src=\"([^\"]+)/)[1] : '';
+            var args = 'bookId=' + bid + '&page=' + p;
+            var api_url = (url.indexOf('//m') != -1) ? 'https://m.ting55.com/glink' : 'https://ting55.com/nlinka';
+            var data = window.external.getPostResultEx(api_url, args, headers);
+            var jo = JSON.parse(data);
+            var video_url = jo.url || url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

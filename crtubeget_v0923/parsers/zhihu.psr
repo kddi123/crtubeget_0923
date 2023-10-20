@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" delegate="true" date="2023.06.13">
+    <url><![CDATA[zhihu\.com/(?:\w?video/(?<id>\d+)|question/(?<id>\d+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail="([^"]+)"]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.zhihu.com/question/313340115/answer/982383152
+            //https://video.zhihu.com/video/1326100412617728000
+            //https://www.zhihu.com/zvideo/1260399509286469632
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var url = window.external.url;
+            var vid = url.indexOf('video') != -1 ? url.match(/video\/(\d+)/)[1] : '';
+            var html = window.external.getHtmlCode(url);
+            if (url.indexOf('/zvideo/') != -1 && !vid && html.indexOf('videoId\"') != -1) {
+                if (html.indexOf('ZVideo-title') != -1)
+                    title = html.match(/ZVideo-title\">([^<]+)/)[1];
+                vid = document.body.innerHTML.match(/videoId\":\"([^\"]+)/)[1];
+            }
+            else if (url.indexOf('/question/') != -1 && html.indexOf('data-lens-id=') != -1) {
+                if (html.indexOf('data-name') != -1)
+                    title = html.match(/data-name=\"([^\"]+)/)[1];
+                vid = html.match(/data-lens-id=\"(\d+)/)[1];
+            }
+            if (vid) {
+                if (!title)
+                    title = html.match(/<title[^>]*>([^<]+)/)[1].replace(' - 知乎', '');
+                //https://video.zhihu.com/video/1203780434469158912
+                var api_url = 'https://lens.zhihu.com/api/v4/videos/' + vid;
+                var data = window.external.getHtmlCode(api_url);
+                if (data.indexOf('playlist') != -1) {
+                    var jo = JSON.parse(data);
+                    thumbnail = jo.cover_url;
+                    var pl = jo.playlist;
+                    if (pl.FHD) {
+                        duration = pl.FHD.duration;
+                        video_url = pl.FHD.play_url;
+                    }
+                    else if (pl.HD) {
+                        duration = pl.HD.duration;
+                        video_url = pl.HD.play_url;
+                    }
+                    else if (pl.SD) {
+                        duration = pl.SD.duration;
+                        video_url = pl.SD.play_url;
+                    }
+                    else if (pl.LD) {
+                        duration = pl.LD.duration;
+                        video_url = pl.LD.play_url;
+                    }
+                }
+                else {
+                    //https://www.zhihu.com/zvideo/1650978855115493376
+                    var args = '{\"content_id\":\"' + vid + '\",\"content_type_str\":\"zvideo\",\"scene_code\":\"pc\",\"is_only_video\":true}';
+                    api_url = 'https://www.zhihu.com/api/v4/video/play_info';
+                    data = window.external.getPostResult(api_url, args);
+                    if (data.indexOf('video_play') != -1) {
+                        var jo = JSON.parse(data);
+                        thumbnail = jo.video_play.default_cover;
+                        duration = jo.video_play.meta.duration;
+                        var pl = jo.video_play.playlist.mp4;
+
+                        function sbs(a, b) {
+                            return b.size - a.size;
+                        }
+                        pl.sort(sbs);
+                        video_url = pl[0].url[0];
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=\"' + thumbnail + '\",duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

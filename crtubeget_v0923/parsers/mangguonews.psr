@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2023.07.22">
+    <url><![CDATA[https?://(?:\w+\.)?mangguonews\.com/.*?video\?id=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://ls.mangguonews.com/mgnh5prod/video?id=c739204d-8725-42e9-84cb-73fcd6ce1659
+            var url = window.external.url;
+            var id = url.match(/id=([^&]+)/)[1];
+            var api_url = 'https://ls.mangguonews.com/apinewsprod/news/getVideoNewsDetailForH5?newsId=' + id;
+            var data = window.external.getHtmlCode(api_url, url);
+            var jo = JSON.parse(data);
+            var item = jo.data;
+            document.body.innerHTML = 'title=\"' + item.title + '\",thumbnail=' + item.coverUrl + ',duration=' + item.videoLen + ',cr_video_url=' + item.videoUrl + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

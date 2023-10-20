@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" referer="true" date="2020.04.15">
+    <url><![CDATA[https?://(?:www\.)?icourses\.cn/web/sword/portal/videoDetail.*?resId=(?<id>[^#]+)]]></url>
+    <title><![CDATA["title":"([^"]+)"]]></title>
+    <thumbnail><![CDATA["fullPreviewUrl":"([^"]+)"]]></thumbnail>
+    <duration><![CDATA["duration":"([^"]+)"]]></duration>
+    <mediaUrl><![CDATA["fullLinkUrl":"([^"]+)"]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            var title = document.getElementById('source-title').innerText;
+            for (let i = 0; i <= _sourceArrStr.length - 1; i++) {
+                var source= _sourceArrStr[i];
+                if (source.title == title) {
+                    document.body.innerHTML = JSON.stringify(source);
+                    break;
+                }
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

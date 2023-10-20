@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" date="2019.12.01">
+    <url><![CDATA[https?://(?:www\.)?manamana\.net/video/detail\?id=(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://manamana.net/video/detail?id=3628#!zh
+            var vid = window.location.href.match(/id=(\d+)/)[1];
+            var api_url = 'https://www.manamana.net/api/video/detail?videoId=' + vid;
+            var data = window.external.getHtmlCode(api_url);
+            var jo = JSON.parse(data);
+            var title = jo.data.title;
+            var thumbnail = 'https://image.manamana.net/' + jo.data.thumb;
+            data = jo.data.qiniuData;
+            jo = JSON.parse(data);
+            var duration = jo.duration;
+            var text = JSON.stringify(jo.resource);
+            var vsign = text.match(/:\"([^\"]+)/)[1];
+            var video_url = 'https://video.manamana.net/' + vsign;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2023.03.06">
+    <url><![CDATA[https?://(?:www\.)?dancebook\.com\.cn/videoitem/index/(?<id>[^/]+)]]></url>
+    <title><![CDATA[v_title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://www.dancebook.com.cn/videoitem/index/36140
+            var html = window.external.getHtmlCode(url);
+            var title = html.match(/<h1>([^<]+)/)[1];
+            var video_url = html.match(/'(.*?\.m3u8[^']*)'/)[1];
+            var vid = video_url.match(/cn\/([^_]+)/)[1];
+            var thumbnail = 'http://qnimage.dancebook.com.cn/' + vid + '_original.jpg';
+            document.body.innerHTML = 'v_title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

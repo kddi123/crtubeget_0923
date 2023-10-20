@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2022.10.02">
+    <url><![CDATA[https?://(?:\w+\.)?savvyuni\.com\.cn/.*?lesson=([^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <ckSign><![CDATA[_savvyuni_sid]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://lms.savvyuni.com.cn/course?courseId=62bcbc92354cbc5982ef396e&lesson=62bcbc92354cbc5982ef396f 4168282421 duodasb!0
+            var title = '', duration = 0, thumbnail = '', video_url = '';
+            var url = window.external.url;
+            var cookie = window.external.getCookieEx(url, '_savvyuni_sid', 2500) || window.external.getCookie(url);
+            var headers = 'User-Agent: ' + navigator.userAgent + '\r\nCookie: ' + cookie;
+            var html = window.external.getHtmlCodeEx(url, headers);
+            if (html.indexOf('videoMaterial') != -1) {
+                var data = html.match(/(\{\"props.*?)<\/script>/)[1];
+                var jo = JSON.parse(data);
+                if (jo.props.pageProps.lessons) {
+                    var lid = url.match(/lesson=([^&]+)/)[1];
+                    var lessons = jo.props.pageProps.lessons;
+                    for (var i = 0; i <= lessons.length - 1; i++) {
+                        var lesson = lessons[i];
+                        if (lesson._id == lid) {
+                            var video = lesson.videoMaterial[0];
+                            title = video.Title;
+                            break;
+                        }
+                    }
+                    //video_url，嵌套太深，直接取吧
+                    var re = new RegExp(lid + '[^}]+VideoURL\":\"([^\"]+)');
+                    var m = data.match(re);
+                    video_url = m ? m[1].trim() : window.external.url;
+                    re = new RegExp(lid + '[^}]+CoverURL\":\"([^\"]+)');
+                    m = data.match(re);
+                    thumbnail = m ? m[1].trim() : '';
+                    re = new RegExp(lid + '[^}]+Duration\":([^,]+)');
+                    m = data.match(re);
+                    duration = m ? m[1].trim() : 0;
+                }
+            }
+            document.body.innerHTML = 'title=\"' + title + '\", thumbnail=' + thumbnail + ', duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

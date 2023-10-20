@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2021.07.14">
+    <url><![CDATA[https?://(?:www\.)?susudm[0-9]?\.com/\w+/.*?(?<id>\d+)\.html?]]></url>
+    <title><![CDATA[]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://susudm.com/mov/3863/1.html
+            //http://susudm.com/tv/66577/31.html
+            //http://susudm8.com/mov/79763/1.html
+            var video_url = window.location.href;
+            var pi = document.getElementById('playiframe');
+            if (pi) {
+                var src = pi.src;
+                if (src.indexOf('vid=') != -1)
+                    video_url = src.match(/vid=([^&]+)/)[1] + '#ra';
+            }
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" aria2c="true" date="2022.10.28">
+    <url><![CDATA[https?://(?:\w+\.)?tokhmi\.\w+/watch\?v=([^&/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <dateTime><![CDATA[date_time=([^,]+)]]></dateTime>
+    <subtitle><![CDATA[subtitle=([^,]+)]]></subtitle>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <audioUrl><![CDATA[cr_audio_url=([^\$]+)]]></audioUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://piped.tokhmi.xyz/watch?v=erH5mrvQkbc
+            var url = window.external.url;
+            var vid = url.match(/v=([^&]+)/)[1];
+            var api_url = 'https://pipedapi.tokhmi.xyz/streams/' + vid;
+            var data = window.external.getHtmlCode(api_url);
+            var jo = JSON.parse(data);
+            var title = jo.title;
+            var thumbnail = jo.thumbnailUrl;
+            var duration = jo.duration;
+            var subtitle = jo.subtitles && jo.subtitles.length != 0 ? jo.subtitles[0].url : '';
+            var date_time = jo.uploadDate;
+            var audios = jo.audioStreams;
+            audios.sort(sbb);
+            var audio_url = audios[0].url + '#.m4a';
+            var videos = [];
+            for (var i = 0; i <= jo.videoStreams.length - 1; i++) {
+                if (jo.videoStreams[i].mimeType == 'video/mp4')
+                    videos.push(jo.videoStreams[i]);
+            }
+            videos.sort(sbb);
+            var video_url = videos[0].url + '#.mp4';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',date_time=' + date_time + ',subtitle=' + subtitle + ',cr_video_url=' + video_url + '$cr_audio_url=' + audio_url + '$';
+
+            //...
+            function sbb(a, b) {
+                return b.bitrate - a.bitrate;
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

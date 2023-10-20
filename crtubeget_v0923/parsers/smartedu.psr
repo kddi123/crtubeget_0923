@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" delegate="true" date="2023.06.20">
+    <url><![CDATA[https?://(?:\w+\.)?smartedu\.cn/.*?(?:activityId|courseId)=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://basic.smartedu.cn/syncClassroom/classActivity?activityId=9655a9f6-72f5-4cc9-bdd0-52e267275482
+            //https://basic.smartedu.cn/qualityCourse?courseId=8ae7e4a7-7ca4-8f1e-017c-a70df0a6026d
+            var title = document.title, thumbnail = '', duration = 0, video_url = '';
+            var url = window.external.url;
+            if (url.indexOf('activityId') != -1) {
+                var aid = url.match(/activityId=([^&]+)/)[1];
+                var api_url = 'https://s-file-1.ykt.cbern.com.cn/zxx/s_course/v1/x_class_hour_activity/' + aid + '.json';
+                var data = window.external.getHtmlCode(api_url, url);
+                var jo = JSON.parse(data);
+                title = jo.name;
+                thumbnail = jo.cover;
+                api_url = 'https://s-file-1.ykt.cbern.com.cn/zxx/s_course/v1/x_class_hour_activity/' + aid + '/resources.json';
+                data = window.external.getHtmlCode(api_url, url);
+                jo = JSON.parse(data);
+                for (var i = 0; i <= jo.length - 1; i++) {
+                    if (jo[i].video_extend != null) {
+                        duration = jo[i].video_extend.duration;
+                        var urls = jo[i].video_extend.urls;
+                        urls = urls[urls.length - 1].urls;
+                        video_url = urls[urls.length - 1];
+                        break;
+                    }
+                }
+            }
+            else {
+                var cookie = window.external.getCookieEx(url, 'UC_SSO_');
+                if (cookie) {
+                    var cid = url.match(/courseId=([^&]+)/)[1];
+                    var api_url = 'https://s-file-2.ykt.cbern.com.cn/zxx/ndrv2/resources/' + cid + '.json';
+                    var data = window.external.getHtmlCode(api_url, url);
+                    var jo = JSON.parse(data);
+                    title = jo.title;
+                    var cr = jo.relations.course_resource[0];
+                    thumbnail = cr.custom_properties.thumbnails[0];
+                    var m3u8_url = cr.ti_items[0].ti_storages[cr.ti_items[0].ti_storages.length - 1];
+                    //X-ND-AUTH...
+                    var headers = 'Referer: ' + url + '\r\nCookie: ' + cookie;
+                    api_url = 'https://sso.basic.smartedu.cn/v1.1/sso/tokens?$proxy=proxyhttp&bodys=%7B%22$headers%22%3A%7B%22Accept%22%3A%22application%2Fjson%22,%22Content-Type%22%3A%22application%2Fjson%22,%22SDP-APP-ID%22%3A%22e5649925-441d-4a53-b525-51a2f1c4e0a8%22,%22Host%22%3A%22sso.basic.smartedu.cn%22%7D,%22$body%22%3A%22%7B%7D%22,%22$method%22%3A%22GET%22%7D';
+                    data = window.external.getHtmlCodeEx(api_url, headers);
+                    jo = JSON.parse(data);
+                    var t = jo.access_token, m = jo.mac_key, d = 91, s = He(d);
+                    var o = parse(m3u8_url);
+                    var a = s + '\nGET\n' + o.relative + '\n' + o.authority + '\n';
+                    var xa = 'MAC id=\"' + t + '\",nonce=\"' + s + '\",mac=\"' + window.external.hmacSha256(a, m) + '\"';
+                    data = window.external.getHtmlCodeEx(m3u8_url, 'X-ND-AUTH: ' + xa);
+                    if (data.indexOf('#EXTM3U') != -1) {
+                        var base_url = m3u8_url.substring(0, m3u8_url.lastIndexOf('/') + 1);
+                        var lines = data.split('\n');
+                        for (var i = 0; i <= lines.length - 1; i++) {
+                            if (lines[i].indexOf('.ts') != -1)
+                                lines[i] = base_url + lines[i];
+                        }
+                        data = lines.join('\n');
+                        video_url = window.external.saveData(data);
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+
+            //...
+            function Ne(e) {
+                for (var t = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), n = '', r = 0; r < e; r++)
+                    n += t[Math.ceil(35 * Math.random())];
+                return n
+            }
+            function He(e) {
+                return (new Date).getTime() + parseInt(e, 10) + ':' + Ne(8)
+            }
+            function parse(e) {
+                e = e.replace('https://', '');
+                return {
+                    'authority': e.substring(0, e.indexOf('/')),
+                    'relative': e.substring(e.indexOf('/'))
+                }
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

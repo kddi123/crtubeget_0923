@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" date="2020.04.03">
+    <url><![CDATA[https?://(?:video\.)?zhibo\.tv/detail/video/(?<id>[^.]+)]]></url>
+    <title><![CDATA[window\.vtitle\s+=\s+'([^']+)']]></title>
+    <thumbnail><![CDATA[window\.imgurl\s+=\s+'([^']+)']]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[videourl:"([^"]+)]]></mediaUrl>
+    <!--https://video.zhibo.tv/detail/video/350111.html-->
+</parser>

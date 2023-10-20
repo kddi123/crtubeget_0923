@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2023.03.19">
+    <url><![CDATA[cloud\.huawei\.com\.cn/.*?/media\?docid=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://feeds-drcn.cloud.huawei.com.cn/landingpage/media?docid=1051004V_1LrVgLsK&to_app=hwbrowser&dy_scenario=recomm&tn=f6189aa93371f0454bc20c751217d730df565c357de87ac3b9c694f1605dd704&channel=HW_VIDEO&ctype=video_live&appid=hwbrowser&cpid=666&r=CN&share_to=link
+
+            var url = window.external.url;
+            var args = url.substring(url.indexOf('?') + 1);
+            var api_url = 'https://feeds-drcn.cloud.huawei.com.cn/landingpage/getdocinfo?' + args;
+            var data = window.external.getPostResult(api_url, '');
+            if (!data) {
+                var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveObject('Microsoft.XMLHTTP');
+                xhr.open('POST', api_url, false);
+                xhr.send(null);
+                data = xhr.responseText;
+            }
+            var jo = JSON.parse(data);
+            var item = jo.infoFlowDoc;
+            var video_url = item.videoUrl;
+            if (video_url.indexOf('http') == -1) {
+                var doc_id = url.match(/docid=([^&]+)/)[1];
+                args = '{\"client\":{\"device\":{\"browserVersion\": \"Chrome/107.0.0.0\"}},\"videoAntiLeechingReqs\":[{\"docId\":\"' + doc_id + '\",\"videoUrl\":\"' + video_url + '\"}]}';
+                api_url = 'https://browsercfg-drcn.cloud.dbankcloud.cn/antileeching/v1/batchvideorealurl';
+                data = window.external.getPostResult(api_url, args);
+                if (!data) {
+                    var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveObject('Microsoft.XMLHTTP');
+                    xhr.open('POST', api_url, false);
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+                    xhr.send(args);
+                    data = xhr.responseText;
+                }
+                video_url = data.match(/realUrl\":\"([^\"]+)/)[1];
+            }
+            document.body.innerHTML = 'title=\"' + item.title + '\",thumbnail=' + item.image + '#.webp,duration=' + item.duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

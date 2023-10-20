@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2023.02.03">
+    <url><![CDATA[https?://(?:www\.)?madou\.club/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://madou.club/xkg100-废渣学生强奸性感刻薄的老师.html
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            var thumbnail = window.TBUI ? window.TBUI.shareimage : '', video_url = '';
+            var frames = document.getElementsByTagName('iframe');
+            if (frames.length != 0) {
+                for (var i = 0; i <= frames.length - 1; i++) {
+                    var src = frames[i].src;
+                    if (src.indexOf('dash.madou.') != -1) {
+                        var html = window.external.getHtmlCode(src, window.external.url);
+                        if (html.indexOf('var m3u8 = ') != -1) {
+                            video_url = 'https://dash.madou.club' + html.match(/m3u8\s+=\s+'([^']+)/)[1];
+                            if (html.indexOf('token = ') != -1)
+                                video_url += '?token=' + html.match(/token\s+=\s+\"([^\"]+)/)[1];
+                        }
+                        break;
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

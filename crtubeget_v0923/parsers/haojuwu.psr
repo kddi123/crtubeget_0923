@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2023.03.06">
+    <url><![CDATA[https?://(?:www\.)?haojuwu\.\w+/.*?/(?<id>[^/]+)/player[^.]+\.html?]]></url>
+    <title><![CDATA[<title>([^-]+).*?</title>]]></title>
+    <thumbnail><![CDATA[pic:\s+'([^']+)']]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[<iframe[^>]+src="[^"]*(http[^"]+)"]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.haojuwu.tv/zy/zongyiwanhenda/player-0-0.html
+            //http://www.haojuwu.tv/mov/jq/shishenling/player-1-0.html
+            if (document.getElementsByTagName('iframe').length != 0) {
+                var html = document.getElementsByTagName('iframe')[0].contentDocument.body.innerHTML;
+                //get m3u8 url
+                if (html.indexOf('src=\"http') != 0) {
+                    var frame_url = html.match(/http[^\"]+/)[0];
+                    var data = window.external.getHtmlCode(frame_url);
+                    if (data.indexOf('.m3u8') != -1) {
+                        var base_url = frame_url.match(/https?:\/\/[^\/]+/)[0];
+                        var m3u8_url = base_url + data.match(/[^\"]+\.m3u8[^\"]+/)[0];
+                        html = '<iframe src=\"' + m3u8_url + '\" />';
+                    }
+                }
+                document.body.innerHTML= html + document.body.innerHTML;
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

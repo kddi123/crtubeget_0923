@@ -1,0 +1,280 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<language Id="ENU" Name="English" LocaleName="English" LangID="0x0409" CodePage="1252">
+  <strings>
+    <INF_AppName>CR TubeGet - Video Downloader</INF_AppName>
+    <INF_ShortcutDesc>The Powerful YouTube and Other Websites Video Downloader</INF_ShortcutDesc>
+    <INF_OK>OK</INF_OK>
+    <INF_Cancel>Cancel</INF_Cancel>
+    <INF_Yes>Yes</INF_Yes>
+    <INF_No>No</INF_No>
+    <INF_Retry>Retry</INF_Retry>
+    <INF_Abort>Abort</INF_Abort>
+    <INF_Ignore>Ignore</INF_Ignore>
+    <INF_Default>Default</INF_Default>
+    <INF_ProjLoading>Loading... {0}/{1}</INF_ProjLoading>
+    <INF_Information>Information</INF_Information>
+    <INF_Start>Start</INF_Start>
+    <INF_Pause>Pause</INF_Pause>
+    <INF_Resume>Resume</INF_Resume>
+    <INF_Waiting>Waiting...</INF_Waiting>
+    <INF_Analyzing>Analyzing...</INF_Analyzing>
+    <INF_Paused>Paused</INF_Paused>
+    <INF_Download>Download</INF_Download>
+    <INF_ReadyToDownload>Ready to Download...</INF_ReadyToDownload>
+    <INF_StartDownload>Start Download...</INF_StartDownload>
+    <INF_Merging>Merging...</INF_Merging>
+    <INF_Converting>Converting...</INF_Converting>
+    <INF_DownloadComplete>Download Complete</INF_DownloadComplete>
+    <INF_Getting>Getting...</INF_Getting>
+    <INF_PlayList>Playlist</INF_PlayList>
+    <INF_Video>Video</INF_Video>
+    <INF_FeedBackSubmit>The information has been submitted. Thank's for your feedback!</INF_FeedBackSubmit>
+    <INF_NetworkError>Network error, please check your network</INF_NetworkError>
+    <INF_ConfirmQuit>There are some download tasks running. Are you sure you want to quit?</INF_ConfirmQuit>    
+    <INF_ReplaceYdl>youtube-dl component update is complete, do you want to apply it now? &#13;&#10;it will be replaced when CR TubeGet starts next time.</INF_ReplaceYdl>
+    <!-- 列表操作 -->
+    <INF_ConfirmDeleteTask>Are you sure you want to delete the task?</INF_ConfirmDeleteTask>
+    <INF_ConfirmDeleteSelected>Are you sure you want to delete the selected tasks?</INF_ConfirmDeleteSelected>
+    <INF_UnShowNextTime>Don't ask me again</INF_UnShowNextTime>
+    <INF_DeleteDownloaded>Delete original file(s) as well</INF_DeleteDownloaded>
+    <INF_ClearDownloadTasks>Are you sure you want to delete the downloading task?</INF_ClearDownloadTasks>
+    <INF_ClearMedias>Are you sure you want to clear the file(s)?</INF_ClearMedias>
+    <INF_PartOfPlaylist>The video is a part of the playlist. &#13;&#10;&#13;&#10;Do you want to download the clip only or download all playlist?</INF_PartOfPlaylist>
+    <INF_PlaylistLoading>Playlist loading... {0}/{1}</INF_PlaylistLoading>
+    <INF_DownloadingTaskInfo>Tasks count: {0}, speed: {1}/s</INF_DownloadingTaskInfo>
+    <INF_Downloaded>Downloaded: {0}, total size: {1}</INF_Downloaded>
+    <INF_NeedYouTubeDlCR>To download this video, youtube-dl_cr component needed. Do you want to download it?</INF_NeedYouTubeDlCR>
+    <INF_NeedAccount>To download this video, you need account support. Please add [{0}] social account in [Settings], and then download it.</INF_NeedAccount>
+    <INF_NeedPhantomJs>To download this video, Phantomjs component needed. Do you want to download it?</INF_NeedPhantomJs>
+    <INF_NeedPhantomRtmp>To download this video, RtmpDump component needed. Do you want to download it?</INF_NeedPhantomRtmp>
+    <INF_YdlMissing>The component needed to download does not exist. This program can not run without it. Do you want to download it?</INF_YdlMissing>
+    <!--下载过程-->
+    <INF_Unknown>Unknown</INF_Unknown>
+    <INF_Second>s</INF_Second>
+    <INF_Progress1>progress: {0}, size: {1}, speed: {2}, remaining time: {3}</INF_Progress1>
+    <INF_Progress2>progress: {0}, speed: {1}, remaining time: {2}</INF_Progress2>
+    <INF_Progress3>downloaded: {0}, speed: {1}</INF_Progress3>
+    <INF_Progress3_1>, remaining time: {0}</INF_Progress3_1>
+    <INF_Progress4>progress: {0}, size: {1}, speed: {2}</INF_Progress4>
+    <INF_AnalyzeFail>Analysis failed: {0}</INF_AnalyzeFail>
+    <INF_AnalyzeFailLite>Analysis failed</INF_AnalyzeFailLite>
+    <INF_DownloadFail>Download failed: {0}</INF_DownloadFail>
+    <INF_MergeFail>Merge failed: {0}</INF_MergeFail>
+    <INF_ConvertFail>Conversion failed: {0}</INF_ConvertFail>
+    <INF_CannotFoundMedia>No video information was found</INF_CannotFoundMedia>
+    <!--账号检测-->
+    <INF_AccountChecking>Account checking, please wait...</INF_AccountChecking>
+    <INF_ValidationFailed>Validation failed: </INF_ValidationFailed>
+    <INF_AccountError>Account error.</INF_AccountError>
+    <INF_PasswordError>Password error.</INF_PasswordError>
+    <INF_NetworkError>Network error.</INF_NetworkError>
+    <INF_ConfirmDeleteAccount>Are you sure you want to delete this social account?</INF_ConfirmDeleteAccount>
+    <!--视频密码-->
+    <INF_VideoPassword>This video is protected by a password, enter the password and then download</INF_VideoPassword>
+    <INF_VideoPasswordError>Wrong password, please re-enter</INF_VideoPasswordError>
+
+    <INF_FileDownloading>Downloading: {0}%</INF_FileDownloading>
+    <INF_FileDownloadCancel>Components are being downloaded. Are you sure you want to cancel them?</INF_FileDownloadCancel>
+    <INF_FileDownloadFail>Component download failed, please try again</INF_FileDownloadFail>
+    <INF_SelectOutputFolder>Please select the output folder:</INF_SelectOutputFolder>
+    <INF_CopyRight>Copyright © {0} CR-Soft</INF_CopyRight>
+    <!--在线升级 -->
+    <INF_UpdateCaption>CR Online Update</INF_UpdateCaption>
+    <INF_Quit>Exit</INF_Quit>
+    <INF_Checking>Checking...</INF_Checking>
+    <INF_CheckFailed>Upgrade information acquisition failed, please check the network</INF_CheckFailed>
+    <INF_LatestVersion>The current version is the latest version.</INF_LatestVersion>
+    <INF_NewVersionFound>New version found: {0}</INF_NewVersionFound>
+    <INF_Version>Version:</INF_Version>
+    <INF_FileSize>Size:</INF_FileSize>
+    <INF_Date>Date:</INF_Date>
+    <INF_WhatsNew>What's new:</INF_WhatsNew>
+    <INF_Downloading>Downloading...</INF_Downloading>
+    <INF_PkgDownloaded>Update package has been downloaded and can update now.</INF_PkgDownloaded>
+    <INF_ValidateFailed>MD5 Check Failed, please download again</INF_ValidateFailed>
+    <INF_UpdateNow>Update Now</INF_UpdateNow>
+    <INF_IgnoreThisVersion>Skip this version</INF_IgnoreThisVersion>
+    <INF_ConfrimCancelUpdate>Are you sure you want to cancel the update operation?</INF_ConfrimCancelUpdate>
+    <INF_CloseApp>has detected that the program is running, please close it and then upgrade. Do you continue to operate?</INF_CloseApp>
+  </strings>
+  <forms>
+    <MainForm>
+      <miOptions Text="Options" />
+      <miLanguage Text="Languages" />
+      <miLocalize Text="Localize..." />
+      <miUI Text="UI" />
+      <miBackImage Text="Background Image" />
+      <miNone Text="None" />
+      <miDefault Text="Default" />
+      <miFlower Text="Flower" />
+      <miSea Text="Sea Water" />
+      <miHideNavi Text="Hide Navigation Bar" />
+      <miDesktopShortcut Text="Create Shortcut on Desktop" />
+      <miHelp Text="Help" />
+      <miFaq Text="FAQ" />
+      <miFeedback Text="Feedback" />
+      <miSupportedSites Text="Supported Sites" />
+      <miUpdate Text="Check Update" />
+      <miDonate Text="Donate" />
+      <miAbout Text="About..." />
+      <btnPasteUrl Text="+ Paste URL" ToolTip="Paste URL then Download" />
+      <miDownloadMp3 Text="Download Mp3" />
+      <miBatchDownload Text="Batch Download" />
+      <miYouTubeSearch Text="YouTube Search" />
+      <tpDownload Text="Downloading" />
+      <tpComplete Text="Completed" />
+      <tpOnline Text="Online Video" />
+      <miShowWindow Text="Show Main Form" />
+      <miOptions2 Text="Options" />
+      <miStartAll Text="Start All" />
+      <miPauseAll Text="Pause All" />
+      <miQuit Text="Quit" />
+      <btnDelete ToolTip="Delete Selected" />
+      <btnPause ToolTip="Pause All" />
+      <btnStart ToolTip="Start All" />
+      <txtSearch PlaceHolderText="Search" />
+      <btnDownload ToolTip="Download" />
+      <btnRefresh ToolTip="Refresh" />
+      <btnForward ToolTip="Forward" />
+      <btnBack ToolTip="Backward" />
+      <btnHome ToolTip="Homepage" />
+    </MainForm>
+    <DownloadPage>
+      <mediaBox EmptyText="No downloading items&#13;&#10;Try dragging a video URL here?" />
+      <miDelete Text="Delete" />
+      <miClear Text="Clear" />
+      <miCopyUrl Text="Copy URL" />
+      <miSource Text="Go to Source Page" />
+    </DownloadPage>
+    <CompletePage>
+      <mediaBox EmptyText="No downloaded items" />
+      <miPlay Text="Play" />
+      <miOpenFolder Text="Open File Location" />
+      <miDelete Text="Delete" />
+      <miClear Text="Clear" />
+      <miClearInvalid Text="Clear Invalid Files" />
+      <miCopyUrl Text="Copy URL" />
+      <miSource Text="Go to Source Page" />
+      <miSort Text="Sort" />
+      <miByName Text="Name" />
+      <miByDate Text="Date" />
+      <miBySize Text="Size" />
+      <miByDuration Text="Duration" />
+    </CompletePage>
+    <BatchDownloadForm Text="Batch Download">
+      <cbDownloadMp3 Text="Download Mp3" />
+      <lblTitle Text="Please enter the URL you want to download, one line for each link." />
+      <txtUrls PlaceHolderText="for example: https://www.youtube.com/watch?v=WLxv2fj65zI" />
+      <btnDownload Text="Download" />
+    </BatchDownloadForm>
+    <SelectMediaForm Text="Video Analysis">
+      <lblTitle Text="Video Analyzing..." />
+      <format Text="Format" />
+      <resolution Text="Resolution" />
+      <frameRate Text="Frame Rate" />
+      <audio Text="Audio" />
+      <size Text="Size" />
+      <btnDownload Text="Download" />
+    </SelectMediaForm>
+    <PlaylistForm Text="Parsing playlist">
+      <lblTitle Text="Parsing..." />
+      <title Text="Topic" />
+      <duration Text="Duration" />
+      <btnDownload Text="Download" />
+    </PlaylistForm>
+    <OptionForm Text="Options">
+      <downloadPage Text="Download" />
+      <lblFolder Text="Output folder:" />
+      <btnSelectFolder Text="..." />
+      <lblMediaFormat Text="Format:" />
+      <lblQuality Text="Quality:" />
+      <lblFormatTip Text="Default or MKV format is recommended for 2K or above video quality. &#13;&#10;When the site does not support the selected format, default format will be downloaded" />
+      <lblMaxTaskCount Text="The maximum number of downloading tasks:" />
+      <cbDownloadSubtitle Text="Download subtitle if it has" />
+      <lblSubtitleLanguage Text="Language:" />
+      <lblSubtitleType Text="Format:" />
+      <cbDownloadThumbnail Text="Download thumbnail" />
+      <cbAddPlaylistIndex Text="Add index for playlist video's file name" />
+      <cbShowDownloadCompleteTip Text="Show popup after successful download" />
+      <cbShowRemoveTip Text="Pop-up prompt tips when remove the download task " />
+      <accountPage Text="Accounts" />
+      <btnAddAccount Text="+Add" />
+      <domain Text="Website" />
+      <account Text="Account" />
+      <othersPage Text="Others" />
+      <lblOnlineUrl Text="The url of online video:" />
+      <lblTaskComplete Text="After downloading:" />
+      <cbTaskComplete>
+        <Items>Do nothing&#13;&#10;Shut down computer&#13;&#10;Sleep computer&#13;&#10;Quit CR TubeGet</Items>
+      </cbTaskComplete>
+      <cbAdvanceMode Text="YouTube analysis by advanced mode" />
+      <cbWatchClipboard Text="Monitor clipboard" />
+      <cbResumeOnStartUp Text="Automatically resume unfinished tasks at startup" />
+      <cbAutoUpdate Text="Enable live update" />
+      <cbToTrayIcon Text="Main form closes to the system tray" />
+      <cbProxy Text="Proxy" />
+      <lblHost Text="Address:" />
+      <lblPort Text="Port:" />
+      <lblProxyType Text="Type:" />
+      <btnReset Text="Reset" />
+      <btnOk Text="OK" />
+      <btnCancel Text="Cancel" />
+    </OptionForm>
+    <AccountForm Text="Social Accounts">
+      <lblWebSite Text="Website:" />
+      <lblAccount Text="Account:" />
+      <lblPassword Text="Password:" />
+      <txtAccount PlaceHolderText="Please enter account" />
+      <txtPassword PlaceHolderText="Please enter password" />
+      <btnOk Text="OK" />
+      <btnCancel Text="Cancel" />
+    </AccountForm>
+    <VideoPasswordForm Text="Video Password">
+      <txtPassword PlaceHolderText="Please enter password" />
+      <btnOk Text="OK" />
+      <btnCancel Text="Cancel" />
+    </VideoPasswordForm>
+    <FileDownloadForm Text="File Download">
+      <btnCancel Text="Cancel" />
+    </FileDownloadForm>
+    <TaskCompleteForm Text="Task Completed">
+      <cbHideTip Text="Don't show again" />
+    </TaskCompleteForm>
+    <ShutdownComputerForm Text="Shut Down the Computer">
+      <lblInfo Text="Your computer will be shut down after {0} seconds" />
+      <btnCancel Text="Cancel" />
+    </ShutdownComputerForm>
+    <FeedBackForm Text="Feedback">
+      <lblTitle Text="Believe, we look forward to your questions and suggestions&#13;&#10;Your feedback can be viewed instantly on CR-Soft website" />
+      <lblEmail Text="EMail:" />
+      <txtEmail PlaceHolderText="Enter your email address here" />
+      <lblContent Text="Content:" />
+      <txtContent PlaceHolderText="Tips:&#13;&#10;1. If you have any comment or suggestion about the program, please write to us.&#13;&#10;2. If you encounter an error duration use, please restart the program and try again." />
+      <cbAttachLog Text="Attach the log file" />
+      <btnSubmit Text="Submit" />
+    </FeedBackForm>
+    <LocalizationForm Text="Localization">
+      <lblTitle Text="Can you help me localize CR TubeGet? Thank you! If you can, please help me:" />
+      <lblStep1 Text="Step 1. Please open the language folder:" />
+      <lblOpen Text="Open" />
+      <lblStep2 Text="Step 2. If you want to modify the language, please open the corresponding language file, &#13;&#10;such as the English file english.lng.&#13;&#10;You can open it with a text editor such as Notepad or Notepad++. " />
+      <lblStep3 Text="Step 3. Please modify the text between the &lt;INF_XXX&gt;...&lt;/INF_XXX&gt; in the &lt;strings&gt; node and &#13;&#10;the text between &quot;...&quot; in the &lt;forms&gt; node,&#13;&#10;Please keep the {x} and &amp;#13;&amp;#10; placeholders and save it. " />
+      <lblStep4 Text="Step 4. If you want to add a new language like French, please copy english.lng to french.lng,&#13;&#10;And set the language information: &lt;language Id=&quot;FRA&quot; Name=&quot;French&quot; LocaleName=&quot;Français&quot; ...&#13;&#10;Then do the text modification as the step 3. " />
+      <lblLangId Text="Language ID" />
+      <lblLastStep Text="Finally: If you have modified or added a new language, please send me a copy:" />
+      <btnClose Text="Close" />
+    </LocalizationForm>
+    <DonateForm Text="Donate">
+      <lblTitle Text="If you are in a good mood today, would you like me to have a cup of coffee?" />
+      <lblThanks Text="Thank you, the person who helped me" />
+      <lblWx Text="Wechat Pay" />
+      <lblZfb Text="ALIPAY" />
+    </DonateForm>
+    <AboutForm Text="About...">
+      <lblAuthor Text="楚人无衣" />
+      <lblDesc Text="Salute: youtube-dl, based on its&#13;&#10;           ffmpeg&#13;&#10;thanks: CSkin, the interface is structured in its &#13;&#10;salute: Wondershare AllMyTube&#13;&#10;&#13;&#10;commemoration: the cold night in distant land, days of alone" />
+      <btnDonate Text="Donate" />
+      <btnClose Text="Close" />
+    </AboutForm>
+  </forms>
+</language>

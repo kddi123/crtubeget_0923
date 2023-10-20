@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2021.10.16">
+    <url><![CDATA[https?://\w+\.douyu\.com/(?:show//?(?<id>[0-9a-zA-Z]+)|p/(?<id>\d+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration":([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[acf_auth]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://v.douyu.com/show/yVY8WwAJ5zP7LOz9
+            //https://yuba.douyu.com/p/922812741592196490
+            //https://v.douyu.com/show/Kg1VWRADQJmMGbNA 登录原画
+            var title = document.title.substring(0, document.title.indexOf('_斗鱼'))
+            var href = window.location.href;
+            if (href.indexOf('/p/') != -1) {
+                var thumbnail = '';
+                var pid = href.match(/p\/(\d+)/)[1];
+                var api_url = 'https://yuba.douyu.com/wbapi/web/post/detail/' + pid;
+                var data = window.external.getHtmlCode(api_url);
+                var jo = JSON.parse(data);
+                var video_url = jo.data.content.match(/data-playurl=\"([^\"]+)/)[1];
+                video_url += '#ra';
+            }
+            else {
+                if ($DATA.DATA && $DATA.DATA.content)
+                    title = $DATA.DATA.content.title || title;
+                var room = window.$DATA.ROOM || $ROOM;
+                var vid = room.vid;
+                var pid = room.point_id;
+                var did = document.cookie.match(/dy_did=([^;]+)/)[1];
+                var tt = parseInt(Date.now() / 1000);
+                window.CryptoJS = {
+                    MD5: function(s) {
+                        return window.external.md5(s);
+                    }
+                };
+                var args = ub98484234(pid, did, tt);
+                args += '&vid=' + vid;
+                var data = window.external.getPostResult('https://v.douyu.com/api/stream/getStreamUrl', args, 'application/x-www-form-urlencoded');
+                var jo = JSON.parse(data);
+                var video_url = jo.data.thumb_video.super ? jo.data.thumb_video.super.url : (jo.data.thumb_video.high ? jo.data.thumb_video.high.url : jo.data.thumb_video.normal.url);
+                var thumbnail = room.pic;
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2021.11.25">
+    <url><![CDATA[https?://(?:\w+.)?eastday\.com/\w+/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://video.eastday.com/a/f211124170916992286735.html
+            var title = document.getElementsByClassName('curTitle').length != 0 ? document.getElementsByClassName('curTitle')[0].innerText : document.title;
+            var thumbnail = source_icon;
+            var duration = mp4long;
+            var video_url = cdnUrl;
+            var data = window.external.getHtmlCode('https://videoback.dftoutiao.com/fengxing/index/sign');
+            var jo = JSON.parse(data);
+            video_url += '&access_token=' + jo.sign;
+            if (video_url.indexOf('http') == -1)
+                video_url = 'https:' + video_url;
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

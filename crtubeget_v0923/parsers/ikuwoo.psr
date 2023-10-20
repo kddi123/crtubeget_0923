@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" delegate="true" date="2023.07.03">
+    <url><![CDATA[https?://(?:www\.)?ikuwoo\.cn/.*?/vod/play/id/(?<id>[^/]+)/.*?.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <exjs><![CDATA[http://www.cr-soft.net/js/aes.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //http://www.ikuwoo.cn/index.php/vod/play/id/508956/sid/2/nid/1.html
+            //http://www.ikuwoo.cn/index.php/vod/play/id/516705/sid/1/nid/2.html
+            var html = window.external.getHtmlCode(window.external.url);
+            var title = html.match(/在线播放([^-]+)\s-/)[1];
+            var url = html.match(/player_aaaa.*?url\":\"([^\"]+)/)[1];
+            var video_url = url + '#ra';
+            var id = window.external.url.match(/id\/([^/]+)/)[1];
+            html = window.external.getHtmlCode('http://www.ikuwoo.cn/index.php/vod/detail/id/' + id + '.html');
+            var thumbnail = (html.indexOf('data-original') != -1) ? 'http://www.ikuwoo.cn' + html.match(/data-original=\"([^\"]+)/)[1] : '';
+            var api_url = 'http://xbfq.ikuwoo.cn/?url=' + url;
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            if (data.indexOf('config = ') != -1) {
+                data = data.match(/config\s=\s([^;]+)/)[1];
+                var jo = JSON.parse(data);
+                var args = 'url=' + jo.url + '&time=' + jo.time + '&key=' + jo.key;
+                data = window.external.getPostResult('http://xbfq.ikuwoo.cn/API.php', args, 'application/x-www-form-urlencoded; charset=UTF-8');
+                if (data.indexOf('\"url\"') != -1)
+                    video_url = JSON.parse(data).url;
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

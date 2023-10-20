@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" referer="true" unescape="false" date="2023.06.08">
+    <url><![CDATA[https?://(?:\w+\.)?oceanengine\.com/.*?detail/(?<id>[^?]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[uid_tt]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://cc.oceanengine.com/inspiration/creative-radar/detail/7037722066547654663?appCode=4&period=3&listType=1
+            //https://cc.oceanengine.com/inspiration/creative-radar/detail/7031099255796629536?appCode=4&period=3&listType=1
+            //https://cc.oceanengine.com/inspiration/creative-radar/detail/7043766835674513419?appCode=4&period=3&listType=2
+            //https://school.oceanengine.com/premium/course/6977634043995095048/6977282234390691854?is_new_connect=0&is_new_user=0&location=qczzxxzyb&round=6977634043995095048&visitor_source=qczxkh_source 加密源，不研究
+            var title = document.title, thumbnail = '', duration = 0, video_url = '';
+            var url = window.external.url;
+            var mid = url.match(/detail\/(\d+)/)[1];
+            var api_url = 'https://cc.oceanengine.com/creative_radar_api/v1/material/info?material_id=' + mid;
+            var cookie = window.external.getCookieEx(url, 'uid_tt', 2500) || document.cookie;
+            var headers = 'caller: cc\r\nReferer: ' + url + '\r\nCookie: ' + cookie;
+            var data = window.external.getHtmlCodeEx(api_url, headers);
+            var jo = JSON.parse(data);
+            title = jo.data.title;
+            thumbnail = jo.data.head_image_uri;
+            duration = jo.data.video_duration;
+            var vid = jo.data.vid;
+            var headers = 'Content-Type:  application/json;charset=UTF-8\r\nReferer: ' + url + '\r\nUser-Agent: ' + navigator.userAgent;
+            var args = '{\"query_ids\":[\"' + vid + '\"],\"water_mark\":\"none\"}';
+            api_url = 'https://cc.oceanengine.com/creative_content_server/api/video/info';
+            data = window.external.getPostResultEx(api_url, args, headers);
+            //https://cc.oceanengine.com/inspiration/creative-radar/detail/7101716582833373220
+            if (data.indexOf('video_url') == -1) {
+                api_url = 'https://cc.oceanengine.com/creative_radar_api/v1/video/info';
+                args = '{\"video_infos\":[{\"mid\":\"' + mid + '\",\"vid\":\"' + vid + '\"}],\"water_mark\":\"none\"}';
+                data = window.external.getPostResultEx(api_url, args, headers);
+            }
+            if (data.indexOf('video_url') == -1) {
+                api_url = 'https://cc.oceanengine.com/creative_radar_api/v1/video/info';
+                args = '{\"video_infos\":[{\"mid\":\"' + mid + '\",\"vid\":\"' + vid + '\"}],\"water_mark\":\"creative_center\"}';
+                data = window.external.getPostResultEx(api_url, args, headers);
+            }
+            jo = JSON.parse(data);
+            video_url = jo.data[vid] ? jo.data[vid].video_url : jo.data[mid] ? jo.data[mid].video_url : url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

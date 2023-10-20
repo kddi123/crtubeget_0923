@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" date="2019.10.12">
+    <url><![CDATA[xinhuanet\.com/.*/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[(?s)<div\s+class="\w-title">\s+([^<]+)\s+</div>]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]*)]]></thumbnail>
+    <duration><![CDATA[filelength="(\d+)\d{7}"]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]*)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            var args = '';
+            var html = document.body.innerHTML.replace(/&amp;/g, '&')
+            var m = html.match(/getPlayPage\?(uuid=[^&]+&vid=[^&]+)/);
+            if (m)
+                args = m[1];
+            else {
+                m = html.match(/<div\s+id=\"DH-PLAYERID\"\s+name=\"([^,]+,[^,]+)/);
+                if (m)
+                    args = 'vid=' + m[1].replace(',', '&uuid=');
+            }
+
+            var thumbnail = '';
+            var video_url = '';
+            if (args) {
+                var url = 'http://player.v.news.cn/api/v1/getConfigs?' + args;
+                var data = window.external.getHtmlCode(url);
+                var jo = JSON.parse(data);
+                thumbnail = jo.result.videoInfos.poster;
+                video_url = jo.result.videoInfos.src;
+            }
+
+            document.body.innerHTML = 'thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$'+ document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

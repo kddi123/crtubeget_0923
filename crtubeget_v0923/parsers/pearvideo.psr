@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" date="2022.01.18">
+    <url><![CDATA[https?://(?:www\.)?pearvideo\.com/video_(?<id>[^?]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.pearvideo.com/video_1722412?st=7
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            var thumbnail = document.getElementById('poster') ? document.getElementById('poster').firstElementChild.src : '';
+            var vid = window.external.url.match(/video_([^?]+)/)[1];
+            var api_url = 'https://www.pearvideo.com/videoStatus.jsp?contId=' + vid;
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            var jo = JSON.parse(data);
+            var video_url = window.external.url;
+            if (jo.videoInfo) {
+                var vi = jo.videoInfo;
+                thumbnail = vi.video_image || thumbnail;
+                video_url = vi.videos.srcUrl || vi.videos.hdUrl || video_url;
+                video_url = video_url.replace(/\d+\-/, 'cont-' + vid + '-');
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

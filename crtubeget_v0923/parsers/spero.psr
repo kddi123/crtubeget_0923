@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.09.12">
+    <url><![CDATA[https?://(?:\w+\.)?spero-h5\.secon\.cn/v/\?id=(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://spero-h5.secon.cn/v/?id=3671
+            //https://spero-h5.secon.cn/v/?id=3673
+            var args = 'deviceId=SPERO_APP_H5_DEVICE_ID&deviceName=SPERO_APP_H5_DEVICE_NAME&distinctId=SPERO_APP_H5_DISTINCT_ID';
+            var headers = 'platform: GROOT\r\nContent-Type: application/x-www-form-urlencoded';
+            var api_url = 'https://spero-outspace.secon.cn/api/spero-auth-service/public/v1/anonymity/login';
+            var data = window.external.getPostResultEx(api_url, args, headers);
+            if (data.indexOf('token') != -1) {
+                var token = JSON.parse(data).data.token;
+                var id = window.external.url.match(/id=(\d+)/)[1];
+                api_url = 'https://spero-outspace.secon.cn/api/spero-ultron-service/pdfFiles/' + id;
+                headers = 'token: ' + token + '\r\nReferer: ' + window.external.url + '\r\nUser-Agent: ' + navigator.userAgent;
+                data = window.external.getHtmlCodeEx(api_url, headers);
+                var jo = JSON.parse(data);
+                document.body.innerHTML = 'title=\"' + jo.data.fileName + '\",cr_video_url=' + jo.data.url + '$';
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" referer="true" date="2023.09.07">
+    <url><![CDATA[(?:https?://(?:\w+\.)?(?:weibo|krcom)|https?://t)\.(?:com|cn)/(?:(?<id>[^&?/]+)/|show\?fid=(?<id>[^&?/]+)|(?<id>[^&?/]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail="([^"]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <audioUrl><![CDATA[cr_audio_url=([^\$]+)]]></audioUrl>
+    <ckSign><![CDATA[SUB]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //http://t.cn/A6PtC2qR?m=4464958576478425&u=2474085613
+            //封面图下载加referer不行
+            var title = '', thumbnail = '', duration = 0, video_url = '', audio_url = '';
+            var url = window.external.url;
+            //某支可无水印下载
+            if (!video_url && (fv[0] != '1' || em)) {
+                data = gvd(url);
+                //特殊字符替换
+                data = data.replace(/\s/g, ' ');
+                var jo = JSON.parse(data);
+                if (jo.body) {
+                    title = jo.body.title;
+                    thumbnail = jo.body.cover_url;
+                    if (jo.body.video_url) {
+                        video_url = jo.body.video_url;
+                        document.body.innerHTML = 'title=\"' + title + '\",thumbnail=\"' + thumbnail + '\",duration=' + duration + ',cr_video_url=' + video_url + '$cr_audio_url=' + audio_url + '$';
+                        return;
+                    }
+                }
+            }
+
+            var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+            var vql = vq + 'P';
+            if (vq <= 8) {
+                if (vq >= 4)
+                    vq = 2160;
+                else
+                    vq = 1440;
+                vql = vq + 'K';
+            }
+            var cookie = window.external.getCookieEx(href, 'SUB', 2500) || window.external.getCookie(href) || document.cookie;
+            if (cookie.indexOf('SUB=') == -1) {
+                if (window.localStorage && window.localStorage.wb_ck)
+                    cookie = window.localStorage.wb_ck;
+                else
+                    cookie = 'SUB=_2AkMXuScYf8NxqwJRmf8RzmnhaoxwzwDEieKh5dbDJRMxHRl-yT9jqhALtRB6PDkJ9w8OaqJAbsgjdEWtIcilcZxHG7rw';
+            }
+            if (window.localStorage && window.localStorage.wb_ck != cookie)
+                window.localStorage.setItem('wb_ck', cookie);
+            var href = window.external.url.indexOf('/show') != -1 ? window.external.url : window.location.href;
+            //http://t.cn/A6Jtb5y6 -> https://passport.weibo.com/visitor/visitor?entry=krvideo&a=enter&url=https%3A%2F%2Fweibo.com%2Ftv%2Ftv%2Fshow%2F1034%3A4725093239291956%3Ffrom%3Dold_pc_videoshow&domain=...
+            if (href.indexOf('url=') != -1)
+                href = decodeURIComponent(href.match(/url=(.*)/)[1]);
+            //https://weibo.com/tv/show/1034:4513581274955800?from=old_pc_videoshow
+            //https://video.weibo.com/show?fid=1034:4602047505563739
+            //https://weibo.com/tv/show/1034:4931082773266473?from=old_pc_videoshow 有水印
+            if (href.indexOf('tv/show/') != -1 || href.indexOf('fid') != -1) {
+                var oid = href.indexOf('tv/show/') != -1 ? href.match(/show\/([^?]+)/)[1] : href.match(/fid=([^?]+)/)[1];
+                var args = 'data={\"Component_Play_Playinfo\":{\"oid\":\"' + oid + '\"}}';
+                var headers = 'User-Agent: ' + navigator.userAgent + '\r\nContent-Type: application/x-www-form-urlencoded\r\nReferer: ' + href + '\r\nCookie: ' + cookie;
+                var api_url = 'https://weibo.com/tv/api/component?page=' + encodeURIComponent('/tv/show/' + oid);
+                var data = window.external.getPostResultEx(api_url, args, headers);
+                //IE...
+                if (data.indexOf('100000') == -1) {
+                    cookie = window.external.getCookie(href, true);
+                    headers = 'User-Agent: ' + navigator.userAgent + '\r\nContent-Type: application/x-www-form-urlencoded\r\nReferer: ' + href + '\r\nCookie: ' + cookie;
+                    data = window.external.getPostResultEx(api_url, args, headers);
+                }
+                if (data.indexOf('100000') != -1) {
+                    var jo = JSON.parse(data);
+                    var pi = jo.data.Component_Play_Playinfo;
+                    if (pi) {
+                        title = pi.title;
+                        thumbnail = pi.cover_image;
+                        duration = pi.duration_time;
+                        var urls = pi.urls;
+                        video_url = pi.urls['1080p'] || pi.urls['高清 1080P'] || pi.urls['720p'] || pi.urls['高清 720P'] || pi.urls['480p'] || pi.urls['标清 480P'];
+                        for (var v in pi.urls) {
+                            if (v.indexOf(vql) != -1) {
+                                video_url = pi.urls[v];
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            //https://weibo.com/l/wblive/p/show/1022:2321324586515949814139
+            else if (href.indexOf('wblive/p/show/') != -1) {
+                var live_id = href.match(/show\/([^?]+)/)[1];
+                var api_url = 'https://weibo.com/l/pc/anchor/live?live_id=' + live_id + '&traceId=' + Date.now() + Math.floor(9e5 * Math.random() + 1e5);
+                var data = window.external.getHtmlCode(api_url, href);
+                if (data.indexOf('100000') != -1) {
+                    var jo = JSON.parse(data);
+                    title = jo.data.item.desc + '-' + jo.data.user_info.name;
+                    thumbnail = jo.data.item.cover;
+                    var si = jo.data.item.stream_info;
+                    video_url = si.replay_url.origin || si.replay_url.hd || si.replay_url.sd || si.pull.live_origin_hls_url || si.pull.live_origin_flv_url;
+                    for (var v in si.replay_url) {
+                        if (v == 'origin' && vq == 1080 || v == 'hd' && vq == 720) {
+                            video_url = si.replay_url[v];
+                            break;
+                        }
+                    }
+                }
+            }
+            //https://weibo.com/7577846269/LsvpIe9J3?type=comment
+            else if (href.match(/com\/\d+\/[^?]+/)) {
+                var id = href.match(/com\/\d+\/([^?]+)/)[1];
+                var api_url = 'https://weibo.com/ajax/statuses/show?id=' + id;
+                var data = window.external.getHtmlCode(api_url, href);
+                if (data.indexOf('playback_list\":[{') != -1) {
+                    var jo = JSON.parse(data);
+                    var pi = jo.page_info;
+                    title = pi.media_info.video_title;
+                    thumbnail = pi.page_pic;
+                    duration = pi.media_info.duration;
+                    video_url = pi.media_info.playback_list[0].play_info.url;
+                    for (var i = 0; i <= pi.media_info.playback_list.length - 1; i++) {
+                        var video = pi.media_info.playback_list[i];
+                        if (video.play_info.height == vq) {
+                            video_url = video.play_info.url;
+                            break;
+                        }
+                    }
+                }
+            }
+            //https://weibo.com/1809745371/J5HlWyJI5?refer_flag=1001030103_
+            //https://weibo.com/3925308009/K0Er1viyC?type=comment 音视频分离支
+            if (!video_url && document.body.innerHTML.match(/objectid=(\d+[^&]+)/)) {
+                var mid = document.body.innerHTML.match(/objectid=(\d+[^&]+)/)[1];
+                var api_url = 'https://weibo.com/aj/video/getdashinfo?media_ids=' + mid;
+                var headers = 'Referer: ' + href + '\r\nCookie: ' + cookie;
+                var data = window.external.getHtmlCodeEx(api_url, headers);
+                if (data.indexOf('\"code\":\"100000\"') != -1 && data.indexOf('\"list\"') != -1) {
+                    var jo = JSON.parse(data);
+                    var videos = jo.data.list[0].details;
+                    for (var i in videos) {
+                        var video = videos[i];
+                        if (!video.play_info)
+                            continue;
+                        if (video.play_info.height == vq || video.play_info.quality_label == vql) {
+                            video_url = video.play_info.url;
+                            duration = video.play_info.duration;
+                        }
+                        //audio
+                        if (video.play_info.label == 'dash_audio')
+                            audio_url = video.play_info.url;
+                    }
+                }
+                else if (document.getElementsByTagName('video').length != 0)
+                    video_url = document.getElementsByTagName('video')[0].src;
+
+                title = title.replace(' - 微博', '');
+                if (this.FM && this.FM.view) {
+                    if (document.body.innerHTML.match(/cover_img=/))
+                        thumbnail = unescape(document.body.innerHTML.match(/cover_img=([^&]+)/)[1]);
+                    if (document.body.innerHTML.match(/duration=/))
+                        duration = document.body.innerHTML.match(/duration=([^&]+)/)[1]
+                }
+            }
+            //...此支下不了1080高清的。或求thumbnail
+            if ((!title || title.indexOf('搜索') != -1 || !video_url || !thumbnail) && typeof(gvd) != 'undefined') {
+                var data = gvd(window.external.url);
+                data = data.replace(/\n/g, '');
+                var jo = JSON.parse(data);
+                if (jo.body && jo.body.video_url) {
+                    title = jo.body.title;
+                    thumbnail = jo.body.cover_url;
+                    video_url = jo.body.video_url;
+                    if (video_url.indexOf('/show/') != -1)
+                        video_url += '#ra';
+                }
+            }
+            if (!title)
+                title = document.title;
+            if (!video_url)
+                video_url = href;
+            if (thumbnail && thumbnail.indexOf('//') == 0)
+                thumbnail = 'https:' + thumbnail;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=\"' + thumbnail + '\",duration=' + duration + ',cr_video_url=' + video_url + '$cr_audio_url=' + audio_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

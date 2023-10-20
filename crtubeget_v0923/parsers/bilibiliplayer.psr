@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" date="2022.05.30">
+    <url><![CDATA[https?://(:?api|player)\.bilibili\.com/.*?[?&]av?id=(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://player.bilibili.com/player.html?aid=22782884&cid=37832419&page=1&autoplay=1&high_quality=1
+            //https://api.bilibili.com/x/web-interface/view?aid=673086320
+            //https://api.bilibili.com/x/player/playurl?cid=337108458&appkey=ba02c181c8820321&otype=json&type=&quality=80&qn=80&fnver=0&fnval=16&avid=673086320&sign=4ee501760cdd5f219272c8e979ccfbd5
+            var aid = window.external.url.match(/av?id=(\d+)/)[1];
+            var video_url = 'http://www.bilibili.com/video/av' + aid + '/#ra';
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + video_url + '\",cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

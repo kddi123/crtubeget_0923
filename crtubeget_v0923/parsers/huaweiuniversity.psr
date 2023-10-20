@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.03.19">
+    <url><![CDATA[huaweiuniversity\.com/courses/.*?/courseware/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[ilxpub_sessionid]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://talent.huaweiuniversity.com/courses/course-v1:HuaweiX+EBGTC00000546+Self-paced/courseware/99f8d1937caa49da84f52e4e4e0cd56f/3307148f22a247d5adeae0077d05723f/
+            var cookie = window.external.getCookie(window.external.url) || document.cookie;
+            var headers = 'User-Agent: ' + navigator.userAgent + '\r\nCookie: ' + cookie;
+            var html = window.external.getHtmlCodeEx(window.external.url, headers);
+            var title = (html.indexOf('data-page-title') != -1) ? html.match(/data-page-title=\"([^\"]+)/)[1] : html.match(/<title>([^<]+)/)[1];
+            var video_url = '';
+            var video_id = (html.indexOf('video_id&#34;') != -1) ? html.match(/video_id&#34;.*?4;([^&]+)/)[1] : '';
+            if (video_id) {
+                var api_url = 'https://talent.huaweiuniversity.com/vod/videos/' + video_id + '/';
+                var data = window.external.getHtmlCodeEx(api_url, headers);
+                var jo = JSON.parse(data);
+                if (jo.video_quality && jo.video_quality.length != 0) {
+                    //1080p
+                    video_url = jo.video_quality[jo.video_quality.length - 1].video_url;
+                    var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+                    for (var v in jo.video_quality) {
+                        if (parseInt(jo.video_quality[v].quality) == vq) {
+                            video_url = jo.video_quality[v].video_url;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

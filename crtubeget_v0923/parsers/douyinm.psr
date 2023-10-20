@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" aria2c="true" date="2022.06.13">
+    <url><![CDATA[https?://(?:qishui|music)\.douyin\.com/(?:\w/(?<id>[^/]+)|qishui.*?track_id=(?<id>[^&]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://qishui.douyin.com/s/Y6jrLdj/
+            //https://music.douyin.com/qishui/share/track?track_id=7020392670779328519&sharer_id=71357770577&hybrid_sdk_version=bullet&auto_play_bgm=1
+            var st = document.getElementById('RENDER_DATA');
+            var jo = JSON.parse(decodeURIComponent(st.innerText));
+            var audio = jo.app.audioWithLyricsOption;
+            document.body.innerHTML = 'title=\"' + audio.trackName + '\",thumbnail=' + audio.coverURL + ',duration=' + audio.duration + ',cr_video_url=' + audio.url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

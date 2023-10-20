@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" referer="true" date="2021.08.12">
+    <url><![CDATA[(?is)https?://(?:\w+\.)?imbc\.com/.*?id=(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://playvod.imbc.com/Templete/ClipView?bid=1000836100891100001
+            //http://playvod.imbc.com/Vod/ClipPlay?broadcastId=1005053100130100002
+            var title = window.shareTxt || document.title;
+            var thumbnail = (document.head.innerHTML.indexOf('\"og:image\"') != -1) ? document.head.innerHTML.match(/content=\"([^\"]+)\"\s+property=\"og:image\"/)[1] : '';
+            var id = window.external.url.match(/[Ii]d=(\d+)/)[1];
+            var api_url = 'http://mediaapi.imbc.com/Player/PlayURLUtil?broadcastId=' + id + '&itemid=' + window.itemId + '&t=' + Date.now();
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            var jo = JSON.parse(data);
+            var video_url = jo.MediaURL
+            var duration = jo.PlayTime;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" delegate="true" date="2023.07.27">
+    <url><![CDATA[https?://(?:www\.)?(?:xiaohongshu|xhslink)\.com/(?:discovery/item/|explore/)?(?<id>\w+)]]></url>
+    <title><![CDATA[title="([^"]+)]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <imageUrl><![CDATA[cr_image_url=([^\$]+)]]></imageUrl>
+    <ckSign><![CDATA[web_session]]></ckSign>
+    <exjs><![CDATA[http://www.cr-soft.net/js/xhsign.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //http://xhslink.com/iXI9wb
+            //http://xhslink.com/UzPVvm
+            //https://www.xiaohongshu.com/explore/639bd054000000002203ab9f
+            //http://xhslink.com/UPEBCr 图集
+            var title = '', thumbnail = '', duration = 0, video_url = '', image_url = '';
+            //不可再求跳转地址，它可能跳到login页
+            var url = window.external.url;
+            if (!video_url && (fv[0] != '1' || em)) {
+                data = gvd(url);
+                //特殊字符替换
+                data = data.replace(/\s/g, ' ');
+                var jo = JSON.parse(data);
+                if (jo.body) {
+                    title = jo.body.title;
+                    //http://xhslink.com/kwJN9h
+                    if (title.indexOf('|') != -1)
+                        title = title.substring(0, title.indexOf('|'));
+                    thumbnail = jo.body.cover_url;
+                    if (jo.body.video_url)
+                        video_url = jo.body.video_url;
+                    else if (jo.body.images && jo.body.images.length > 1) {
+                        video_url = jo.body.images[0] + '#0.jpg';
+                        for (var i = 1; i <= jo.body.images.length - 1; i++) {
+                            if (!image_url)
+                                image_url = jo.body.images[i] + '#' + i + '.jpg';
+                            else
+                                image_url += '|' + jo.body.images[i] + '#' + i + '.jpg';
+                        }
+                    }
+                }
+            }
+            //wm?
+            if (!video_url) {
+                if (!url.match(/\/(\w{24})/)) {
+                    var ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36';
+                    url = window.external.getRedirectedUrl(url, '', ua);
+                }
+                if (url.match(/\/(\w{24})/)) {
+                    var note_id = url.match(/\/(\w{24})/)[1];
+                    var cookie = window.external.getCookieEx(url, 'web_session', 2500);
+                    var args = '{\"source_note_id\":\"' + note_id + '\"}';
+                    var o = _sign('/api/sns/web/v1/feed', JSON.parse(args));
+                    var headers = 'X-t: ' + o['X-t'] + '\r\nX-s: ' + o['X-s'] + '\r\nContent-Type: application/json;charset=UTF-8\r\nReferer: https://www.xiaohongshu.com/\r\nCookie: ' + cookie;
+                    var api_url = 'https://edith.xiaohongshu.com/api/sns/web/v1/feed';
+                    var data = window.external.getPostResultEx(api_url, args, headers);
+                    //空页面无title
+                    if (data.indexOf('items\":[{') != -1) {
+                        var jo = JSON.parse(data);
+                        var note = jo.data.items[0].note_card;
+                        title = note.title || note.desc;
+                        thumbnail = note.image_list.length != 0 ? note.image_list[0].url : '';
+                        if (note.video) {
+                            var media = note.video.media;
+                            duration = media.video.duration;
+                            if (media.stream.h264.length != 0)
+                                video_url = media.stream.h264[0].master_url;
+                            else if (media.stream.h265.length != 0)
+                                video_url = media.stream.h265[0].master_url;
+                        }
+                    }
+                }
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$cr_image_url=' + image_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

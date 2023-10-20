@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2022.10.15">
+    <url><![CDATA[https?://(?:\w+\.)?eyepetizer\.net/.*?video_id=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <ckSign><![CDATA[access_token]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://m.eyepetizer.net/u1/video-detail?video_id=310787
+            var title = document.title, thumbnail = '', duration = 0, video_url = '';
+            var url = window.external.url;
+            var cookie = window.external.getCookieEx(url, 'access_token', 2500) || window.external.getCookie(url);
+            var vid = url.match(/video_id=([^&]+)/)[1];
+            var cid = cookie.indexOf('PHPSESSIONID') != -1 ? cookie.match(/PHPSESSIONID=([^;]+)/)[1] : '';
+            var token = cookie.indexOf('access_token') != -1 ? cookie.match(/access_token=([^;]+)/)[1] : '';
+            var headers = 'X-THEFAIR-FORWARD-HOST: https://api.eyepetizer.net\r\nX-THEFAIR-APPID: xfpa44crf2p70lk8\r\nX-THEFAIR-UA: EYEPETIZER_UNIAPP_H5/100000 (android;android;OS_VERSION_UNKNOWN;zh-Hans-CN;h5;1.0.0;cn-bj;SOURCE_UNKNOWN;1920*1080;NETWORK_UNKNOWN) native/1.0\r\n';
+            headers += 'X-THEFAIR-CID: ' + cid + '\r\nX-THEFAIR-AUTH: ' + token + '\r\nCookie: ' + cookie;
+            var api_url = 'https://proxy.eyepetizer.net/v1/content/item/get_item_detail_v2?resource_type=pgc_video&resource_id=' + vid;
+            var data = window.external.getHtmlCodeEx(api_url, headers);
+            if (data.indexOf('play_url') != -1) {
+                var jo = JSON.parse(data);
+                var video = jo.result.video;
+                title = video.title;
+                thumbnail = video.cover.url;
+                duration = video.duration.value;
+                video_url = video.play_url;
+            }
+
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

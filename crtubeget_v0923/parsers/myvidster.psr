@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" delegate="true" date="2023.03.07">
+    <url><![CDATA[https?://(?:www\.)?myvidster\.com/video/[^/]+/(?<id>[^/$]+)]]></url>
+    <title><![CDATA[<meta[^>]+content="([^"]+)"\s+property="og:title">]]></title>
+    <thumbnail><![CDATA[<link\s+href="([^"]+)"\s+rel="image_src"]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[<link\s+href="([^"]+)"\s+rel="videolink"]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.myvidster.com/video/303040735/MQ_9_Reaper_The_Most_Dangerous_Drone_in_the_World_Shorts_-_YouTube
+            //IE不返回消息
+            document.body.innerHTML = window.external.getHtmlCode(window.external.url);
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

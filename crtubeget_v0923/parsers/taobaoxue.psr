@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" unescape="false" date="2022.10.26">
+    <url><![CDATA[taobao\.com/learn\.htm\?courseId=\d+&sectionId=(?<id>\d+)&resourceId=\d+]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <ckSign><![CDATA[_tb_token_]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //taobaoxue列表之虚拟地址
+            //http://v.xue.taobao.com/learn.htm?courseId=135484&sectionId=16580002&resourceId=6871001
+            //http://v.xue.taobao.com/learn.htm?courseId=135484&sectionId=16580003&resourceId=6822002
+            var cookie = window.external.getCookieEx(url, '_tb_token_', 2500) || window.external.getCookieEx(url, 'cookie2', 2500);
+            var headers = 'Cookie: ' + cookie + '\r\nUser-Agent: ' + navigator.userAgent;
+            var url = window.external.url;
+            var args = url.substring(url.indexOf('?') + 1);
+            var api_url = 'http://v.xue.taobao.com/json/asynResource.do?' + args;
+            var data = window.external.getHtmlCodeEx(api_url, headers, 0, false);
+            var jo = JSON.parse(data);
+            var video = jo.data.resource.extObj;
+            var title = video.title;
+            var duration = video.duration;
+            var video_url = video.videoPlayInfo.webUrlMap.ud || video.videoPlayInfo.webUrlMap.hd || video.videoPlayInfo.webUrlMap.ld;
+            video_url += '?auth_key= ' + jo.data.resource.authority.authKey;
+            document.body.innerHTML = 'title=\"' + title + '\",duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" unescape="false" date="2022.11.01">
+    <url><![CDATA[https?://[^/]+/[^/]*(?:盘|云|存储|影|视|[D|d]isk|[D|d]rive)[^/]*/.*/(?<id>.*?)\.(?:mp4|mkv|flv|mp3|flac)$]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://pan.hxft.xyz/阿里云盘/电影/拯救大兵瑞恩.Saving.Private.Ryan.1998.BluRay.1080p.x265.10bit.2Audio.MNHD-FRDS.mkv
+            //https://yun.llh1347.com/阿里云盘分享/电影/国产/三八线上1960.mp4
+            //https://myone.ml/阿里网盘1/秦时明月/天行九歌/天行九歌 第02话 蓝光(1080P)-41-17.mp4
+            //https://disk.ihaoye.cc/美-日-韩影视/国产/A-暗算.9.0.Ansuan.EP01-34.2006.2160P.WEB-DL.H265.AAC/07.mp4
+            //http://www.azad.asia:5244/阿里 - 影视库/【2022上新】/D-大话西游：缘起.A.Chinese.Odyssey.2022.2160p.WEB-DL.H265.AAC-HDBWEB/大话西游之缘起.A.Chinese.Odyssey.2022.2160p.WEB-DL.H265.AAC-HDBWEB.mp4
+            var url = decodeURIComponent(window.external.url);
+            var title = url.substring(url.lastIndexOf('/') + 1);
+            var thumbnail = '', duration = 0, video_url = '';
+            var host = url.match(/(https?:\/\/[^\/]+)/)[1];
+            var args = url.replace(host, '');
+            args = '{\"path\":\"' + args + '\",\"password\":\"\"}';
+            var api_url = host + '/api/fs/get';
+            var data = window.external.getPostResult(api_url, args);
+            if (data.indexOf('\"raw_url\"') != -1) {
+                var jo = JSON.parse(data);
+                thumbnail = jo.data.thumb;
+                video_url = jo.data.raw_url;
+            }
+            else {
+                api_url = host + '/api/public/path';
+                data = window.external.getPostResult(api_url, args);
+                if (data.indexOf('files\":[{') != -1) {
+                    var jo = JSON.parse(data);
+                    thumbnail = jo.data.files[0].thumbnail;
+                    duration = jo.data.files[0].time_str;
+                    video_url = jo.data.files[0].url;
+                }
+            }
+
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

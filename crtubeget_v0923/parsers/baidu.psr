@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.11.23">
+    <url><![CDATA[https?://(?:\w+\.)?baidu\.com/(?:movie|watch)/(?<id>\d+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail="([^"]+)"]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[ignore_cks]]></ckSign>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //http://v.baidu.com/watch/8275348700252635318.html
+            //http://v.baidu.com/movie/144106.htm?frp=browse
+            //http://baishi.baidu.com/watch/5651476065998868611.html?fr=v.baidu.com/channel/short/newmusic&tabfr=/channel/short/newmusic
+            var title = document.title, thumbnail = '', duration = 0, video_url = '';
+            var html = window.external.getHtmlCodeEx(window.external.url);
+            //movie
+            if (window.external.url.indexOf('movie') != -1) {
+                title = (html.indexOf('videoTitle') != -1) ? html.match(/videoTitle\"\s+value=\"([^\"]+)/)[1] : '';
+                thumbnail = html.match(/<img[^>]+src=\"([^\"]+)\"\s+id=\"j-banner-bg/)[1];
+                var id = window.external.url.match(/\/(\d+)/)[1];
+                var api_url = 'http://v.baidu.com/movie_intro/?dtype=payment&service=json&e=1&id=' + id + '&frp=browse&callback=&ip=&_=' + Date.now();
+                var data = window.external.getHtmlCodeEx(api_url);
+                var jo = JSON.parse(data);
+                data = window.external.getHtmlCodeEx('http://v.baidu.com' + jo.data[0].url);
+                video_url = data.match(/href=\"([^\"]+)/)[1] + '#ra';
+            }
+            //watch
+            else {
+                title = (html.indexOf('\"title\":') != -1) ? html.match(/\"title\":\s+\"([^\"]+)/)[1] : '';
+                thumbnail = (html.indexOf('\"pics\"') != -1) ? html.match(/\"pics\":\s*\"([^\"]+)/)[1].replace(/\\/g, '') : '';
+                duration = (html.indexOf('\"duration\"') != -1) ? html.match(/\"duration\":\"([^\"]+)/)[1] : '';
+                video_url = (html.indexOf('video=http') != -1) ? decodeURIComponent(html.match(/video=(http[^']+)/)[1]) : '';
+            }
+            if (!title)
+                title = html.match(/<title>([^<]+)/)[1];
+            if (!video_url)
+                video_url = window.external.url;
+            //thumbnail中有,，且不可用cookie
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=\"' + thumbnail + '\",duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

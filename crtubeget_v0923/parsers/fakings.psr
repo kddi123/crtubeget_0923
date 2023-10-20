@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2019.10.11">
+    <url><![CDATA[https?://(?:www\.)?(?:fakings|pepeporn)\.com/(?:video/(?<id>[^.]+)|api/.*?video=(?<id>[^.]+))]]></url>
+    <title><![CDATA[<h1[^>]+><a[^>]+>([^<]+)</a>]]></title>
+    <thumbnail><![CDATA[posterImage:'([^']+)']]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[<video[^>]+>\s+<source[^>]+src="([^"]+)"]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.pepeporn.com/video/ah-ya-te-vas-espera-papi-me-quede-con-ganas-me-darias-mas-rabo-jennifer-dominic-quiere-mas.htm?ref=xsalefakings
+            var src = document.getElementsByTagName('iframe')[0].src;
+            var html = window.external.getHtmlCode(src);
+            document.body.innerHTML = html + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

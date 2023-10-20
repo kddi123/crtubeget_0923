@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" date="2020.04.01">
+    <url><![CDATA[https?://(?:study\.)?jxeduyun\.com/.*/course/(?<id>[^/]+)]]></url>
+    <title><![CDATA[<span\s+class="title"[^>]+>([^<]+)</span>]]></title>
+    <thumbnail><![CDATA[url\("([^"]+)"]]></thumbnail>
+    <duration><![CDATA[<span>(\d+:\d+)</span>]]></duration>
+    <mediaUrl><![CDATA[src="([^"]+)"]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            if (document.getElementsByClassName('xgplayer-icon-play').length != 0) {
+                document.getElementsByClassName('xgplayer-icon-play')[0].click();
+                //delay
+                var completed = false;
+                setTimeout(function () {
+                    completed = true;
+                }, 2500);
+                while (!completed)
+                    window.external.DoEvents();
+            }
+            var emt = null;
+            if (document.getElementsByClassName('xgplayer-definition').length != 0)
+                emt = document.getElementsByClassName('xgplayer-definition')[0].firstElementChild;
+            if (emt)
+                emt = emt.lastElementChild;
+            if (!emt && document.getElementsByTagName('video').length != 0)
+                emt = document.getElementsByTagName('video')[0];
+            if (emt)
+                document.body.innerHTML = emt.outerHTML.replace('url=', 'src=') + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

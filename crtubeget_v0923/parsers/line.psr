@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2020.07.10">
+    <url><![CDATA[https?://(?:live\.)?line\.\w+/channels/[^/]+/broadcast/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            var title = document.title.substr(0, document.title.indexOf(' - LINE'));
+            var href = window.location.href;
+            var args = href.substr(href.indexOf('s/') + 2);
+            var api_url = 'https://live-api.line-apps.com/web/v4.0/channel/' + args;
+            var data = window.external.getHtmlCode(api_url, href);
+            var jo = JSON.parse(data);
+            title = title || jo.item.title;
+            title = title.replace(/\"/g, '\'');
+            var urls = jo.archivedHLSURLs;
+            var video_url = urls['1080'] || urls['720'] || urls['480'];
+            if (!video_url) {
+                urls = jo.liveHLSURLs;
+                video_url = urls['1080'] || urls['720'] || urls['480'];
+            }
+            var turls = jo.item.thumbnailURLs;
+            var thumbnail = turls.commonLarge || turls.large || tursl.small;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

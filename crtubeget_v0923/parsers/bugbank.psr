@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" date="2022.05.30">
+    <url><![CDATA[https?://(?:www\.)?bugbank\.cn/live/view.html\?id=(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.bugbank.cn/live/view.html?id=113800
+            var url = window.external.url;
+            var id = url.match(/id=([^&/]+)/)[1];
+            var api_url = 'https://www.bugbank.cn/api/liveroom/id/' + id;
+            var data = window.external.getHtmlCode(api_url, url);
+            var jo = JSON.parse(data);
+            api_url = 'https://www.bugbank.cn/api/liveroom/liveurl/' + jo.id;
+            data = window.external.getHtmlCode(api_url, url);
+            jo = JSON.parse(data);
+            var aid = jo.vcode.match(/aid=([^&]+)/)[1];
+            var video_url = 'https://www.bilibili.com/video/av' + aid + '/#ra';
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + video_url + '\",cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

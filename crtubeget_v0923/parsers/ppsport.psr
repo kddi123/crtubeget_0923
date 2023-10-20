@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true"  referer="true" date="2023.01.12">
+    <url><![CDATA[https?://(?:\w{3,}\.)?(?:pptv|ppsport)\.com/.*/(?:([^.]+)\.html?|(\d+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <exjs><![CDATA[https://cdn.bootcss.com/crypto-js/3.1.9/crypto-js.min.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //http://www.ppsport.com/article/news/1550510.html
+            //http://www.ppsport.com/article/video/1555551.html
+            //http://sports.pptv.com/vod/32695121/8120978?from=pptv
+            //https://v.pptv.com/show/UfBl4kqwIF7BP6c.html -> http://sports.pptv.com/vod/32695121/8120978?from=pptv -> http://sports.pptv.com/vod/pg_h5video/32695121/8120978?from=pptv
+            //http://sports.pptv.com/vod/pg_h5video/30333498/8108034?from=pptv
+            var url = window.external.url;
+            if (url.indexOf('www.') == -1)
+                url = url.replace('ppsport', 'www.ppsport');
+            var html = window.external.getHtmlCode(url);
+            var title = html.indexOf('<h1') != -1 ? html.match(/<h1[^>]*>([^<]*)/)[1] : html.match(/<title>([^<]+)/)[1];
+            var duration = 0, thumbnail = '', video_url = '', cid = '';
+            if (url.indexOf('pg_h5video') != -1)
+                cid = url.match(/pg_h5video\/(\d+)/)[1];
+            else if (url.indexOf('vod') != -1)
+                cid = url.match(/vod\/(\d+)/)[1];
+            else if (html.indexOf('videoWrap').length != -1)
+                cid = html.match(/videoid =\"([^\"]+)\"\s+class=\"videoWrap\"/)[1];
+            if (cid) {
+                var api_url = 'http://oneplay.api.pptv.com/ups-service/play?type=mhpptv&appId=pptv.web.h5&appPlt=web&appVer=1.0.4&channel=sn.cultural&sdkVer=1.5.0&cid=' + cid + '&allowFt=0,1,2,3&ppi=302c3530&ahl_ver=1&ahl_random=374b7d5d453b2c4d2e2e327452434168&version=1&ahl_signa=552aed5c0f2d2e561cd55991925ae817add78ceb86ede3ecac08dd4df6a31f78&videoFormat=mp4&vvId=295b5e4a-4a77-442a-8594-36c47c87d6c5';
+                var data = window.external.getHtmlCode(api_url);
+                if (data.indexOf('vod2') != -1) {
+                    var jo = JSON.parse(data);
+                    if (!title)
+                        title = jo.data.program.nm;
+                    thumbnail = jo.data.program.coverPic;
+                    duration = jo.data.program.media.duration;
+                    var vod = jo.data.program.media.resource.vod2.item[jo.data.program.media.resource.vod2.item.length - 1];
+                    var dt = vod.dt;
+                    var h = dt.key.content;
+                    var f = dt.sh + dt.st + dt.id + dt.bh + dt.iv + 'V8oo0Or1f047NaiMTxK123LMFuINTNeI';
+                    f = CryptoJS.SHA256(f).toString();
+                    var key = dt.key.content;
+                    var t = key.split('-')[0];
+                    var k = decrypt(t, f) + key.substr(key.indexOf('-'));
+                    video_url = 'https://' + dt.sh + '/' + vod.rid.split('.')[0] + '.m3u8?fpp.ver=1.0.0&h5vod.ver=2.1.5&k=' + k + '&vvId=295b5e4a-4a77-442a-8594-36c47c87d6c5&type=mhpptv&o=0&sv=4.1.18';
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+
+            //generate3RdDecryptK->secure_key_decrypt_3rd 
+            function decrypt(text, key) {
+                var r = CryptoJS.lib.CipherParams.create({
+                    ciphertext: CryptoJS.enc.Hex.parse(text)
+                });
+                var k = CryptoJS.enc.Hex.parse(key);
+                let d = CryptoJS.AES.decrypt(r, k, {
+                    mode: CryptoJS.mode.ECB,
+                    padding: CryptoJS.pad.ZeroPadding,
+                    formatter: CryptoJS.format.OpenSSL
+                });
+                return d.toString();
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

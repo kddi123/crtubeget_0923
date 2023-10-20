@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" date="2022.05.14">
+    <url><![CDATA[weishi\.qq\.com/(?:weishi/feed|ws)/(?:.*?id=(?<id>\w+)|(?<id>\w+)$)]]></url>
+    <title><![CDATA[title="([^"]+)]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://isee.weishi.qq.com/ws/app-pages/share/index.html?wxplay=1&id=75RvbyiNu1KWcPbBZ&spid=1407885697821351936&qua=v1_and_weishi_8.8.0_588_230011423_d&chid=100081014&pkg=3670&attach=cp_reserves3_1000370011
+            //https://h5.weishi.qq.com/weishi/feed/75RvbyiNu1KWcPbBZ/wsfeed?wxplay=1&id=75RvbyiNu1KWcPbBZ&spid=1407885697821351936&qua=v1_and_weishi_8.8.0_588_230011423_d&chid=100081014&pkg=3670&attach=cp_reserves3_1000370011
+            //https://h5.weishi.qq.com/weishi/feed/79mlWUA8S1HIRq8fA/wsfeed?attach=cp_reserves3_1000020006&chid=100002010&id=79mlWUA8S1HIRq8fA
+            //https://h5.weishi.qq.com/weishi/feed/78zWmEKsm1LQs5JcC
+            //video_url对应的url不能下载，因此取实际url
+            var id = (window.location.href.indexOf('&id=') != -1) ? window.location.href.match(/&id=([^&]+)/)[1] : window.location.href.match(/feed\/([^/]+)/)[1];
+            var args = 'feedid=' + id;
+            var data = window.external.getPostResult('https://h5.weishi.qq.com/webapp/json/weishi/WSH5GetPlayPage', args, 'application/x-www-form-urlencoded');
+            var jo = JSON.parse(data);
+            var item = jo.data.feeds[0];
+            var thumbnail = (item.images.length != 0) ? item.images[0].url : '';
+            document.body.innerHTML = 'title=\"' + item.feed_desc + '\",thumbnail=' + thumbnail + ',duration=' + (item.video.duration / 1000) + ',cr_video_url=' + item.video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

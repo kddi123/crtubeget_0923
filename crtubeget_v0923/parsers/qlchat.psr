@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.05.21">
+    <url><![CDATA[https?://(?:\w+\.)?qlchat\.com/.*?topicId=(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[userId]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://m.qlchat.com/topic/details-video?topicId=2000004706229303
+            //https://m.qlchat.com/wechat/page/topic-simple-video?topicId=2000012867455759&byhand=1
+            var cookie = window.external.getCookie(window.external.url) || document.cookie;
+            if (cookie.indexOf('userId') == -1) {
+                document.head.innerHTML = '';
+                document.body.innerHTML = 'error=请登录千聊然后再做解析。$';
+                return;
+            }
+
+            var title = '', thumbnail = '', duration = 0, audio_url = '', video_url = '';
+            var html = window.external.getHtmlCodeEx(window.external.url, 'Cookie: ' + cookie);
+            title = (html.indexOf('\"topic\"') != -1) ? html.match(/\"topic\":\"([^\"]+)/)[1] : title;
+            thumbnail = (html.indexOf('\"backgroundUrl\"') != -1) ? html.match(/\"backgroundUrl\":\"([^\"]+)/)[1] : thumbnail;
+            duration = (html.indexOf('\"duration\"') != -1) ? html.match(/\"duration\":\"([^\"]+)/)[1] : duration;
+            var tid = window.external.url.match(/topicId=(\d+)/)[1];
+            var headers = 'Content-Type: application/json;charset=UTF-8\r\nCookie: ' + cookie;
+            var args = '{\"topicId\":\"' + tid + '\"}';
+            var api_url = 'https://m.qlchat.com/api/wechat/topic/getMediaActualUrl';
+            var data = window.external.getPostResultEx(api_url, args, headers);
+            if (data.indexOf('playUrl') != -1) {
+                var jo = JSON.parse(data);
+                var media = jo.data.audio || jo.data.video[0];
+                duration = media.duration;
+                video_url = media.playUrl;
+            }
+
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$cr_audio_url=' + audio_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

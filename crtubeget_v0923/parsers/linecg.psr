@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2020.07.23">
+    <url><![CDATA[https?://(?:www\.)?linecg\.com/video/play(?<id>[^.]+)]]></url>
+    <title><![CDATA[>([^<]+)</a></p>]]></title>
+    <thumbnail><![CDATA[img:"([^"]+)"]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.linecg.com/video/play36789.html
+            var m = document.body.innerHTML.match(/thisid:\"(\d+)\"/);
+            var args = 'id=' + m[1];
+            var data = window.external.getPostResult('https://www.linecg.com/video/xmlplay/id/playlist', args, 'application/x-www-form-urlencoded');
+            m = document.body.innerHTML.match(/now_playid\s+=\s+\'(\d+)\'/);
+            if (!m)
+                m = window.location.href.match(/play_\d+_(\d+)\.html/);
+            if (!m)
+                m = document.body.innerHTML.match(/video_id=\'(\d+)\'/);
+            var vid = m[1];
+            var re = new RegExp(vid + '\",\"token\":\"([^\"]+)\"');
+            m = data.match(re);
+            var token = m[1];
+            var video_url = 'https://www.linecg.com/hls/m3u8/hls/' + token + '/playtype/html5.linecg';
+            document.body.innerHTML = 'cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

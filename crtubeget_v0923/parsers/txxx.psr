@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" date="2021.04.27">
+    <url><![CDATA[https?://(?:www\.)?(?:txxx|hclips|upornia|hdzog|hotmovs|pornq|voyeurhit|tubepornclassic|vjav|porn555|see|pornl|thegay|shemalez)\.(?:com|xxxx)/videos/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnailUrl":"([^"]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://txxx.com/videos/17177469/stepsister-with-perfect-ass-gave-me-cum-in-her-pussy/
+            //https://vjav.com/videos/401083/crazy-adult-video-big-tits-craziest-pretty-one/
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            var vid = window.external.url.match(/videos\/([^\/]+)/)[1];
+            var host = 'https://' + window.location.hostname;
+            var api_url = host + '/api/videofile.php?video_id=' + vid;
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            if (data.indexOf('video_url') != -1) {
+                var jo = JSON.parse(data);
+                video_url = host + d(jo[0].video_url);
+            }
+            else
+                video_url = window.external.url
+            document.body.innerHTML = 'title=\"' + title + '\",cr_video_url=' + video_url + '$';
+
+            function d(e) {
+                var t = 'АВСDЕFGHIJKLМNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,~'
+                    , n = ''
+                    , r = 0;
+                /[^АВСЕМA-Za-z0-9\.\,\~]/g.exec(e) && console.log('error decoding url'),
+                e = e.replace(/[^АВСЕМA-Za-z0-9\.\,\~]/g, '');
+                do {
+                    var a = t.indexOf(e.charAt(r++))
+                        , i = t.indexOf(e.charAt(r++))
+                        , o = t.indexOf(e.charAt(r++))
+                        , l = t.indexOf(e.charAt(r++));
+                    a = a << 2 | i >> 4,
+                    i = (15 & i) << 4 | o >> 2;
+                    var s = (3 & o) << 6 | l;
+                    n += String.fromCharCode(a),
+                    64 != o && (n += String.fromCharCode(i)),
+                    64 != l && (n += String.fromCharCode(s))
+                } while (r < e.length);
+                return unescape(n)
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

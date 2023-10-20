@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" delegate="true" date="2023.03.07">
+    <url><![CDATA[https?://(?:www\.)?missevan\.com/sound/(?:player\?id=(?<id>[^&]+)|(?<id>\d+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.missevan.com/sound/player?id=7188966
+            var url = window.external.url;
+            var id = url.match(/id=([^&]+)/)[1];
+            var api_url = 'https://www.missevan.com/sound/getsound?soundid=' + id;
+            var data = window.external.getHtmlCode(api_url, url);
+            var jo = JSON.parse(data);
+            var snd = jo.info.sound;
+            var duration = snd.duration / 1000;
+            var video_url = snd.soundurl;
+            document.body.innerHTML = 'title=\"' + snd.soundstr + '\",thumbnail=' + snd.front_cover + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

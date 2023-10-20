@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2020.02.02">
+    <url><![CDATA[https?://(?:www\.|live\.)?yunketang100\.com/(?:[^?]+\?BKR=(?<id>[^\s]+)|[^.]+\.html?)]]></url>
+    <title><![CDATA["_name":"([^"]+)"]]></title>
+    <thumbnail><![CDATA["video_capture":"([^"]+)"]]></thumbnail>
+    <duration><![CDATA["duration":"([^"]+)"]]></duration>
+    <mediaUrl><![CDATA["record_m3u8":"([^"]+)"]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            var cid = window.location.href.match(/com\/([^?]+)/)[1];
+            var args = '{\"request_type\":2,\"course_chapter_alias\":\"' + cid + '\"}';
+            var data = window.external.getPostResult('http://a.buka.tv/buka/api/course/list/info.do', args, 'application/json;charset=UTF-8');
+            //JSON.parse(data) error...
+            var chapter_id = data.match(/course_chapter_id\":([^,]+)/)[1];
+            var login_id = document.cookie.match(/login_id=([^;]+)/)[1];
+            args = '{\"course_chapter_id\":' + chapter_id + ',\"login_id\":\"' + login_id + '\"}';
+            data = window.external.getPostResult('http://a.buka.tv/buka/api/video/select.do', args, 'application/json;charset=UTF-8');
+            var html = '';
+            var id = window.location.href.match(/BKR=([^\s]+)/)[1];
+            var jo = JSON.parse(data);
+            for (var c in json) {
+                if (jo[c]._id == id) {
+                    html = JSON.stringify(jo[c]);
+                    break;
+                }
+            }
+            if (html != '')
+                document.body.innerHTML = html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

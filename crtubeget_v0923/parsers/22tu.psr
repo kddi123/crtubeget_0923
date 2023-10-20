@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2023.03.01">
+    <url><![CDATA[https?://(?:www\.)?22tu\.\w+/vodplay/([^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.22tu.tv/vodplay/162763-2-1/
+            //https://www.22tu.org/vodplay/152498-1-1/
+            var title = document.getElementsByTagName('h1')[0].innerText;
+            var video_url = player_aaaa.url;
+            var vid = window.location.href.match(/play\/(\d+)/)[1];
+            var domain = window.external.url.match(/https?:\/\/[^/]+/)[0];
+            var detail = domain + '/voddetail/' + vid + '/';
+            var html = window.external.getHtmlCode(detail);
+            var thumbnail = html.match(/data-pic=\"([^\"]+)/)[1];
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

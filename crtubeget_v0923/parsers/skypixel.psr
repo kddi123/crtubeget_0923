@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" date="2019.09.30">
+    <url><![CDATA[https?://(?:www\.)?skypixel\.com/videos/(?<id>[^/]+)]]></url>
+    <title><![CDATA[<h1[^>]+>([^<]+)</h1>]]></title>
+    <thumbnail><![CDATA[poster="([^"]+)"]]></thumbnail>
+    <duration><![CDATA[duration:\s+([^,]+),]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        if (document.getElementsByTagName('iframe').length != 0) {
+            try {
+                var src = document.getElementsByTagName('iframe')[0].src;
+                var html = window.external.getHtmlCode(src);
+                var duration = html.match(/duration:\s+\d+,/)[0];
+                var data = html.match(/JSON\.parse\(([^\)]+)\)/)[1];
+                data = data.replace(/\\\\\"/g, '\"');
+                video_url = data.match(/src\":\"([^\"]+)\"}]/)[1];
+                document.body.innerHTML = duration + 'cr_video_url=' + video_url + '$' + document.body.innerHTML;
+            }
+            catch (ex) {
+            }
+        }
+    ]]></jsCode>
+</parser>

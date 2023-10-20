@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" date="2022.08.19">
+    <url><![CDATA[https?://(?:www\.)?bilibili\.com/bangumi/play/(?:ep|ss)(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[<meta\s+content="([^"]+)[^>]+property="og:image">]]></thumbnail>
+    <duration><![CDATA[duration":(\d+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[SESSDATA]]></ckSign>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://www.bilibili.com/bangumi/play/ep435342?from_spmid=666.25.titbit.0
+            //https://www.bilibili.com/bangumi/play/ss5978 -> 第61集
+            var cookie = window.external.getCookieEx(window.external.url, 'SESSDATA', 2500) || window.external.getCookie(window.external.url);
+            var headers = 'User-Agent: ' + navigator.userAgent + '\r\nCookie: ' + cookie;
+            var html = window.external.getHtmlCodeEx(window.external.url, headers);
+            var title = html.match(/<h1.*?>([^<]+)/)[1];
+            var video_url = window.external.url;
+            //url格式转换，annie 0.11之前版本不分ss链接
+            if (video_url.indexOf('/play/ss') != -1) {
+                var ep_id = '';
+                if (html.indexOf('last_ep_id') != -1) {
+                    ep_id = html.match(/\"last_ep_id\":([^,]+)/)[1];
+                    title += '第' + html.match(/\"last_ep_index\":\"([^\"]+)/)[1] + '集';
+                }
+                else {
+                    var m = html.match(/\{\"loaded\":(?:true|false),\"id\":(\d+)/);
+                    if (m) 
+                        ep_id = m[1];
+                }
+                if (ep_id)
+                    video_url ='https://www.bilibili.com/bangumi/play/ep' + ep_id + '#ra';
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

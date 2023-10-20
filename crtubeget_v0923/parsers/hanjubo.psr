@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2022.08.21">
+    <url><![CDATA[https?://(?:www\.)?hanjubo\.com/player/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[<title>(.*?)\s-\s在线观看</title>]]></title>
+    <thumbnail><![CDATA[pic:\s+'([^']+)']]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[<iframe[^>]+src="[^"]*(http[^"]+)"]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.hanjubo.com/player/2040_1_1.html
+            var html = window.external.getHtmlCode(document.getElementsByTagName('iframe')[0].src);
+            //get m3u8 url
+            if (html.indexOf('.m3u8') != -1) {
+                var m3u8Url = html.match(/'([^']+\.m3u8[^']*)'/)[1];
+                html = '<iframe src=\"' + m3u8Url + '\" />';
+            }
+            document.body.innerHTML= html + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

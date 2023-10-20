@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" referer="true" date="2023.09.28">
+    <url><![CDATA[https?://(?:[a-z-]+\.)?huya\.com/(?:video/)play/(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail="([^"]+)"]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://v.huya.com/play/482577383.html
+            //http://v-material.huya.com/play/716451583
+            //https://v-api-plus.huya.com/play/703731905.html
+            //https://www.huya.com/video/play/920516008.html
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            var thumbnail = '', duration = 0, video_url = '';
+            var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+            var vid = this.vid || window.external.url.match(/play\/(\d+)/)[1];
+            var api_url = 'https://liveapi.huya.com/moment/getMomentContent?videoId=' + vid + '&_=' + Date.now();
+            var data = window.external.getHtmlCode(api_url);
+            if (data && data.indexOf('videoInfo') != -1) {
+                var jo = JSON.parse(data);
+                var vi = jo.data.moment.videoInfo;
+                title = vi.videoTitle;
+                thumbnail = vi.videoBigCover;
+                duration = vi.videoDuration;
+                video_url = vi.definitions[0].url || vi.definitions[0].m3u8;
+                for (let idx in vi.definitions) {
+                    var video = vi.definitions[idx];
+                    if (video.height == vq) {
+                        video_url = video.url || video.m3u8;
+                        break;
+                    }
+                }
+            }
+            if (!video_url) {
+                api_url = 'https://v-api-player-ssl.huya.com/?r=vhuyaplay%2Fvideo&format=mp4%2Cm3u8&vid=' + vid + '&_=' + Date.now();
+                data = window.external.getHtmlCode(api_url);
+                if (data && data.indexOf('transcode') != -1) {
+                    var jo = JSON.parse(data);
+                    video_url = jo.result.items[0].transcode.urls[0];
+                    for (let idx in jo.result.items) {
+                        var video = jo.result.items[idx];
+                        duration = video.duration;
+                        if (video.height == vq) {
+                            video_url = video.transcode.urls[0];
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!video_url) {
+                var m = document.body.innerHTML.match(/<video[^>]+src=\"([^\"]+)/);
+                if (m) {
+                    video_url = m[1];
+                    duration = document.body.innerHTML.match(/(\d+:\d+)<\/span>\s+<\/div>/)[1];
+                }
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=\"' + thumbnail + '\",duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2021.07.03">
+    <url><![CDATA[https?://(?:v\.)?sogou\.com/vc/.*?link=(?<id>[^&]+)]]></url>
+    <title><![CDATA[]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://v.sogou.com/vc/np?type=play&link=mi4dgzjsmq3wgmjtmmztiylemvsdin3gha3dcn3dmy3gkolbgfrqsmjwgi2tenzrg42tgclon5zg2ylml5ygyylzbfuhi5dqhixs63joo5swsytpfzrw4l3torqxi5ltf5ftmm2vjr5deqluh5the33nozzw6z3pou6tc&query=%E6%98%A5%E5%A4%A9%E7%9A%84%E6%B2%B9%E8%8F%9C%E8%8A%B1&docid=cfaa286e57c9157a-c5aad525e8efe87e-da62ba92ef5d214f89b293268b089d0b
+            document.body.innerHTML = 'cr_video_url=' + window.location.href + '#ra$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

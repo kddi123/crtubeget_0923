@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2020.11.01">
+    <url><![CDATA[https?://(?:\w+\.)?people(?:\.com)?\.cn/(?:.*/)?(?:(?<id>[^.]+)\.html?|[a-z]+/(?<id>\d+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            var title = document.title;
+            title = title.replace(' - ', '--');
+            if (title.indexOf('--') != -1)
+                title = title.substr(0, title.indexOf('--'));
+            var imgs = document.getElementsByTagName('img');
+            var thumbnail = (imgs.length != 0) ? document.getElementsByTagName('img')[0].src : '';
+            for (var i = 0; i <= imgs.length - 1; i++) {
+                var img = imgs[i];
+                if (img.parentElement && img.parentElement.parentElement && img.parentElement.parentElement.className == 'v-intro') {
+                    thumbnail = imgs[i].src;
+                    break;
+                }
+            }
+
+            var video_url = '';
+            var html = document.body.innerHTML;
+            if (document.getElementsByTagName('video').length != 0)
+                video_url = document.getElementsByTagName('video')[0].src;
+            else {
+                var href = window.location.href;
+                var html = document.body.innerHTML;
+                var api_url = '';
+                //http://v.people.com.cn/n1/2020/0307/c413792-31621701.html
+                //http://dangshi.people.com.cn/n1/2016/0713/c85037-28551777.html
+                //http://cq.people.com.cn/n/2015/0614/c362578-25232664.html
+                if (href.indexOf('v.') != -1 || document.getElementById('pvpShowDiv')) {
+                    if (html.indexOf('{id:') != -1) {
+                        var id = html.match(/\{id:\"([^\"]+)/)[1];
+                        api_url = 'http://tvplayer.people.com.cn/getXML.php?path=' + id + '&callback=';
+                        var data = window.external.getHtmlCode(api_url);
+                        video_url = data.match(/'([^']+)/)[1];
+                        if (data.match(/'([^']+jpg)/))
+                            thumbnail = data.match(/'([^']+jpg)/)[1];
+                    }
+                }
+                //http://vblog.people.com.cn/index/playvideo/contentid/128827
+                else if (href.indexOf('vblog.') != -1 && html.indexOf('pid:') != -1) {
+                    var pid = html.match(/pid:\"([^\"]+)/)[1];
+                    api_url = 'http://vblog.people.com.cn/getWapXML.php?pid=' + pid + '&callback=';
+                    var data = window.external.getHtmlCode(api_url);
+                    video_url = data.match(/'([^']+)/)[1];
+                    thumbnail = data.match(/'([^']+jpg)/)[1];
+                }
+                //http://zhibo.people.cn/watch/5103778->http://zhibo.people.cn/live/watch/general?id=2manep0o
+                else if (href.indexOf('zhibo') != -1 && href.indexOf('id=') != -1) {
+                    var id = href.match(/id=([^&]+)/)[1];
+                    html = window.external.getHtmlCode('http://zhibo.people.cn/?c=activity&a=indexv3&id=' + id);
+                    var m_id = html.match(/m_id\":\"([^\"]+)/)[1];
+                    api_url = 'http://zhibo.people.cn/videos/api/get_video/' + m_id + '?_=' + Date.now();
+                    var data = window.external.getHtmlCode(api_url);
+                    var jo = JSON.parse(data);
+                    video_url = jo.video.url;
+                    title = jo.video.name;
+                    thumbnail = jo.video.thumb_url;
+                }
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

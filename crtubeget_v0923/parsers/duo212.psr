@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2022.06.09">
+    <url><![CDATA[https?://(?:www\.)?duo\d+\.top/player/(?<id>[^/]+)/index.*?\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.duo212.top/player/shengdanchuanshuo/index-0-0.html
+            //https://www.duo212.top/player/jueqi/index-0-0.html
+            //https://www.duo238.top/player/shengdanchuanshuo/index-0-0.html
+            var api_url = 'https://www.duo212.top' + document.body.innerHTML.match(/\/playdata[^\"]+/)[0];
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            var video_url = data.match(/http.*?\.m3u8/)[0];
+            document.body.innerHTML = 'title=\"' + window.xTitle + '\",cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

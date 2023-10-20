@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" date="2022.06.20">
+    <url><![CDATA[https?://(?:\w+\.)?yhdmp\.live/vp/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.yhdmp.live/vp/22119-1-2.html 樱花动漫
+            //https://m.yhdmp.live/vp/22403-2-13.html
+            var title = document.title.match(/(.*?)—在线播放/)[1], thumbnail = window.bdPic;
+            var video_url = window.external.url;
+            if (video_url.indexOf('//m.') != -1)
+                video_url = video_url.replace('//m', '//www') + '#ra';
+            else {
+                var emt = document.getElementById('yh_playfram');
+                if (emt && emt.src && emt.src.indexOf('url=') != -1)
+                    video_url = decodeURIComponent(emt.src.match(/url=([^&]+)/)[1]);
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

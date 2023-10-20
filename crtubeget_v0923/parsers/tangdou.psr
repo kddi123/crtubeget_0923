@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" referer="true" date="2023.03.19">
+    <url><![CDATA[https?://(?:\w+\.)?tangdou(?:adn)?\.com/(?:play/|.*?vid=)(?<id>[^?&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://m.tangdou.com/play/1500680324633
+            //https://share.tangdouadn.com/h5/play?vid=20000004736565
+            if (window.external.url.indexOf('vid=') != -1) {
+                var vid = window.external.url.match(/vid=([^&]+)/)[1];
+                var video_url = 'https://m.tangdou.com/play/' + vid;
+                document.body.innerHTML = 'title=\"' + video_url + '\",cr_video_url=' + video_url + '#ra$';
+                return;
+            }
+
+            var title = (document.getElementsByClassName('title-txt').length != 0) ? document.getElementsByClassName('title-txt')[0].innerText : document.title;
+            var html = document.body.innerHTML;
+            var thumbnail = html.match(/url\(\"([^\"]+)/)[1];
+            var duration = html.match(/duration:\"([^\"]+)/)[1];
+            var video_url = html.match(/play_url:\"([^\"]+)/)[1].replace(/\\u002F/g, '/');
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

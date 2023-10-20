@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="7500" crpj="true" date="2021.10.22">
+    <url><![CDATA[https?://(?:www\.)?pexels\.com/(?:[^/]+/)?video/(?<id>[^/]+)]]></url>
+    <title><![CDATA["title":"([^"]+)"]]></title>
+    <thumbnail><![CDATA["thumbnailUrl":"([^"]+)"]]></thumbnail>
+    <duration><![CDATA["duration":"([^"]+)"]]></duration>
+    <mediaUrl><![CDATA["contentUrl":"([^"]+?)"]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.pexels.com/zh-cn/video/3327617/
+            //Host..., WebClient不能设置，日！延长等待时间
+            var title = document.title, video_url = '';
+            var entries = window.performance.getEntriesByType('resource');
+            //为什么let不行？？？
+            for (var i = 0; i <= entries.length - 1; i++) {
+                var e = entries[i];
+                if (e.name.indexOf('vimeo.com') != -1) {
+                    video_url = e.name;
+                    break;
+                }
+            }
+            //xhr，同域发送
+            if (!video_url) {
+                var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveObject('Microsoft.XMLHTTP');
+                xhr.open('GET', window.external.url, false);
+                xhr.setRequestHeader('Host', 'www.pexels.com');
+                xhr.send(null);
+                var html = xhr.responseText;
+                if (html.indexOf('<title>') != -1)
+                    title = html.match(/<title>([^<]+)/)[1];
+                if (html.indexOf('contentUrl') != -1)
+                    video_url = html.match(/contentUrl\":\"([^\"]+)/)[1];
+            }
+            if (!video_url) {
+                video_url = window.external.url.match(/http.*?video\/\d+/)[0] + '/download/';
+                video_url = window.external.getRedirectedUrl(video_url, window.external.url);
+            }
+            document.body.innerHTML += '\"title\":\"' + title + '\",\"contentUrl\":\"' + video_url + '\"';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

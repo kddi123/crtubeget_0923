@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" referer="true" date="2022.05.15">
+    <url><![CDATA[https?://(?:\w+\.)?yangkeduo\.com/.*?\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://mobile.yangkeduo.com/fyxmkief.html?feed_id=3889905772437070853&share_uid=555605715...
+            //https://mobile.yangkeduo.com/goods1.html?_wvx=10&refer_share_uin=AGVHK2TP7JAAP3V5OK5MJETSWE_GEXDA&refer_share_uid=3736990325&share_uin=AGVHK2TP7JAAP3V5OK5MJETSWE_GEXDA&page_from=59&_wv=41729&refer_share_id=pwLfPJvDJqwNzXCVmKlBLCw4vibtJEeN&refer_share_channel=qq&share_uid=3736990325&pxq_secret_key=RMHAFVM3BFWO73KSYE5NEK5X2SVUHOWADALJ6EUGMLYH6PD2ESAA&goods_id=107583900637
+            var title = document.title, thumbnail = '', duration = 0, video_url = window.external.url;
+            if (window.rawData && window.rawData.store) {
+                var store = window.rawData.store;
+                if (store.authorInfo) {
+                    title = store.desc;
+                    thumbnail = store.cover;
+                    video_url = store.videos[0].url;
+                }
+                //url2有时效性
+                if (store.initDataObj && store.initDataObj.goods) {
+                    var goods = store.initDataObj.goods
+                    title = goods.goodsName;
+                    thumbnail = goods.hdThumbUrl || goods.thumbUrl;
+                    video_url = goods.videoGallery[0].videoUrl;
+                }
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

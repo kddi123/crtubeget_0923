@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2023.04.02">
+    <url><![CDATA[https?://(?:\w+\.)?baidu\.com/(?:webpage.*?type=live.*?|.*?pclive.*?)&room_id=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://mbd.baidu.com/webpage?type=live&action=liveshow&live_type=review&room_id=4140359441&qq-pf-to=pcqq.group->
+            //https://live.baidu.com/m/media/pclive/pchome/live.html?type=live&action=liveshow&live_type=review&room_id=4140359441&qq-pf-to=pcqq.group
+            //https://live.baidu.com/m/media/pclive/pchome/live.html?type=live&action=liveshow&live_type=review&room_id=8154835088&homepage_previous=__SOURCE__
+            var url = window.location.href;
+            var room_id = url.match(/room_id=([^&]+)/)[1];
+            var cookie = window.external.getCookieEx(url, 'BAIDUID', 2500) || document.cookie;
+            var bid = cookie.match(/BAIDUID=([^;]+)/)[1];
+            var device_id = getDeviceId(bid);
+            var args = '{\"data\":{\"room_id\":\"' + room_id + '\",\"device_id\":\"' + device_id + '\"}}';
+            var api_url = 'https://mbd.baidu.com/searchbox?cmd=371&action=star&service=bdbox&osname=pc&data=' +  encodeURIComponent(args) + '&_' + Date.now();
+            var data = window.external.getHtmlCode(api_url, url);
+            var jo = JSON.parse(data);
+            var video = jo.data['371'].video;
+            var title = video.title;
+            var thumbnail = video.cover.cover_100;
+            var video_url = video.play_url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+
+            //...
+            function getDeviceId(e) {
+                var r = wordsToBytes(s(e));
+                return 'pc-' + bytesToHex(r)
+            }
+
+            function s(e) {
+                e = stringToBytes(unescape(encodeURIComponent(e)));
+                for (var r = bytesToWords(e), l = 8 * e.length, c = 1732584193, u = -271733879, d = -1732584194, h = 271733878, f = 0; f < r.length; f++)
+                    r[f] = 16711935 & (r[f] << 8 | r[f] >>> 24) | 4278255360 & (r[f] << 24 | r[f] >>> 8);
+                r[l >>> 5] |= 128 << l % 32,
+                r[14 + (l + 64 >>> 9 << 4)] = l;
+                for (f = 0; f < r.length; f += 16) {
+                    var y = c
+                        , b = u
+                        , A = d
+                        , E = h;
+                    c = p(c, u, d, h, r[f + 0], 7, -680876936),
+                    h = p(h, c, u, d, r[f + 1], 12, -389564586),
+                    d = p(d, h, c, u, r[f + 2], 17, 606105819),
+                    u = p(u, d, h, c, r[f + 3], 22, -1044525330),
+                    c = p(c, u, d, h, r[f + 4], 7, -176418897),
+                    h = p(h, c, u, d, r[f + 5], 12, 1200080426),
+                    d = p(d, h, c, u, r[f + 6], 17, -1473231341),
+                    u = p(u, d, h, c, r[f + 7], 22, -45705983),
+                    c = p(c, u, d, h, r[f + 8], 7, 1770035416),
+                    h = p(h, c, u, d, r[f + 9], 12, -1958414417),
+                    d = p(d, h, c, u, r[f + 10], 17, -42063),
+                    u = p(u, d, h, c, r[f + 11], 22, -1990404162),
+                    c = p(c, u, d, h, r[f + 12], 7, 1804603682),
+                    h = p(h, c, u, d, r[f + 13], 12, -40341101),
+                    d = p(d, h, c, u, r[f + 14], 17, -1502002290),
+                    c = m(c, u = p(u, d, h, c, r[f + 15], 22, 1236535329), d, h, r[f + 1], 5, -165796510),
+                    h = m(h, c, u, d, r[f + 6], 9, -1069501632),
+                    d = m(d, h, c, u, r[f + 11], 14, 643717713),
+                    u = m(u, d, h, c, r[f + 0], 20, -373897302),
+                    c = m(c, u, d, h, r[f + 5], 5, -701558691),
+                    h = m(h, c, u, d, r[f + 10], 9, 38016083),
+                    d = m(d, h, c, u, r[f + 15], 14, -660478335),
+                    u = m(u, d, h, c, r[f + 4], 20, -405537848),
+                    c = m(c, u, d, h, r[f + 9], 5, 568446438),
+                    h = m(h, c, u, d, r[f + 14], 9, -1019803690),
+                    d = m(d, h, c, u, r[f + 3], 14, -187363961),
+                    u = m(u, d, h, c, r[f + 8], 20, 1163531501),
+                    c = m(c, u, d, h, r[f + 13], 5, -1444681467),
+                    h = m(h, c, u, d, r[f + 2], 9, -51403784),
+                    d = m(d, h, c, u, r[f + 7], 14, 1735328473),
+                    c = g(c, u = m(u, d, h, c, r[f + 12], 20, -1926607734), d, h, r[f + 5], 4, -378558),
+                    h = g(h, c, u, d, r[f + 8], 11, -2022574463),
+                    d = g(d, h, c, u, r[f + 11], 16, 1839030562),
+                    u = g(u, d, h, c, r[f + 14], 23, -35309556),
+                    c = g(c, u, d, h, r[f + 1], 4, -1530992060),
+                    h = g(h, c, u, d, r[f + 4], 11, 1272893353),
+                    d = g(d, h, c, u, r[f + 7], 16, -155497632),
+                    u = g(u, d, h, c, r[f + 10], 23, -1094730640),
+                    c = g(c, u, d, h, r[f + 13], 4, 681279174),
+                    h = g(h, c, u, d, r[f + 0], 11, -358537222),
+                    d = g(d, h, c, u, r[f + 3], 16, -722521979),
+                    u = g(u, d, h, c, r[f + 6], 23, 76029189),
+                    c = g(c, u, d, h, r[f + 9], 4, -640364487),
+                    h = g(h, c, u, d, r[f + 12], 11, -421815835),
+                    d = g(d, h, c, u, r[f + 15], 16, 530742520),
+                    c = v(c, u = g(u, d, h, c, r[f + 2], 23, -995338651), d, h, r[f + 0], 6, -198630844),
+                    h = v(h, c, u, d, r[f + 7], 10, 1126891415),
+                    d = v(d, h, c, u, r[f + 14], 15, -1416354905),
+                    u = v(u, d, h, c, r[f + 5], 21, -57434055),
+                    c = v(c, u, d, h, r[f + 12], 6, 1700485571),
+                    h = v(h, c, u, d, r[f + 3], 10, -1894986606),
+                    d = v(d, h, c, u, r[f + 10], 15, -1051523),
+                    u = v(u, d, h, c, r[f + 1], 21, -2054922799),
+                    c = v(c, u, d, h, r[f + 8], 6, 1873313359),
+                    h = v(h, c, u, d, r[f + 15], 10, -30611744),
+                    d = v(d, h, c, u, r[f + 6], 15, -1560198380),
+                    u = v(u, d, h, c, r[f + 13], 21, 1309151649),
+                    c = v(c, u, d, h, r[f + 4], 6, -145523070),
+                    h = v(h, c, u, d, r[f + 11], 10, -1120210379),
+                    d = v(d, h, c, u, r[f + 2], 15, 718787259),
+                    u = v(u, d, h, c, r[f + 9], 21, -343485551),
+                    c = c + y >>> 0,
+                    u = u + b >>> 0,
+                    d = d + A >>> 0,
+                    h = h + E >>> 0
+                }
+                return endian([c, u, d, h]);
+            }
+
+            function stringToBytes(e) {
+                for (var t = [], r = 0; r < e.length; r++)
+                    t.push(255 & e.charCodeAt(r));
+                return t
+            }
+
+            function bytesToWords(e) {
+                for (var t = [], r = 0, n = 0; r < e.length; r++,
+                n += 8)
+                    t[n >>> 5] |= e[r] << 24 - n % 32;
+                return t
+            }
+
+            function p(e, t, r, n, i, a, o) {
+                var s = e + (t & r | ~t & n) + (i >>> 0) + o;
+                return (s << a | s >>> 32 - a) + t
+            }
+
+            function m(e, t, r, n, i, a, o) {
+                var s = e + (t & n | r & ~n) + (i >>> 0) + o;
+                return (s << a | s >>> 32 - a) + t
+            }
+
+            function g(e, t, r, n, i, a, o) {
+                var s = e + (t ^ r ^ n) + (i >>> 0) + o;
+                return (s << a | s >>> 32 - a) + t
+            }
+
+            function v(e, t, r, n, i, a, o) {
+                var s = e + (r ^ (t | ~n)) + (i >>> 0) + o;
+                return (s << a | s >>> 32 - a) + t
+            }
+
+            function endian(e) {
+                if (e.constructor == Number)
+                    return 16711935 & rotl(e, 8) | 4278255360 & rotl(e, 24);
+                for (var t = 0; t < e.length; t++)
+                    e[t] = endian(e[t]);
+                return e
+            }
+
+            function rotl(e, t) {
+                return e << t | e >>> 32 - t
+            }
+
+            function wordsToBytes(e) {
+                for (var t = [], r = 0; r < 32 * e.length; r += 8)
+                    t.push(e[r >>> 5] >>> 24 - r % 32 & 255);
+                return t
+            }
+
+            function bytesToHex(e) {
+                for (var t = [], r = 0; r < e.length; r++)
+                    t.push((e[r] >>> 4).toString(16)),
+                    t.push((15 & e[r]).toString(16));
+                return t.join('')
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

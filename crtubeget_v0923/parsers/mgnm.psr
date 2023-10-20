@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.07.12">
+    <url><![CDATA[https?://nm\.mgtv\.com/share/video/(?<id>\w+).*?did=[^&]+]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[loginAccount]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //http://nm.mgtv.com/share/video/058d4227ef2342c0bf7bf24442217605?_from=iphone&did=414427695e495720e190b44b2479156dbf9dde48&uid=259ea22652f04efb8cab4d5d36af4536&version=6.8.15&dc=BADD8E22-E2C3-4D03-A08D-120D93A3A8E5
+            var title = '', thumbnail = '', video_url = window.location.href;
+            var duration = 0;
+            var vid = window.location.href.match(/video\/(\w+)/)[1];
+            var did = window.location.href.match(/did=([^&]+)/)[1];
+            var api_url = 'https://tiny.api.mgtv.com/tiny/v1/video/feed?vid=' + vid + '&did=' + did + '&_=' + Date.now();
+            var data = window.external.getHtmlCode(api_url, window.location.href);
+            var jo = JSON.parse(data);
+            if (jo.data && jo.data.videos) {
+                var video = jo.data.videos[0];
+                title = video.title;
+                thumbnail = video.cover;
+                duration = video.duration;
+                api_url = 'https://disp.titan.mgtv.com' + video.url;
+                data = window.external.getHtmlCode(api_url, window.location.href);
+                jo = JSON.parse(data);
+                video_url = jo.info;
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

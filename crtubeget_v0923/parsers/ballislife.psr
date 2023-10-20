@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2021.05.04">
+    <url><![CDATA[https?://(?:www\.)?ballislife\.com/(?<id>[^/]{9,})]]></url>
+    <title><![CDATA[<meta\s+content="([^"]+)"\s+property="og:title">]]></title>
+    <thumbnail><![CDATA[<meta\s+content="([^"]+)"\s+property="og:image">]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://ballislife.com/sierra-canyon-defeats-etiwanda-for-the-open-division-title/
+            var video_url = window.external.url;
+            var frames = document.getElementsByTagName('iframe');
+            for (var i = 0; i <= frames.length - 1; i++) {
+                if (frames[i].src.indexOf('https://www.youtube') != -1) {
+                    video_url = frames[i].src + '#ra';
+                    break;
+                }
+            }
+            document.body.innerHTML = 'cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

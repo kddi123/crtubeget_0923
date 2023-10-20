@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.11.02">
+    <url><![CDATA[https?://(?:\w+\.)?jable\.tv/videos/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://jable.tv/videos/SSIS-208/
+            var title = '', thumbnail = '';
+            var html = document.body.innerHTML;
+            //又是host: jable.tv得在第一位...
+            //不能判断indexOf('<h4>')
+            if (document.getElementsByTagName('h4').length == 0) {
+                var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveObject('Microsoft.XMLHTTP');
+                xhr.open('GET', window.external.url, false);
+                xhr.setRequestHeader('Host', 'jable.tv');
+                xhr.send(null);
+                html = xhr.responseText;
+                thumbnail = (html.indexOf('og:image') != -1) ? html.match(/og:image\"\s+content=\"([^\"]+)/)[1] : '';
+            }
+            else
+                thumbnail = (document.head.innerHTML.indexOf('og:image') != -1) ? document.head.innerHTML.match(/content=\"([^\"]+).*?\"og:image\"/)[1] : '';
+            title = html.match(/<h4>([^<]+)/)[1];
+            var video_url = html.indexOf('hlsUrl') != -1 ? html.match(/hlsUrl.*?'([^']+)/)[1] : '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

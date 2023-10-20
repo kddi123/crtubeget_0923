@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.08.25">
+    <url><![CDATA[https?://(?:www\.)?lrts\.me/(?:book/\d+/(?<id>\d+)|sound/(?<id>\d+))]]></url>
+    <title><![CDATA[]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //book的只支持列表解析，无单个链接
+            //https://www.lrts.me/sound/6733985
+            var href = window.location.href;
+            var video_url = '';
+            if (href.indexOf('book') != -1) {
+                var id = href.match(/book\/(\d+)/)[1];
+                var section = href.match(/book\/\d+\/(\d+)/)[1];
+                var base_url = 'http://m.lrts.me/ajax/getPlayPath?entityId=' + id + '&entityType=3&opType=1&type=0&sections=';
+                var data = window.external.getHtmlCode(base_url + '[' + section + ']');
+                if (data) {
+                    var jo = JSON.parse(data);
+                    if (jo.list && jo.list.length != 0)
+                        video_url = jo.list[0].path;
+                }
+            }
+            else {
+                if (document.getElementsByTagName('h1').length != 0)
+                    document.title = document.getElementsByTagName('h1')[0].innerText;
+                var html = document.getElementsByClassName('d-o')[0].innerHTML;
+                var rid = html.match(/resourcesid=(\d+)/)[1];
+                var sid = html.match(/sections=(\d+)/)[1];
+                var api_url = 'https://www.lrts.me/ajax/playlist/1/' + rid + '/' + sid;
+                var data = window.external.getHtmlCode(api_url);
+                video_url = data.match(/\"([^\"]+)\"\s+name=\"source\"/)[1];
+            }
+            document.body.innerHTML = 'cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

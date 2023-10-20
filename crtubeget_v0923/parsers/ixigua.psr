@@ -1,0 +1,432 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" unescape="false" referer="true" delegate="true" date="2023.09.20">
+    <url><![CDATA[https?://(?:www\.|\w\.)?(?:ixigua|toutiao|365yg)\.com/(?:(?:\w+/)?i?(?<id>\d+)|cinema/album/(?<id>[^/]+)|group/(?<id>[^/]+)|pseries/(?<id>[^/]+)|user_playlist/(?<id>[^?]+)|(?:\w+/?)?(?<id>\w{6,}))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <dateTime><![CDATA[date_time=([^,]+)]]></dateTime>
+    <subtitle><![CDATA[subtitle=([^,]+)]]></subtitle>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <audioUrl><![CDATA[cr_audio_url=([^\$]+)]]></audioUrl>
+    <exjs><![CDATA[https://sf1-ttcdn-tos.pstatp.com/obj/rc-web-sdk/acrawler.js|http://www.cr-soft.net/js/jx.js]]></exjs>
+    <jsCode><![CDATA[
+        try {
+            //终于，还是用上了about:blank...
+            //referer对带中文复制的短链接应用出错，不整。https://v.ixigua.com/Drbuc5a/点击链接直接打开...v1.8.7.2去除这样中文，再加上，不然音频下载403
+            //unescape为缩略图x-signature不被修改计
+            //https://v.ixigua.com/JauYbFb/
+            //https://v.ixigua.com/it4Yxt/
+            //https://m.toutiao.com/is/egPLRnn/
+            //https://www.toutiao.com/item/6954958014709236235/
+            //https://www.toutiao.com/item/6927629030690652675/
+            //https://www.ixigua.com/toplay/7004761687308009997?log Tag=bf591500323838746917
+            //http://toutiao.com/preview_article/?pgc_id=6968334822502728206
+            //https://www.ixigua.com/6796539530896736782?logTag=NiIeQhfmMcwvG6CVYqgUI...此链接怪异，无水印源指向不对
+            //https://www.ixigua.com/6877138417789075968?logTag=8q7DBzS-sSTCARV46KwH6
+            //https://www.ixigua.com/6749846354375213581?logTag=9sd1sbdGtg5vGWHsu3uaB 旧水印
+            //https://www.ixigua.com/6884820658107187727?logTag=1u9KsswO3DAxVBYU6kBpX 视频中固有水印
+            //https://www.ixigua.com/6681057203291423246?logTag=J49wmJuki3BhKvo24rPEf 亦固有
+            //https://www.ixigua.com/6793371865243976204 亦固有
+            //https://www.ixigua.com/6687746760762196488?logTag=d0947ca8d389d44317d7 有
+            //https://www.ixigua.com/6493326417961419278?logTag=6Fp-BC1COFKRzPla8Ih0e 这种古老水印
+            //https://www.ixigua.com/user_playlist/67211827964?rank=18&offset=120&order=new&filterTS=1615106429
+            //https://www.ixigua.com/6516466656263275015?logTag=bd559f96d944407b5113 美拍水印
+            //https://www.ixigua.com/6773490207481135624?utm_source=baidu_lvideo mpd加密，不能下，或花屏
+            //https://www.ixigua.com/7064961078328984064 字幕
+            //https://www.ixigua.com/toplay/7089773148907930152?logTag=d7ac06fe8bf3d2f43473 新式硬水印
+            //https://www.ixigua.com/7037469306828882470?& 4k 720, 无1080
+            //http://www.toutiao.com/a7072981970514346511/? -> https://www.ixigua.com/7072981970514346511/
+            //https://www.ixigua.com/7107537466785333797 个人上传，有4k支路
+            //Navigator.prototype.__defineGetter__('userAgent', function() {
+            navigator.__defineGetter__('userAgent', function() {
+                return 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36';
+            });
+            if (typeof(fv) == 'undefined')
+                fv = window.external.fv;
+            var is_fv = fv && fv[0] == '0';
+            var url = window.external.url;
+            if (url.indexOf('www.toutiao.com/a') != -1 && !is_fv) {
+                var video_url = url.replace('www.toutiao.com/a', 'www.ixigua.com/');
+                document.body.innerHTML = 'cr_video_url=' + video_url + '#ra$';
+                return;
+            }
+            //https://www.toutiao.com/video/7218838250134340096/
+            if (url.indexOf('www.toutiao.com/video/') != -1) {
+                var video_url = url.replace('www.toutiao.com/video/', 'www.ixigua.com/');
+                if (!is_fv) {
+                    document.body.innerHTML = 'cr_video_url=' + video_url + '#ra$';
+                    return;
+                }
+            }
+
+            var video_url = '', audio_url = '';
+            var title = '', thumbnail = '', duration = 0, subtitle = '', date_time = 0;
+            var vq = window.external.vq || '1080p';
+            //default...
+            if (!vq.match(/^\d+/))
+                vq = '1080p';
+            var pd = undefined, dash = undefined;
+            var vip = false;
+            var err = 'error=请升级至最新版本再试。$';
+
+            if (url.indexOf('v.ixigua') != -1 || url.indexOf('ixigua') == -1)
+                url = window.external.getRedirectedUrl(url, '', navigator.userAgent);
+            //两次跳转
+            if (url.indexOf('m.ixigua') != -1)
+                url = window.external.getRedirectedUrl(url, '', navigator.userAgent);
+            //https://m.toutiao.com/is/FRonceX/
+            while (url.indexOf('m.toutiao') != -1)
+                url = window.external.getRedirectedUrl(url, '', navigator.userAgent);
+            //https://m.toutiao.com/is/U6h1k37/ -> https://www.toutiao.com/w/1766199710573582/?app=news_article
+            if (url.match(/toutiao.com\/\w\/\d+/)) {
+                var cookie = window.external.getCookieEx(url, 'ttwid');
+                if (cookie) {
+                    var headers = 'Cookie: ' + cookie;
+                    var html = window.external.getHtmlCodeEx(url, headers);
+                    if (html.indexOf('RENDER_DATA') != -1) {
+                        var text = decodeURIComponent(html.match(/RENDER_DATA[^>]+>(.*?)<\/script>/)[1]);
+                        var jo = JSON.parse(text);
+                        title = jo.data.title;
+                        date_time = jo.data.publishTime;
+                        var vi = jo.data.videoInfo;
+                        thumbnail = vi.coverUrl;
+                        jo = JSON.parse(vi.playInfo);
+                        duration = jo.video_duration;
+                        video_url = jo.video_list[0].main_url;
+                    }
+                }
+            }
+            var gid = url.match(/com\/(?:\w+\/)?i?(\d+)/) ? url.match(/\/(?:\w+\/)?i?(\d+)/)[1] : '', vid = '', fid = '';
+            //为避免登录才有msToken，这个先吧
+            var cookie = getcks(url);
+            if (!cookie)
+                cookie = window.external.getCookieEx(url, 'msToken', 2500);
+            //...
+            if (!video_url && cookie) {
+                var headers = 'User-Agent: ' + navigator.userAgent + '\r\nReferer: ' + url + '\r\nCookie: ' + cookie;
+                var html = window.external.getHtmlCodeEx(url, headers);
+                //...
+                if (html.indexOf('normal_6min\":{') != -1) {
+                    vip = html.indexOf('\"vipType\":1') != -1;
+                    cookie = window.external.getCookieEx(url, 'sessionid', 2500);
+                    if (cookie) {
+                        headers = 'User-Agent: ' + navigator.userAgent + '\r\nReferer: ' + url + '\r\nCookie: ' + cookie;
+                        html = window.external.getHtmlCodeEx(url, headers);
+                    }
+                }
+                //xg: 404页，toutiao: 404错误页
+                if (html.match(/<title[^>]*>404/)) {
+                    title = '你要下载的视频不存在';
+                    document.body.innerHTML = 'title=\"' + title + '\"$error=非常抱歉！您查看的页面找不到了...$';
+                    return;
+                }
+
+                if (html.indexOf('file_id\"') != -1)
+                    fid = html.match(/file_id\":\"([^\"]+)/)[1];
+                title = html.indexOf('<h1') != -1 ? html.match(/<h1.*?>([^<]+)/)[1] : '';
+                thumbnail = html.indexOf('og:image') != -1 ? html.match(/og:image\"\s+content=\"([^\"]+)/)[1].replace('&amp;', '&') : '';
+                //大图...测试不行，它是第一帧图片，非缩略图
+                //if (html.match(/poster_url\":\"https[^\"]+-noop[^\"]+\"/))
+                //    thumbnail = html.match(/poster_url\":\"(https[^\"]+-noop[^\"]+)\"/)[1].replace(/\\u002F/g, '/');
+                duration = html.indexOf('op:video:duration') != -1 ? html.match(/op:video:duration\"\s+content=\"([^\"]+)/)[1] : 0;
+                gid = html.indexOf('group_id\":') != -1 ? html.match(/group_id\":\"([^\"]+)/)[1] : gid;
+                //基于gid，url转换：https://www.ixigua.com/user_playlist/7008152666?rank=12&offset=90&order=new&filterTS=1616157018&logTag=KA3Wn5N63IDaTstoQMWhT
+                if (url.indexOf('user_playlist') != -1 && gid) {
+                    video_url = 'https://www.ixigua.com/' + gid + '#ra';
+                    document.body.innerHTML = 'cr_video_url=' + video_url + '#ra$';
+                    return;
+                }
+                vid = html.indexOf('vid\":') != -1 ? html.match(/vid\":\"([^\"]+)/)[1] : vid;
+                if (html.indexOf('packerData') != -1) {
+                    try {
+                        var pds = html.match(/packerData\":(.*?)\},\"queryKey/)[1];
+                        pd = eval('(' + pds + ')');
+                        if (pd && pd.video) {
+                            date_time = pd.video.video_publish_time;
+                            dash = pd.video.video_logo;
+                        }
+                    }
+                    catch (ex) {
+                    }
+                }
+            }
+            //subtitle
+            if (vid && fid && html.indexOf('sub_id\"') != -1) {
+                var sid = html.match(/sub_id\":([^,]+)/)[1];
+                var api_url = 'https://www.ixigua.com/api/videov2/getAllSubtitle?video_id=' + vid + '&file_id=' + fid + '&sub_ids=' + sid;
+                var data = window.external.getHtmlCode(api_url, url);
+                if (data.indexOf('url\"') != -1)
+                    subtitle = data.match(/url\":\"([^\"]+)/)[1];
+            }
+            //https://www.ixigua.com/7189506021486756389?id=7189506102264857146
+            if (url.indexOf('id=') != -1 && gid && !pd) {
+                var eid = url.match(/id=([^&]+)/)[1];
+                var api_url = 'https://www.ixigua.com/api/albumv2/details?albumId=' + gid + '&episodeId=' + eid;
+                var data = window.external.getHtmlCode(api_url, url);
+                if (data.indexOf('episodeInfo\":{') != -1)
+                    pd = JSON.parse(data).data;
+            }
+
+            function sbs(a, b) {
+                return a.size - b.size;
+            }
+            //西瓜视频已无水印，普通视频此支足矣！为只下音频情况考虑，此支保留
+            if (!video_url && gid) {
+                //https://www.ixigua.com/6620915739064795655/ 此有水印。因此，此支只判断k类的
+                //https://www.ixigua.com/6785489916194193928/ 4k 2k...360p
+                var device_id = Date.now().toString() + (Math.floor(Math.random () * 900) + 100).toString();
+                var api_url = 'http://is.snssdk.com/ugc/video/v1/aweme/detail/info/?group_id=' + gid + '&device_id=' + device_id + '&aid=32&version_code=746&device_platform=android';
+                var data = window.external.getHtmlCode(api_url, url);
+                if (data.indexOf('\"data\":{') != -1) {
+                    //避免JSON.parse错误
+                    var jo = eval('(' + data + ')');
+                    title = jo.data.title;
+                    if (jo.data.thumb_image_list.length != 0)
+                        thumbnail = jo.data.thumb_image_list[0].url;
+                    if (!duration)
+                        duration = jo.data.video.duration;
+                    if (!date_time)
+                        date_time= jo.data.publish_time;
+                    var pl = jo.data.video.play_addr_list;
+                    //有些失效视频没有pl，https://www.ixigua.com/6949887003433369886... 有dash即可走此支，其为高清无水印源
+                    if (pl) {
+                        pl.sort(sbs);
+                        for (var v in pl) {
+                            var video = pl[v];
+                            video_url = video.play_url_list[0];
+                            if (video.definition == vq)
+                                break;
+                        }
+                    }
+                    else
+                        err = 'error=请检查链接是否失效了。$';
+                }
+                //无4k，最高1080
+                else {
+                    var api_url = 'https://api100-quic-c-lf.ixigua.com/video/app/article/full/15/2/' + gid + '/0/0/0/?version_code=9.0.1&device_platform=iphone';
+                    data = window.external.getHtmlCode(api_url, url);
+                    if (!data) {
+                        for (var i = 0; i <= 9; i++) {
+                            api_url = 'https://api100-quic-c-lf.ixigua.com/video/app/article/full/15/2/' + gid + '/0/0/0/?version_code=9.0.' + i + '&device_platform=iphone';
+                            data = window.external.getHtmlCodeEx(api_url, '', 500);
+                            if (data.indexOf('video_play_info\":\"{') != -1)
+                                break;
+                        }
+                    }
+
+                    if (data.indexOf('video_play_info\":\"{') != -1) {
+                        var jo = JSON.parse(data);
+                        title = jo.data.title;
+                        if (!thumbnail && jo.data.large_image_list.length != 0)
+                            thumbnail = jo.data.large_image_list[0].url;
+                        if (!duration)
+                            duration = jo.data.video_duration;
+                        if (!date_time)
+                            date_time= jo.data.publish_time;
+                        jo = JSON.parse(jo.data.video_play_info);
+                        var vl = jo.video_list;
+                        //有些失效视频没有pl，https://www.ixigua.com/6949887003433369886
+                        if (vl) {
+                            var pl = [];
+                            for (var v in vl)
+                                pl.push(vl[v]);
+                            pl.sort(sbs);
+                            for (var v in pl) {
+                                var video = pl[v];
+                                video_url = video.main_url;
+                                if (video.main_url.indexOf('http') == -1)
+                                    video_url = atob(video.main_url);
+                                var def = video.definition;
+                                if (!def && video.video_meta)
+                                    def = video.video_meta.definition;
+                                if (def && def == vq)
+                                    break;
+                            }
+                        }
+                    }
+                    //无1080源，不用... http://i.snssdk.com/video/urls/v/0/mp4/v0201ag10000ch6tcnjc77ua2b31l9eg?nobase64=true&ptoken=pgc_nologo
+                    //其缩短略图poster_url为第一帧图，非封面
+                    /*else if (vid) {
+                        var args = '/video/urls/v/1/toutiao/mp4/' + vid + '?r=' + Date.now() + '032';
+                        var api_url = 'https://ib.365yg.com' + args + '&s=' + crc32(args);
+                    }*/
+                }
+            }
+            //normal中4k...https://www.ixigua.com/7024092117081260581?logTag=ec321a82c8049919295c 4k于normal中
+            if ((!video_url || vq.indexOf('k') != -1) && pd && dash) {
+                var no_video = !video_url, k_got = false
+                var vr = pd.videoResource || pd.video.videoResource;
+                if (vr.normal) {
+                    var vl = [];
+                    for (var v in vr.normal.video_list)
+                        vl.push(vr.normal.video_list[v]);
+                    vl.sort(sbs);
+                    if (!duration)
+                        duration = vr.normal.video_duration;
+                    for (var i in vl) {
+                        var def = vl[i].definition;
+                        if (!no_video || def.indexOf('k') != -1) {
+                            video_url = vl[i].main_url;
+                            video_url = (video_url.indexOf('ixigua') == -1) ? atob(video_url) : video_url;
+                            k_got = def.indexOf('k') != -1;
+                            if (def.indexOf(vq) != -1)
+                                break;
+                        }
+                    }
+                }
+                //dash source, no watermark...加上版本判断，4k故，它为先。因此处取值可能音视频合并失败，因此做vq判断
+                if (!k_got && !is_fv) {
+                    try {
+                        //video & episodeInfo & movie https://www.ixigua.com/6904818605544866315，dash只有video_list
+                        var vr = pd.videoResource || pd.video.videoResource;
+                        var dash_video = vr.dash_120fps ? vr.dash_120fps : vr.dash;
+                        var ja = dash_video && dash_video.dynamic_video ? dash_video.dynamic_video.dynamic_audio_list : undefined;
+                        var jv = dash_video && dash_video.dynamic_video ? dash_video.dynamic_video.dynamic_video_list : dash_video.video_list;
+                        audio_url = ja ? atob(ja[ja.length - 1].main_url) : audio_url;
+                        //音视频须为一体
+                        if (jv && ja) {
+                            for (var v in jv) {
+                                if (jv[v].definition.indexOf('k') != -1 && vq.indexOf('k') != -1) {
+                                    video_url = atob(jv[v].main_url);
+                                    k_got = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if ((!video_url || !k_got) && audio_url && !window.external.audio)
+                            audio_url = '';
+                        //dash_120fps音频可能403，再找dash
+                        if (audio_url && !window.external.urlExists(audio_url) && pd.video.videoResource.dash_120fps && pd.videoResource.dash) {
+                            ja = dash_video.dynamic_video.dynamic_audio_list;
+                            audio_url = atob(ja[ja.length - 1].main_url);
+                        }
+                        if (audio_url && !window.external.urlExists(audio_url))
+                            audio_url = '';
+                    }
+                    catch (ex) {
+                    }
+                }
+            }
+            //movies...pd.episodeInfo
+            if (!video_url && pd) {
+                var vr = pd.videoResource || pd.video.videoResource;
+                //https://www.ixigua.com/6743376910056686091?id=6818727593588556302 无normal
+                if (vr.normal) {
+                    if (!duration)
+                        duration = vr.normal.video_duration;
+                    function sbr(a, b) {
+                        return a.vheight - b.vheight;
+                    }
+                    var jn = vr.normal.video_list;
+                    var jv = [], i = 0;
+                    for (var v in jn) {
+                        jv[i] = jn[v];
+                        i++;
+                    }
+                    jv.sort(sbr);
+                    for (var i in jv) {
+                        video_url = jv[i].main_url;
+                        if (jv[i].definition.indexOf(vq) != -1)
+                            break;
+                    }
+                }
+                else if (vr.dash_120fps && vr.dash_120fps.dynamic_video)
+                    video_url = vr.dash_120fps.dynamic_video.main_url;
+                else if (vr.dash && vr.dash.dynamic_video)
+                    video_url = vr.dash_120fps.dynamic_video.main_url;
+                video_url = (video_url.indexOf('ixigua') == -1) ? atob(video_url) : video_url;
+            }
+            //??? ...https://www.ixigua.com/7266745446981173812 avif缩略图，v1865 用ffmpeg转换
+            //https://www.ixigua.com/6813173441525449227?id=6821125198100562444&logTag=NSQbfGIjXOMCg1BaG7XUs其解析出错误
+            if (!video_url && (fv[0] != '1' || em)) {
+                var data = gvd(url);
+                var jo = JSON.parse(data);
+                if (jo.body && jo.body.video_url) {
+                    title = jo.body.title;
+                    //以避免页面中取的不能下载...有时它解的不能下载，做判断
+                    if (!thumbnail)
+                        thumbnail = jo.body.cover_url;
+                    //https://www.ixigua.com/6768030523659911694?logTag=xJpJ8B4-ejC4z1Hz7xNNn此支，无水印源不可下
+                    //又：有时其会误判，不再做有效性判断
+                    //if (window.external.urlExists(jo.body.video_url))
+                    video_url = jo.body.video_url;
+                }
+                else
+                    err = 'error=请检查链接是否失效了。$';
+            }
+            if (!video_url && vip)
+                video_url = getol(window.external.url);
+            if (pd) {
+                title = pd.video ? pd.video.title : pd.episodeInfo ? pd.episodeInfo.name || pd.episodeInfo.title : title;
+                if (!thumbnail && pd.episodeInfo && pd.episodeInfo.coverList)
+                    thumbnail = pd.episodeInfo.coverList[0].url;
+                if (!duration && pd.video)
+                    duration = pd.video_duration
+            }
+            if (thumbnail)
+                thumbnail = thumbnail.replace('_576x324', '');
+
+           var html = 'title=\"' + title.replace(/\"/g, '') + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',date_time=' + date_time + ',subtitle=' + subtitle + ',cr_video_url=' + video_url + '$cr_audio_url=' + audio_url + '$' + err;
+            if (typeof(window.external.receive) != 'undefined')
+                window.external.receive(html);
+            else
+                document.body.innerHTML = html;
+
+            //...
+            function getcks(url) {
+                if (typeof(window.external.getCookieEx) == 'undefined')
+                    return '';
+
+                //hard...避免chrome等多账号影响，此为先
+                try {
+                    window.byted_acrawler.init({
+                        aid: 99999999,
+                        dfp: 0
+                    });
+
+                    var h = window.external.getHeaders(url, 'GET', '', navigator.userAgent);
+                    if (h.indexOf('__ac_nonce') != -1) {
+                        var an = h.match(/__ac_nonce=([^;]+)/)[1];
+                        var as = window.byted_acrawler.sign('', an);
+                        var data = '{\"region\":\"cn\",\"aid\":1768,\"needFid\":false,\"service\":\"www.ixigua.com\",\"migrate_info\":{\"ticket\":\"\",\"source\":\"node\"},\"cbUrlProtocol\":\"https\",\"union\":true}';
+                        h = window.external.getPostHeaders('https://ttwid.bytedance.com/ttwid/union/register/', data);
+                        if (h.indexOf('ttwid') != -1) {
+                            var ttwid = h.match(/ttwid=([^;]+)/)[1];
+                            return '__ac_nonce=' + an + ';__ac_signature=' + as + ';ttwid=' + ttwid;
+                        }
+                    }
+                }
+                catch (ex) {
+                }
+
+                var result = '';
+                for (var i = 0; i <= 2; i++) {
+                    result = window.external.getCookieEx(url, '__ac_nonce', 2500);
+                    if (result)
+                        return result;
+                }
+                for (var i = 0; i <= 2; i++) {
+                    result = window.external.getCookieEx(url, 'ttwid', 2500);
+                    if (result)
+                        return result;
+                }
+            }
+
+            function crc32(t) {
+                var table = '00000000 77073096 EE0E612C 990951BA 076DC419 706AF48F E963A535 9E6495A3 0EDB8832 79DCB8A4 E0D5E91E 97D2D988 09B64C2B 7EB17CBD E7B82D07 90BF1D91 1DB71064 6AB020F2 F3B97148 84BE41DE 1ADAD47D 6DDDE4EB F4D4B551 83D385C7 136C9856 646BA8C0 FD62F97A 8A65C9EC 14015C4F 63066CD9 FA0F3D63 8D080DF5 3B6E20C8 4C69105E D56041E4 A2677172 3C03E4D1 4B04D447 D20D85FD A50AB56B 35B5A8FA 42B2986C DBBBC9D6 ACBCF940 32D86CE3 45DF5C75 DCD60DCF ABD13D59 26D930AC 51DE003A C8D75180 BFD06116 21B4F4B5 56B3C423 CFBA9599 B8BDA50F 2802B89E 5F058808 C60CD9B2 B10BE924 2F6F7C87 58684C11 C1611DAB B6662D3D 76DC4190 01DB7106 98D220BC EFD5102A 71B18589 06B6B51F 9FBFE4A5 E8B8D433 7807C9A2 0F00F934 9609A88E E10E9818 7F6A0DBB 086D3D2D 91646C97 E6635C01 6B6B51F4 1C6C6162 856530D8 F262004E 6C0695ED 1B01A57B 8208F4C1 F50FC457 65B0D9C6 12B7E950 8BBEB8EA FCB9887C 62DD1DDF 15DA2D49 8CD37CF3 FBD44C65 4DB26158 3AB551CE A3BC0074 D4BB30E2 4ADFA541 3DD895D7 A4D1C46D D3D6F4FB 4369E96A 346ED9FC AD678846 DA60B8D0 44042D73 33031DE5 AA0A4C5F DD0D7CC9 5005713C 270241AA BE0B1010 C90C2086 5768B525 206F85B3 B966D409 CE61E49F 5EDEF90E 29D9C998 B0D09822 C7D7A8B4 59B33D17 2EB40D81 B7BD5C3B C0BA6CAD EDB88320 9ABFB3B6 03B6E20C 74B1D29A EAD54739 9DD277AF 04DB2615 73DC1683 E3630B12 94643B84 0D6D6A3E 7A6A5AA8 E40ECF0B 9309FF9D 0A00AE27 7D079EB1 F00F9344 8708A3D2 1E01F268 6906C2FE F762575D 806567CB 196C3671 6E6B06E7 FED41B76 89D32BE0 10DA7A5A 67DD4ACC F9B9DF6F 8EBEEFF9 17B7BE43 60B08ED5 D6D6A3E8 A1D1937E 38D8C2C4 4FDFF252 D1BB67F1 A6BC5767 3FB506DD 48B2364B D80D2BDA AF0A1B4C 36034AF6 41047A60 DF60EFC3 A867DF55 316E8EEF 4669BE79 CB61B38C BC66831A 256FD2A0 5268E236 CC0C7795 BB0B4703 220216B9 5505262F C5BA3BBE B2BD0B28 2BB45A92 5CB36A04 C2D7FFA7 B5D0CF31 2CD99E8B 5BDEAE1D 9B64C2B0 EC63F226 756AA39C 026D930A 9C0906A9 EB0E363F 72076785 05005713 95BF4A82 E2B87A14 7BB12BAE 0CB61B38 92D28E9B E5D5BE0D 7CDCEFB7 0BDBDF21 86D3D2D4 F1D4E242 68DDB3F8 1FDA836E 81BE16CD F6B9265B 6FB077E1 18B74777 88085AE6 FF0F6A70 66063BCA 11010B5C 8F659EFF F862AE69 616BFFD3 166CCF45 A00AE278 D70DD2EE 4E048354 3903B3C2 A7672661 D06016F7 4969474D 3E6E77DB AED16A4A D9D65ADC 40DF0B66 37D83BF0 A9BCAE53 DEBB9EC5 47B2CF7F 30B5FFE9 BDBDF21C CABAC28A 53B39330 24B4A3A6 BAD03605 CDD70693 54DE5729 23D967BF B3667A2E C4614AB8 5D681B02 2A6F2B94 B40BBE37 C30C8EA1 5A05DF1B 2D02EF8D';
+                var crc = 0
+                var n = 0; //a number between 0 and 255
+                var x = 0; //an hex number
+                crc = crc ^ (-1);
+                for( var i = 0, iTop = t.length; i < iTop; i++ ) {
+                  n = ( crc ^ t.charCodeAt( i ) ) & 0xFF;
+                  x = '0x' + table.substr( n * 9, 8 );
+                  crc = ( crc >>> 8 ) ^ x;
+                }
+                return (crc ^ (-1)) >>> 0;
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

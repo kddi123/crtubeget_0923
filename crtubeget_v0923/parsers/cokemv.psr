@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2022.07.19">
+    <url><![CDATA[https?://(?:\w+\.)?cokemv\.me/vodplay/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://cokemv.me/vodplay/40238-1-1.html
+            //https://cokemv.me/vodplay/40034-1-3.html
+            var title = this.vod_name + ' ' + this.vod_part;
+            var href = window.location.href;
+            var url = 'https://cokemv.me/voddetail/' + href.match(/vodplay\/(\d+)/)[1] + '.html';
+            var html = window.external.getHtmlCode(url);
+            var thumbnail = html.match(/data-original=\"([^\"]+)/) ? html.match(/data-original=\"([^\"]+)/)[1] : '';
+
+            var video_url = player_aaaa.url;
+            if (video_url.indexOf('m3u8') != -1) {
+                var data = window.external.getHtmlCode(video_url, href);
+                if (data.indexOf('#EXTM3U') != -1) {
+                    data = data.replace(/\/jump/g, 'https://cokemv.org/jump');
+                    video_url = window.external.saveData(data);
+                }
+            }
+            if (!video_url)
+                video_url = window.location.href;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

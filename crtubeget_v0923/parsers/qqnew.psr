@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2022.07.16">
+    <url><![CDATA[https?://new\.qq\.com/\w+/\w+/(?<id>[^&/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://new.qq.com/rain/a/20210402V01LO100
+            //https://new.qq.com/omv/video/x3347qsvaax
+            var title = window.DATA ? window.DATA.title : document.title;
+            if (document.getElementsByTagName('h3').length != 0)
+                title = document.getElementsByTagName('h3')[0].innerText;
+            var video_url = window.DATA ? window.DATA.url + '#ra': '';
+            if (!video_url && window.external.url.indexOf('/video/') != -1) {
+                var vid = window.external.url.match(/video\/([^/]+)/)[1];
+                video_url = 'https://v.qq.com/x/page/' + vid + '.html#';
+            }
+            document.body.innerHTML = 'title=\"' + title + '\",cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

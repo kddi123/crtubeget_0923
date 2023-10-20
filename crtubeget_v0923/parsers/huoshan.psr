@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2022.01.16">
+    <url><![CDATA[https?://(?:\w+\.)?huoshan\.com/(?:hotsoon/s/(?<id>[^/]+)|pages/item/index\.html\?item_id=(?<id>[^&.]+)|share/item/(?<id>[^/]+))]]></url>
+    <title><![CDATA[title="([^"]+)]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://reflow.huoshan.com/share/item/6725602715323485453 ->xg
+            //https://share.huoshan.com/hotsoon/s/gHkRC7onTm8/ -> dy
+            var url = window.external.url;
+            if (url.indexOf('item_id') == -1)
+                url = window.external.getRedirectedUrl(url, url, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.4692.71 Safari/537.36');
+            var title = '', thumbnail = '', duration = 0, video_url = '';
+            var m = url.match(/item_id=(\d+)/) || url.match(/item\/(\d+)/);
+            if (m) {
+                var item_id = m[1];
+                var data = window.external.getHtmlCode('https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=' + item_id, url);
+                if (data.indexOf('\"share_title\"') != -1)
+                    title = data.match(/\"share_title\":\"([^\"]*)/)[1];
+                else if (data.indexOf('\"desc\"') != -1)
+                    title = data.match(/\"desc\":\"([^\"]*)/)[1];
+                if (data.indexOf('\"duration\"') != -1)
+                    duration = parseInt(data.match(/\"duration\":([^,]+)/)[1]) / 1000;
+                if (!title) {
+                    data = window.external.getHtmlCode('https://www.ixigua.com/' + item_id + '/', url);
+                    if (data && data.match(/<title[^>]*>([^<]+)\s+-/))
+                        title = data.match(/<title[^>]*>([^<]+)\s+-/)[1];
+                }
+                if (!title)
+                    title = document.title + '_' + item_id;
+                var api_url = 'https://share.huoshan.com/api/item/info?item_id=' + item_id;
+                data = window.external.getHtmlCode(api_url, url);
+                if (data.indexOf('\"url\"') != -1) {
+                    var jo = JSON.parse(data);
+                    thumbnail = jo.data.item_info.cover;
+                    video_url = jo.data.item_info.url;
+                }
+            }
+            if (!video_url && typeof(gvd) != 'undefined') {
+                data = gvd(window.external.url);
+                var jo = JSON.parse(data);
+                if (jo.body && jo.body.video_url) {
+                    title = jo.body.title;
+                    thumbnail = jo.body.cover_url;
+                    video_url = jo.body.video_url;
+                }
+            }
+            if (!video_url)
+                video_url = url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

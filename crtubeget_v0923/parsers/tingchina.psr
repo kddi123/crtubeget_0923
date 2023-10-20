@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" speed="512k" delegate="true" date="2023.08.19">
+    <url><![CDATA[https?://(?:www\.)?tingchina\.com/.*?/play_(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //为避免播放声音，以代理处之
+            //https://www.tingchina.com/yousheng/30898/play_30898_2.htm
+            var url = window.external.url;
+            var html = window.external.getHtmlCode(url, url, 0, false);
+            var title = html.match(/bookname=\"([^\"]+)/)[1] + '-' + html.match(/mp3Name=\"([^\"]+)/)[1];
+            var m = html.match(/book01.*?src=\"([^\"]+)/);
+            var thumbnail = m ? m[1] : '';
+            m = html.match(/wpTime.*?\/(\d+:\d+)/);
+            var duration = m ? m[1] : '0';
+            var api_url = 'https://img.tingchina.com/play/h5_jsonp.asp';
+            var headers = 'Referer: ' + url + '\r\nUser-Agent: ' + navigator.userAgent;
+            var data = window.external.getHtmlCodeEx(api_url, headers);
+            if (data && data.indexOf('key=') != -1) {
+                var fileUrl = html.match(/fileUrl= \"([^\"]+)/)[1];
+                var key = data.match(/key=(?:\"\s+\+\s+\")?([^\"]+)/)[1];
+                video_url = 'https://t3344.tingchina.com' + fileUrl + '?key=' + key;
+            }
+            if (!video_url)
+                video_url = url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

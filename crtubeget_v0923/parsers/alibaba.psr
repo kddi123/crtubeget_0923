@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2023.08.19">
+    <url><![CDATA[https?://(?:\w+\.)?alibaba\.com/(?:live/(?<id>[^.]+)\.html?|(?:watch/)?v/(?<id>[^?]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.alibaba.com/live/ultrasonic-plastic-welding-machine_d6d6067f-5622-40c6-8122-80f147c7032d.html
+            //https://watch.alibaba.com/v/8773cc55-b94f-4347-b210-89f36707143c?pageId=9&tracelog=share_app&referrer=mini_program&requestUrl=https://watch.alibaba.com/v/8773cc55-b94f-4347-b210-89f36707143c
+            //https://m.alibaba.com/watch/v/49a49f88-395e-45b7-a710-1e4f475c0bb9?tracelog=share_app&referrer=mini_program->https://watch.alibaba.com/v/...
+            var html = window.external.getHtmlCode(window.external.url, '', 0, false);
+            var title = (html.indexOf('"title"') != -1) ? html.match(/\"title\":\"([^\"]+)/)[1] : document.title;
+            var thumbnail = (html.indexOf('og:image') != -1) ? html.match(/<meta\s+property=\"og:image\"\s+content=\"([^\"]+)\"/)[1] : '';
+            var duration = (html.indexOf('liveDurationStr') != -1) ?  html.match(/liveDurationStr\":\"([^\"]+)/)[1] : 0;
+            var video_url = (html.indexOf('replayVideoUrl') != -1) ? html.match(/replayVideoUrl\":\"([^\"]+)/)[1] : window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

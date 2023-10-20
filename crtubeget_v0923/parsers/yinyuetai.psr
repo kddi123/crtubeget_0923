@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" referer="true" date="2023.04.07">
+    <url><![CDATA[https?://(?:\w+\.)?yinyuetai\.com/(?:play|.*home)\?id=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.yinyuetai.com/play?id=46
+            //https://share.yinyuetai.com/#/home?id=7046327714034315264&qq-pf-to=pcqq.group
+            var url = window.external.url;
+            var id = url.match(/id=([^&]+)/)[1];
+            var is_play = url.indexOf('play') != -1;
+            var api_url = is_play ? 'https://data.yinyuetai.com/video/getVideoInfo?id=' + id : 'https://video-api.yinyuetai.com/video/get?id=' + id;
+            var data = window.external.getHtmlCode(api_url, url);
+            var jo = JSON.parse(data);
+            var title = is_play ? jo.videoName : jo.data.title;
+            var thumbnail = is_play ? jo.videoImg : jo.data.fullClip.cover;
+            var video_url = is_play ? jo.videoUrl : jo.data.fullClip.urls[jo.data.fullClip.urls.length - 1].url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

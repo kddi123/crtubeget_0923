@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2023.01.16">
+    <url><![CDATA[https?://(?:\w+\.)?porncvd\.com/javs/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://porncvd.com/javs/60ed2bcb83a18943b9f1ebf0.html
+            var title = (document.getElementsByTagName('h4').length != 0) ? document.getElementsByTagName('h4')[0].innerText : document.title;
+            var html = document.body.innerHTML;
+            var thumbnail = (html.indexOf('pic:\"') != -1) ? html.match(/pic:\"([^\"]+)/)[1].trim() : '';
+            var video_url = document.getElementById('video-in').value;
+            var js = html.match(/var\s+whitelist.*?[^\]]+/)[0] + '];';
+            eval(js);
+            video_url = whitelist[randomNum(0,3)] + video_url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+
+            function randomNum(minNum, maxNum) {
+                switch(arguments.length){
+                    case 1:
+                        return parseInt(Math.random() * minNum + 1, 10);
+                        break;
+                    case 2:
+                        return parseInt(Math.random() * (maxNum - minNum + 1) + minNum, 10);
+                        break;
+                    default:
+                        return 0;
+                        break;
+                }
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

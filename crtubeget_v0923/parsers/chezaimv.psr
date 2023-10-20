@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2023.03.22">
+    <url><![CDATA[https?://(?:www\.)?chezaimv\.com/(?:video|play)/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[cd_name]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //http://www.chezaimv.com/video/6945.html
+            //http://www.chezaimv.com/play/46152.html
+            var title = document.title;
+            if (title.indexOf('在线播放') != -1)
+                title = title.substring(0, title.indexOf('在线播放'));
+            if (title.indexOf(',mp3下载') != -1)
+                title = title.substring(0, title.indexOf(',mp3下载'));
+            var thumbnail = (document.getElementsByClassName('down_pic').length != 0) ? document.getElementsByClassName('down_pic')[0].innerHTML.match(/src=\"([^\"]+)/)[1] : '';
+            if (!thumbnail && document.getElementsByClassName('pic').length != 0)
+                thumbnail = 'http://www.chezaimv.com' + document.getElementsByClassName('pic')[0].innerHTML.match(/src=\"([^\"]+)/)[1];
+            var video_url = '';
+            var url = window.external.url;
+            var id = url.match(/\/(\d+)\.html?/)[1];
+            var cookie = window.external.getCookieEx(url, 'cd_name', 2500) || document.cookie;
+            var headers = 'Content-Type: application/x-www-form-urlencoded\r\nReferer: ' + url + '\r\nCookie: ' + cookie;
+            var api_url = 'http://www.chezaimv.com/skin/czmv/play.php';
+            var type = (url.indexOf('video') != -1) ? 'video' : 'dance';
+            var args = 'id=' + id + '&type=' + type;
+            var data = window.external.getPostResultEx(api_url, args, headers);
+            if (data.indexOf('\"url\"') != -1) {
+                var jo = JSON.parse(data);
+                video_url = jo.url;
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

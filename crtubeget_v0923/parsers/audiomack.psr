@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.08.17">
+    <url><![CDATA[https?://(?:www\.)?audiomack\.com/\w+/song/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]*)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://audiomack.com/olamide/song/need-for-speed
+            var video_url = window.external.url.replace(/(\w+)\/(song)/, '$2/$1');
+            document.body.innerHTML = 'title=\"' + video_url + '\",cr_video_url=' + video_url + '#ra$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

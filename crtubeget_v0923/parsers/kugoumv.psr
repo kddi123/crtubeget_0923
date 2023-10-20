@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2020.01.05">
+    <url><![CDATA[https?://(?:www\.)?kugou\.com/mvweb/html/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[mv_name\s+=\s+"([^"]+)"]]></title>
+    <thumbnail><![CDATA[mv_pic\s+=\s+"([^"]+)"]]></thumbnail>
+    <duration><![CDATA[timelength":(\d+)\d{3}]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            var key = window.external.md5(mv_hash + 'kugoumvcloud');
+            var api_url = 'http://trackermv.kugou.com/interface/index/cmd=100&hash=' + mv_hash + '&key=' + key + '&ext=mp4';
+            var data = window.external.getHtmlCode(api_url);
+            var jo = JSON.parse(data);
+            var video_url = '';
+            if (jo.mvdata)
+                video_url = jo.mvdata.sq.downurl || jo.mvdata.hd.downurl|| jo.mvdata.sd.downurl;
+
+            document.body.innerHTML = 'cr_video_url=' + video_url + '$' + data + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

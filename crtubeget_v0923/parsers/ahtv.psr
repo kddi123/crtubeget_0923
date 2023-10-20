@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" referer="true" date="2022.12.13">
+    <url><![CDATA[https?://(?:\w+\.)?ahtv\.cn/.*?/\d{4}-\d{2}-\d{2}/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://www.ahtv.cn/spk/folder31227/folder31228/2022-01-25/cEuGxGX4viEocckr.html
+            var html = window.external.getHtmlCode(window.external.url);
+            var title = htmlDecode(html.match(/<title>([^<]+)/)[1]);
+            var video_url = html.match(/\"(http.*?[^\"]+\.m(?:p4|3u8))/)[1];
+            video_url = video_url.replace(/\\/g, '');
+            document.body.innerHTML = 'title=\"' + title + '\",cr_video_url=' + video_url + '$' + html;
+        }
+        catch (ex) {
+        alert(ex);
+        }
+    ]]></jsCode>
+</parser>

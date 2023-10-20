@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" crpj="true" date="2023.02.06">
+    <url><![CDATA[https?://(?:\w+\.)?4kvm\.com/(?:movies/(?<id>[^/]+)|seasons/[^?]+\?ep=(?<id>[^&]+))]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.4kvm.com/movies/afdszd
+            //https://www.4kvm.com/seasons/santij?ep=3 虚拟
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            var thumbnail = (document.getElementsByClassName('poster').length != 0) ? document.getElementsByClassName('poster')[0].innerHTML.match(/src=\"([^\"]+)/)[1] : '';
+            var video_url = '';
+            var url = window.external.url;
+            var api_url = '';
+            if (url.indexOf('movies') != -1 && document.getElementsByTagName('iframe').length != 0)
+                api_url = document.getElementsByTagName('iframe')[0].src;
+            else if (url.indexOf('seasons') != -1 && document.body.innerHTML.match(/ifsrc:'([^']+)/)) {
+                api_url = document.body.innerHTML.match(/ifsrc:'([^']+)/)[1];
+                var ep = url.match(/ep=([^&]+)/)[1];
+                api_url += '&source=0&ep=' + ep;
+                title += ' 第' + ep + '集';
+            }
+            if (api_url) {
+                var html = window.external.getHtmlCode(api_url, url);
+                if (html.match(/url:'([^']+)/)) {
+                    video_url = html.match(/url:'([^']+)/)[1];
+                    if (video_url.indexOf('.m3u8') == -1) {
+                        var data = window.external.getHtmlCode(video_url, url);
+                        if (data.indexOf('#EXTM3U') != -1)
+                            video_url = window.external.saveData(data);
+                        else
+                            video_url = '';
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = window.external.url;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$' + document.body.innerHTML;
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

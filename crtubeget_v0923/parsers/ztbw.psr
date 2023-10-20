@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2020.09.16">
+    <url><![CDATA[https?://(?:www\.)?ztbw\.net/.*/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^"]+)]]></mediaUrl>
+    <ckSign><![CDATA[ignore_cks]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            var title = document.getElementsByTagName('h1').length != 0 ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            var m = document.head.innerHTML.match(/content=\"([^\"]+)\"\s+property=\"og:image\">/);
+            var thumbnail = m ? 'http://www.ztbw.net' + m[1] : '';
+            var video_url = zanpiancms_player.url || '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '\"';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

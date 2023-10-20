@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2020.10.29">
+    <url><![CDATA[https?://(?:www\.)?leleketang\.com/.*?v(?<id>\d+)\.shtml?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //http://www.leleketang.com/kingkey/kb/v18532.shtml
+            var title = (document.getElementsByClassName('pb_c_content').length != 0) ? document.getElementsByClassName('pb_c_content')[0].innerText : document.title;
+            if (title.indexOf('\r') != -1)
+                title = title.substr(0, title.indexOf('\r'));
+            if (title[title.length - 1] == '：')
+                title = title.substr(0, title.length - 1);
+            var thumbnail = document.getElementById('jp_poster_0') ? document.getElementById('jp_poster_0').src : '';
+            var duration = (document.getElementsByClassName('jp-duration').length != 0) ? document.getElementsByClassName('jp-duration')[0].innerText : 0;
+            var video_url = document.getElementById('jp_video_0') ? document.getElementById('jp_video_0').src : window.location.href;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

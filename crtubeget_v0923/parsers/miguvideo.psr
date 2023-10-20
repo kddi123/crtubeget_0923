@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2023.05.18">
+    <url><![CDATA[https?://(?:\w+\.)?(?:miguvideo\.com|migu\.cn)/.*?(?:cid=|mgdbId=|detail/|live/)(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[userInfo]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://www.miguvideo.com/mgs/website/prd/detail.html?cid=690123342
+            //https://www.miguvideo.com/mgs/website/prd/sportLive.html?mgdbId=120000169058->https://www.miguvideo.com/mgs/website/prd/detail.html?cid=714449146
+            //https://www.migu.cn/video/detail/1301200000003413831.html->https://www.miguvideo.com/mgs/website/prd/detail.html?cid=638917815
+            //https://m.miguvideo.com/mgs/msite/prd/detail.html?channelid=201600010010028&sharefrom=miguvideoapp&cid=744402407
+            //https://www.miguvideo.com/p/detail/643620594?lastLocation=aaff5d9d3fae483580bd972c30af2d82
+            //https://www.miguvideo.com/p/live/120000451055
+            var url = window.external.url;
+            if (url.indexOf('migu.cn') != -1)
+                url = window.location.href;
+            if (url.indexOf('mgdbId=') != -1) {
+                var mid = url.match(/mgdbId=(\d+)/)[1];
+                var api_url = 'https://app-sc.miguvideo.com/vms-match/v3/staticcache/basic/basic-data/' + mid;
+                var data = window.external.getHtmlCode(api_url);
+                var jo = JSON.parse(data);
+                var video_url = 'https://www.miguvideo.com/mgs/website/prd/detail.html?cid=' + jo.body.pId;
+                document.head.innerHTML = '';
+                document.body.innerHTML = 'title=\"' + jo.body.title + '\",cr_video_url=' + video_url + '#ra$';
+                return;
+            }
+
+            var cid = (url.indexOf('cid=') != -1) ? url.match(/cid=(\d+)/)[1] : '';
+            if (!cid && url.indexOf('channelid=') != -1)
+                cid = url.match(/channelid=.*?(\d{9})/)[1];
+            if (!cid && url.match(/detail\/\d+/))
+                cid = url.match(/detail\/([^?&]+)/)[1];
+            if (!cid && url.match(/live\/\d+/))
+                cid = url.match(/live\/([^?&]+)/)[1];
+            var api_url = (url.indexOf('live') == -1) ? 'http://www.miguvideo.com/gateway/program/v2/cont/content-info/' + cid : 'https://v0-sc.miguvideo.com/vms-match/v6/staticcache/basic/basic-data/' + cid + '/miguvideo';
+            var data = window.external.getHtmlCode(api_url, url);
+            var thumbnail = '';
+            var jo = JSON.parse(data);
+            var h5pics = jo.body.data ? jo.body.data.h5pics : jo.body.h5pic;
+            for (let k in h5pics) {
+                thumbnail = h5pics[k];
+                break;
+            }
+            var cookie = window.external.getCookieEx(url, 'userInfo', 2500);
+            var rt = 4;
+            var vq = parseInt((window.external.vq && window.external.vq.match(/\d+/) ? window.external.vq : '1080').match(/\d+/)[0]);
+            if (vq == 720)
+                rt = 3;
+            else if (vq == 480 || vq == 360)
+                rt = 2;
+            //live
+            cid = jo.body.pId || cid;
+            api_url = 'https://webapi.miguvideo.com/gateway/playurl/v3/play/playurl?contId=' + cid + '&rateType=' + rt;
+            var ui = cookie.match(/UserInfo=\d+\|[^;]+/) ? '\r\nuserId: ' + cookie.match(/UserInfo=(\d+)/)[1] + '\r\nuserToken: ' + cookie.match(/UserInfo=\d+\|([^;]+)/)[1] : '';
+            var sid = cookie.indexOf('clientId%22:%22') != -1 ? cookie.match(/clientId%22:%22([^%]+)/)[1] : '';
+            if (sid)
+                ui += '\r\nSDKCEId: ' + sid;
+            //若无ui，则1080为360秒预览
+            var headers = ui ? 'terminalId: www\r\nappId: miguvideo\r\nAccept: application/json\r\nCookie: ' + cookie + ui : '';
+            data = window.external.getHtmlCodeEx(api_url, headers);
+            jo = JSON.parse(data);
+            var title = jo.body.content.contName;
+            var duration = jo.body.content.duration;
+            var video_url = jo.body.urlInfo.url;
+            var pu_data = get_puData(jo.body.urlInfo.url);
+            var video_url = jo.body.urlInfo.url + pu_data;
+            //为&time转义计
+            document.body.innerText = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+
+            function get_puData(e) {
+                var t = getqs('userid', e) || 'eeeeeeeee'
+                  , r = getqs('timestamp', e) || 'tttttttttttttt'
+                  , n = getqs('ProgramID', e) || 'ccccccccc'
+                  , o = getqs('Channel_ID', e) || 'nnnnnnnnnnnnnnnn'
+                  , a = getqs('puData', e) || '';
+                if (!a)
+                    return e;
+                var s = '2624';
+                s = s.split('');
+                for (var u = t.split('')[s[0]] || 'e', l = r.split('')[s[1]] || 't', c = n.split('')[s[2]] || 'c', f = o.split('')[o.split('').length - s[3]] || 'n', d = a.split(''), h = [], p = 0; 2 * p < d.length; p++)
+                    switch (h.push(d[d.length - p - 1]),
+                    p < d.length - p - 1 && h.push(a[p]),
+                    p) {
+                    case 1:
+                        h.push(u);
+                        break;
+                    case 2:
+                        h.push(l);
+                        break;
+                    case 3:
+                        h.push(c);
+                        break;
+                    case 4:
+                        h.push(f)
+                    }
+                var y = h.join('');
+                return '&ddCalcu=' + y
+            }
+
+            function getqs(e, t) {
+                var r, n = new RegExp('(^|\\?|&|#)' + e + '=([^&#]*)(&|#|$)','i');
+                if (t)
+                    r = t.match(n);
+                else {
+                    try {
+                        r = top.location.href.match(n)
+                    } catch (e) {
+                        r = window.location.href.match(n)
+                    }
+                }
+                return null != r ? decodeURIComponent(r[2]) : null
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

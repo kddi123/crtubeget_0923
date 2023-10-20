@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" referer="true" date="2020.05.03">
+    <url><![CDATA[https?://(?:www\.)?(?:kanqiye|6pian)\.(?:com|cn)/[^/]+/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[<h1>([^<]+)</h1>]]></title>
+    <thumbnail><![CDATA[background-image:\s+url\("([^"]+)"]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[<video[^>]+src="([^"]+?)"]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            if (document.body.innerHTML.indexOf('quality: [') != -1) {
+                var video_url = document.body.innerHTML.match(/'([^']+)',\s+type:'hls'\s+}]/)[1];
+                if (video_url)
+                    document.body.innerHTML = '<video src=\"' + video_url + '\" />$' + document.body.innerHTML;
+            }
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

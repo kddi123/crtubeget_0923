@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2020.10.28">
+    <url><![CDATA[https?://(?:www\.)?2-class\.com/[^/]+/(?<id>\w{32,})]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.2-class.com/myRecommend/540bdc413c214adcaadaa2bbbb0461b9
+            var id = window.location.href.match(/\/(\w{32,})/)[1];
+            var token = window.__DATA__.reqtoken;
+            var args = '{\"resourceId\":\"' + id + '\",\"reqtoken\":\"' + token + '\"}';
+            var cookie = window.external.getCookie(window.location.href, true) || document.cookie;
+            var headers = 'Content-Type: application/json\r\nCookie: ' + cookie;
+            var api_url = 'https://www.2-class.com/api/resource/getDetailNew';
+            var data = window.external.getPostResultEx(api_url, args, headers);
+            var jo = JSON.parse(data);
+            var title = jo.data.title || document.title;
+            title = title.replace(/\"/g, '\'');
+            var thumbnail = jo.data.coverUrl;
+            var duration = jo.data.playInfoList[0].duration;
+            var video_url = jo.data.playInfoList[0].playURL;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

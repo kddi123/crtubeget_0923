@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.11.30">
+    <url><![CDATA[https?://(?:\w+\.)?qtfm\.cn/.*?/programs/(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.qtfm.cn/channels/160362/programs/8748941
+            //https://www.qtfm.cn/channels/355104/programs/14715781/
+            //https://m.qtfm.cn/share/vchannels/355104/programs/14715778?platform=direct_link
+            var url = window.external.url;
+            if (url.indexOf('vchannels') != -1) {
+                document.head.innerHTML = '';
+                document.body.innerHTML = 'cr_video_url=' + url.replace('m.qtfm.cn/share/v', 'www.qtfm.cn/') + '#ra$';
+                return;
+            }
+
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : document.title.substring(0, document.title.indexOf('-'));
+            var thumbnail = '', duration = 0, video_url = '';
+            if (document.getElementsByClassName('right').length != 0 && document.getElementsByClassName('right')[0].getElementsByTagName('img').length != 0)
+                thumbnail = document.getElementsByClassName('right')[0].getElementsByTagName('img')[0].src;
+            if (document.getElementsByClassName('propTxt duration').length != 0)
+                duration = document.body.innerHTML.match(/时长:.*?<span>([^<]+)/)[1];
+
+            var cid = url.match(/channels\/(\d+)/)[1];
+            var pid = url.match(/programs\/(\d+)/)[1];
+            var t = Date.now();
+            var l = '/audiostream/redirect/' + cid + '/' + pid + '?access_token=&device_id=MOBILESITE&qingting_id=&t=' + t;
+            var sign = window.external.hmacMd5(l, 'fpMn12&38f_2e');
+            video_url = 'https://audio.qtfm.cn' + l + '&sign=' + sign;
+            //->m4a
+            video_url = window.external.getRedirectedUrl(video_url, url);
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

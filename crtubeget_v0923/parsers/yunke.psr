@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="500" crpj="true" referer="true" date="2020.02.27">
+    <url><![CDATA[https?://(?:\w+\.)?yunke\.com/course\.plan\.play/(?<id>\d+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^$]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            var pid = this.planId;
+            var api_url = 'https://' + document.domain + '/player.plan.info/' + pid;
+            var data = window.external.getHtmlCode(api_url);
+            var jo = JSON.parse(data);
+            var title = jo.course.title;
+            var thumbnail = jo.course.thumb_big;
+            var hv = 'hls';
+            if (jo.cdn_hls.length != 0)
+                hv = jo.cdn_hls[0].hls;
+            var hls = jo[hv];
+            var dt = hls.detail[hls.detail.length - 1];
+            var video_url = hls.url + dt.stream + '?' + dt.key_name + '=' + dt.key_value;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + '$cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

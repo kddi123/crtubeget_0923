@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="2500" crpj="true" date="2023.06.08">
+    <url><![CDATA[https?://(?:\w+\.)?zhibo8\.com/.*/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://www.zhibo8.com/zuqiu/2023/0608-652e887-svideo.htm
+            var title = jsondata.title;
+            var thumbnail = (document.getElementsByClassName('thumb_img').length != 0) ? document.getElementsByClassName('thumb_img')[0].src : '';
+            var duration = (document.getElementsByClassName('video_time').length != 0) ? document.getElementsByClassName('video_time')[0].innerText : '';
+            var api_url = 'https://a.qiumibao.com/pindao/getData.php?ourl=' + encodeURIComponent(jsondata.video_url) + '&shortvideo=1';
+            var data = window.external.getHtmlCode(api_url);
+            var video_url = json(data).url;
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

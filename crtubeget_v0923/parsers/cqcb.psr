@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2022.04.29">
+    <url><![CDATA[https?://(?:\w+\.)?cqcb\.com/.*?classId=[^&]+&newsId=(?<id>[^&]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <delegate><![CDATA[about:blank]]></delegate>
+    <jsCode><![CDATA[
+        try {
+            //https://wap.cqcb.com/shangyou_news/NewsDetail?classId=5723&newsId=4202703
+            //下面链接可自解，因此不做支持
+            //https://www.cqcb.com/shangyoushipin/2022-04-27/4860135_pc.html
+            var cid = window.external.url.match(/classId=([^&]+)/)[1];
+            var nid = window.external.url.match(/newsId=([^&]+)/)[1];
+            var api_url = 'https://newsapi.cqcb.com/v1/detail?columnId=' + cid + '&newsId=' + nid;
+            var data = window.external.getHtmlCode(api_url, window.external.url);
+            var item = JSON.parse(data).data;
+            document.body.innerHTML = 'title=\"' + item.title + '\",thumbnail=' + item.titlePic + ',cr_video_url=' + item.videoUrl + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

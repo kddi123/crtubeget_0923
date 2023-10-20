@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="1500" crpj="true" date="2021.05.27">
+    <url><![CDATA[https?://(?:\w+\.)?tvcbook\.(?:com|xxxx)/video/(?<id>[^.]+)\.html?]]></url>
+    <title><![CDATA[title="([^"]+)]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[duration=([^,]+)]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <ckSign><![CDATA[sensorsdata2015jssdkcross]]></ckSign>
+    <jsCode><![CDATA[
+        try {
+            //https://preview.tvcbook.com/video/1045116.html
+            //https://preview.tvcbook.com/video/35661.html?code=dae1r96Mnq3G4PBDovYhtq5fcT1HDXrz0332YZYc4Sb9buu_CTs
+            var title = (document.getElementsByTagName('h1').length != 0) ? document.getElementsByTagName('h1')[0].innerText : document.title;
+            var thumbnail = (document.getElementsByTagName('video').length != 0) ? document.getElementsByTagName('video')[0].poster : '';
+            var duration = 0;
+            var video_url = document.getElementById('media_src') ? document.getElementById('media_src').src : window.location.href;
+            if (window.video) {
+                title = window.video.best_title || window.video.title;
+                if (window.video.media && window.video.media.data)
+                    duration = window.video.media.data[0].duration;
+            }
+            document.head.innerHTML = '';
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',duration=' + duration + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parser delay="4500" date="2022.10.15">
+    <url><![CDATA[https?://y\.qq\.com/.*?/mv/(?<id>[^/]+)]]></url>
+    <title><![CDATA[title="([^"]+)"]]></title>
+    <thumbnail><![CDATA[thumbnail=([^,]+)]]></thumbnail>
+    <duration><![CDATA[]]></duration>
+    <mediaUrl><![CDATA[cr_video_url=([^\$]+)]]></mediaUrl>
+    <jsCode><![CDATA[
+        try {
+            //https://y.qq.com/n/ryqq/mv/r0017pe794k
+            //https://y.qq.com/n/ryqq/mv/d0013yx7930
+            var title = (document.getElementsByClassName('mv__name').length != 0) ? document.getElementsByClassName('mv__name')[0].innerText : document.title;
+            var thumbnail = '', video_url = '';
+            if (window.__INITIAL_DATA__ && window.__INITIAL_DATA__.mvDetail) {
+                var md = window.__INITIAL_DATA__.mvDetail;
+                title = md.title;
+                thumbnail = md.picurl;
+            }
+            var vid = window.external.url.match(/mv\/([^/]+)/)[1];
+            var args = '{\"mvUrl\":{\"module\":\"music.stream.MvUrlProxy\",\"method\":\"GetMvUrls\",\"param\":{\"vids\":[\"' + vid + '\"],\"request_type\":10003,\"addrtype\":3,\"format\":264}}}';
+            var data = window.external.getPostResult('https://u.y.qq.com/cgi-bin/musicu.fcg', args);
+            if (data.indexOf('freeflow_url\":[\"')!= -1) {
+                data = data.substring(data.lastIndexOf('freeflow_url\":[\"'));
+                video_url = data.match(/freeflow_url\":\[\"([^\"]+)/)[1];
+            }
+            if (!video_url) {
+                var entries = window.performance.getEntriesByType('resource');
+                for (var i = 0; i <= entries.length - 1; i++) {
+                    var e = entries[i];
+                    if (e.name.indexOf('.m3u8') != -1) {
+                        video_url = e.name;
+                        break;
+                    }
+                }
+            }
+            if (!video_url)
+                video_url = window.location.href;
+            document.body.innerHTML = 'title=\"' + title + '\",thumbnail=' + thumbnail + ',cr_video_url=' + video_url + '$';
+        }
+        catch (ex) {
+        }
+    ]]></jsCode>
+</parser>
